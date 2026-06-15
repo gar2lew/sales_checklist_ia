@@ -61,10 +61,20 @@
     .fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1}
     .photoActions button{position:relative;z-index:3}
     .sigWrap{border:1px solid #dfe1eb;border-radius:16px;background:#fff;overflow:hidden}
-    #signature{width:100%;height:185px;display:block;touch-action:none;background:linear-gradient(#fff,#fff),repeating-linear-gradient(0deg,transparent,transparent 29px,#f1f2f6 30px)}
+    #signature,#signature2{width:100%;height:185px;display:block;touch-action:none;background:linear-gradient(#fff,#fff),repeating-linear-gradient(0deg,transparent,transparent 29px,#f1f2f6 30px)}
     .sigTools{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px;background:#fafafe;border-top:1px solid var(--line);flex-wrap:wrap}
     .toggleRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 0}
     .toggleRow label{display:flex;align-items:center;gap:8px;margin:0;font-weight:700;color:var(--muted)}
+    .optionGrid{display:grid;grid-template-columns:1fr;gap:10px}
+    @media (min-width:720px){.optionGrid{grid-template-columns:repeat(3,1fr)}}
+    .radioCard{display:flex;gap:10px;align-items:flex-start;border:1px solid #ececf4;background:var(--soft);border-radius:14px;padding:11px;font-weight:800;color:#30364a}
+    .radioCard input{width:20px;height:20px;margin:0;accent-color:var(--navy);flex:none}
+    .subsection{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+    .subsection h3{font-size:14px;margin:0 0 10px;color:var(--navy);letter-spacing:0}
+    .adminList{display:grid;gap:8px;margin-top:10px}
+    .adminOption{display:flex;gap:8px;align-items:center}
+    .adminOption input{flex:1}
+    .adminActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     .previewWrap{position:sticky;top:14px}
     .paper{width:100%;max-width:420px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.12);overflow:hidden;aspect-ratio:595/842;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:800;text-align:center;padding:18px}
     .paper canvas{width:100%;display:block}
@@ -90,10 +100,11 @@
   <div class="app">
     <section class="hero">
       <h1>Sales Appointment Capture</h1>
-      <p>Use the checklist while in the appointment to make sure everything is collected. The final PDF is kept clean: it includes only the selected Irrevocable Authority form and attached ID/photo pages — not the staff checklist or upload controls.</p>
+      <p>Use the checklist while in the appointment to make sure everything is collected. The final PDF is kept clean: it includes selected client forms and attached ID/photo pages - not the staff checklist or upload controls.</p>
       <div class="toolbar">
-        <button class="btn primary" id="generateTop">⬇ Generate PDF</button>
-        <button class="btn ghost" id="shareTop">↗ Share PDF</button>
+        <button class="btn primary" id="generateTop">Generate PDF</button>
+        <button class="btn ghost" id="downloadTop" disabled>Download PDF</button>
+        <button class="btn ghost" id="shareTop" disabled>Share PDF</button>
         <button class="btn ghost" id="previewTop">↻ Refresh Preview</button>
         <button class="btn ghost" id="saveDraft">💾 Save Draft</button>
         <button class="btn ghost" id="loadDraft">↩ Load Draft</button>
@@ -108,7 +119,7 @@
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
           <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="date"></div>
-            <div><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
+            <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientName">Client Name <span class="required">*</span></label><input id="clientName" type="text" placeholder="Client name"></div>
           </div>
           <div class="fields two" style="margin-top:12px">
@@ -141,19 +152,142 @@
           </div>
           <div class="fields two" style="margin-top:12px">
             <div><label for="iaProperty">Property</label><input id="iaProperty" type="text" placeholder="Property address or description"></div>
-            <div><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
+            <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
           </div>
           <div class="fields two" style="margin-top:12px">
             <div><label for="iaDate">IA Date</label><input id="iaDate" type="date"></div>
             <div style="align-self:end"><button type="button" class="btn small" id="copyIAFields">Copy appointment details into IA fields</button></div>
           </div>
           <div class="toggleRow">
-            <label><input type="checkbox" id="iaApplySignature" checked> Apply captured client signature to IA form</label>
+            <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
+          </div>
+        </section>
+
+        <section class="card" id="eoiDetailsCard">
+          <h2>3. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 defaults from the appointment details.</p>
+          <div class="toggleRow" style="margin-bottom:12px">
+            <label><input type="checkbox" id="includeEOI"> Include Expression of Interest form in final PDF</label>
+          </div>
+
+          <div class="subsection">
+            <h3>Client 1</h3>
+            <div class="fields two">
+              <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Defaults to Client Name above"></div>
+              <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Defaults to Client Phone above"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
+              <div><label for="eoiClient1Address">Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to Client Address above"></div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Client 2</h3>
+            <div class="fields two">
+              <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Second client name"></div>
+              <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Second client mobile"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Second client email"></div>
+              <div><label for="eoiClient2Address">Address</label><input id="eoiClient2Address" type="text" placeholder="Second client address"></div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Ownership</h3>
+            <div class="optionGrid">
+              <label class="radioCard"><input type="radio" name="eoiOwnership" value="sole" checked> Sole Owner</label>
+              <label class="radioCard"><input type="radio" name="eoiOwnership" value="joint"> Joint Tenants 50/50</label>
+              <label class="radioCard"><input type="radio" name="eoiOwnership" value="common"> Tenants in Common</label>
+            </div>
+            <div style="margin-top:12px"><label for="eoiCommonShares">Tenants in Common percentage shares</label><input id="eoiCommonShares" type="text" placeholder="Example: Client 1 60%, Client 2 40%"></div>
+          </div>
+
+          <div class="subsection">
+            <h3>Sale details</h3>
+            <div class="fields two">
+              <div>
+                <label for="eoiSaleType">Proposed Sale Type</label>
+                <select id="eoiSaleType">
+                  <option value="">Select sale type</option>
+                  <option value="Land">Land</option>
+                  <option value="House">House</option>
+                  <option value="House and Land">House and Land</option>
+                </select>
+              </div>
+              <div><label for="eoiSaleAddress">Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property / sale address"></div>
+            </div>
+            <div class="fields three" style="margin-top:12px">
+              <div><label for="eoiPriceLand">Land Price</label><input id="eoiPriceLand" type="text" placeholder="$"></div>
+              <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
+              <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="eoiFinancePercent">Percentage of Finance</label><input id="eoiFinancePercent" type="text" placeholder="Example: 80%"></div>
+              <div><label for="eoiNextAppointment">Next Appointment Date and Time</label><input id="eoiNextAppointment" type="text" placeholder="Example: 20/06/2026 10:30 AM"></div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Completion details</h3>
+            <div class="fields three">
+              <div>
+                <label for="eoiIdAttached">ID Attached</label>
+                <select id="eoiIdAttached">
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <label for="eoiBranch">Branch Location</label>
+                <select id="eoiBranch">
+                  <option value="">Select branch</option>
+                  <option value="Brisbane">Brisbane</option>
+                  <option value="Perth">Perth</option>
+                </select>
+              </div>
+              <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="date"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
+              <div><label for="eoiComments">Comments</label><textarea id="eoiComments" placeholder="Comments for the EOI form"></textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="adminSettingsCard">
+          <h2>4. Admin Settings</h2>
+          <p class="hint">Configure whether staff and solicitor fields are free-text or dropdown fields. Settings are saved on this device.</p>
+          <div class="fields two">
+            <div>
+              <label for="staffMode">Staff Member field type</label>
+              <select id="staffMode">
+                <option value="text">Free-text input</option>
+                <option value="select">Dropdown/select</option>
+              </select>
+              <div class="adminList" id="staffOptionsList"></div>
+              <div class="adminActions">
+                <button type="button" class="btn small" id="addStaffOption">Add staff option</button>
+              </div>
+            </div>
+            <div>
+              <label for="solicitorMode">Solicitor / Conveyancer field type</label>
+              <select id="solicitorMode">
+                <option value="text">Free-text input</option>
+                <option value="select">Dropdown/select</option>
+              </select>
+              <div class="adminList" id="solicitorOptionsList"></div>
+              <div class="adminActions">
+                <button type="button" class="btn small" id="addSolicitorOption">Add solicitor option</button>
+              </div>
+            </div>
           </div>
         </section>
 
         <section class="card">
-          <h2>3. Pre-departure checklist</h2>
+          <h2>5. Pre-departure checklist</h2>
           <div class="checklist">
             <label class="check"><input id="item1" type="checkbox"><span>Reservation Form is fully completed and signed by the client</span></label>
             <label class="check"><input id="item2" type="checkbox"><span>Email addresses have been verified and double-checked</span></label>
@@ -163,7 +297,7 @@
         </section>
 
         <section class="card">
-          <h2>4. Attach client ID/photos</h2>
+          <h2>6. Attach client ID/photos</h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
           <div class="toggleRow">
@@ -174,13 +308,20 @@
         </section>
 
         <section class="card">
-          <h2>5. Client signature & notes</h2>
-          <p class="hint">Client can sign below using a finger, stylus, or mouse.</p>
+          <h2>7. Final signatures & notes</h2>
+          <p class="hint">Capture final signatures once. These are applied to the relevant generated forms.</p>
           <div class="sigWrap">
             <canvas id="signature" width="900" height="250"></canvas>
             <div class="sigTools">
-              <span class="hint" style="margin:0">Sign here</span>
-              <button class="btn small danger" id="clearSignature">Clear signature</button>
+              <span class="hint" style="margin:0">Signature 1</span>
+              <button class="btn small danger" id="clearSignature">Clear signature 1</button>
+            </div>
+          </div>
+          <div class="sigWrap" style="margin-top:12px">
+            <canvas id="signature2" width="900" height="250"></canvas>
+            <div class="sigTools">
+              <span class="hint" style="margin:0">Signature 2</span>
+              <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
             </div>
           </div>
           <div style="margin-top:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
@@ -192,6 +333,11 @@
         <section class="card">
           <h2>Output preview</h2>
           <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.</p>
+          <div class="toggleRow" style="justify-content:space-between;margin-bottom:10px">
+            <button type="button" class="btn small" id="previewPrev">Previous</button>
+            <span class="hint" id="previewPageLabel" style="margin:0">No output pages</span>
+            <button type="button" class="btn small" id="previewNext">Next</button>
+          </div>
           <div class="paper" id="previewPaper">Click “Refresh Preview”</div>
         </section>
       </aside>
@@ -204,6 +350,8 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="resetForm">Reset</button>
         <button class="btn dark" id="generateBottom">Generate PDF</button>
+        <button class="btn" id="downloadBottom" disabled>Download PDF</button>
+        <button class="btn" id="shareBottom" disabled>Share PDF</button>
       </div>
     </div>
   </div>
@@ -213,7 +361,13 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const fields = ['date','teamMember','clientName','clientPhone','clientEmail','clientAddress','appointmentLocation','iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature','notes','includeFullPhotos','compressPhotos','item1','item2','item3','item4'];
+  const fields = [
+    'date','teamMember','clientName','clientPhone','clientEmail','clientAddress','appointmentLocation',
+    'iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature',
+    'includeEOI','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
+    'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','eoiFinancePercent','eoiNextAppointment','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
+    'notes','includeFullPhotos','compressPhotos','item1','item2','item3','item4'
+  ];
   const photoLabels = ['ID Photo 1','ID Photo 2','ID Photo 3','ID Photo 4'];
   const photos = photoLabels.map((label,i)=>({label, file:null, dataURL:null, img:null, rotation:0, name:''}));
   const iaImageSources = {
@@ -223,6 +377,13 @@
   const iaImageCache = {};
   let lastPdfBlob = null;
   let lastPdfName = '';
+  let previewPageIndex = 0;
+  const adminSettingsKey = 'salesAppointmentAdminSettings';
+  const defaultAdminSettings = {
+    staff: { mode: 'text', options: [''] },
+    solicitor: { mode: 'text', options: [''] }
+  };
+  let adminSettings = loadAdminSettings();
 
   function localDateISO(){
     const d = new Date();
@@ -231,6 +392,7 @@
   }
   $('date').value = localDateISO();
   if($('iaDate')) $('iaDate').value = $('date').value;
+  if($('eoiDate')) $('eoiDate').value = $('date').value;
 
   function toast(msg){
     const t=$('toast'); t.textContent=msg; t.classList.add('show');
@@ -248,11 +410,114 @@
     return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
   }
   function updateName(){ $('fileNamePreview').textContent = pdfFileName(); }
+  function canSharePdf(){
+    if(!navigator.share || !lastPdfBlob) return false;
+    if(!navigator.canShare) return true;
+    try{
+      const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
+      return navigator.canShare({files:[file]});
+    }catch{
+      return false;
+    }
+  }
+  function updateActionButtons(){
+    const hasPdf = !!lastPdfBlob;
+    ['downloadTop','downloadBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
+    const canShare = canSharePdf();
+    ['shareTop','shareBottom'].forEach(id=>{
+      const el=$(id);
+      if(!el) return;
+      el.disabled = !hasPdf || !canShare;
+      el.title = canShare ? '' : 'Sharing is not supported in this browser.';
+    });
+  }
   function updateIaDetails(){
     // Keep the IA section visible so staff can always find the Perth/Brisbane option.
     const selected = $('iaForm') && $('iaForm').value;
     const card = $('iaDetailsCard');
     if(card) card.style.borderColor = selected ? 'rgba(209,171,111,.75)' : '';
+  }
+  function updateEoiDetails(){
+    const included = $('includeEOI') && $('includeEOI').checked;
+    const card = $('eoiDetailsCard');
+    if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
+  }
+  function eoiOwnership(){
+    const selected = document.querySelector('input[name="eoiOwnership"]:checked');
+    return selected ? selected.value : 'sole';
+  }
+  function loadAdminSettings(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(adminSettingsKey) || 'null');
+      return {
+        staff: { mode: saved?.staff?.mode === 'select' ? 'select' : 'text', options: Array.isArray(saved?.staff?.options) && saved.staff.options.length ? saved.staff.options : [''] },
+        solicitor: { mode: saved?.solicitor?.mode === 'select' ? 'select' : 'text', options: Array.isArray(saved?.solicitor?.options) && saved.solicitor.options.length ? saved.solicitor.options : [''] }
+      };
+    }catch{
+      return JSON.parse(JSON.stringify(defaultAdminSettings));
+    }
+  }
+  function saveAdminSettings(){
+    localStorage.setItem(adminSettingsKey, JSON.stringify(adminSettings));
+  }
+  function bindFieldEvents(id){
+    const el=$(id);
+    if(!el || el.dataset.bound === 'true') return;
+    el.dataset.bound = 'true';
+    el.addEventListener('input',()=>{ updateName(); clearGenerated(); });
+    el.addEventListener('change',()=>{ updateName(); clearGenerated(); if(id==='iaForm') updateIaDetails(); if(id==='includeEOI') updateEoiDetails(); });
+  }
+  function renderConfigurableControl(kind, fieldId, label, placeholder, required){
+    const config = adminSettings[kind];
+    const current = fieldText(fieldId);
+    const control = kind === 'staff' ? $('teamMemberControl') : $('solicitorControl');
+    if(!control) return;
+    const requiredMarkup = required ? ' <span class="required">*</span>' : '';
+    if(config.mode === 'select'){
+      const options = config.options.filter(v=>v.trim());
+      const optionMarkup = ['<option value="">Select</option>'].concat(options.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`)).join('');
+      control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}">${optionMarkup}</select>`;
+      if(current) $(fieldId).value = current;
+    } else {
+      control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><input id="${fieldId}" type="text" placeholder="${placeholder}">`;
+      $(fieldId).value = current;
+    }
+    bindFieldEvents(fieldId);
+  }
+  function renderOptionList(kind){
+    const list = kind === 'staff' ? $('staffOptionsList') : $('solicitorOptionsList');
+    if(!list) return;
+    const config = adminSettings[kind];
+    list.classList.toggle('hidden', config.mode !== 'select');
+    list.innerHTML = '';
+    config.options.forEach((value, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'adminOption';
+      row.innerHTML = `<input type="text" value="${value.replace(/"/g,'&quot;')}" aria-label="${kind} option ${idx+1}"><button type="button" class="btn small danger">Remove</button>`;
+      const input = row.querySelector('input');
+      const remove = row.querySelector('button');
+      input.addEventListener('input',()=>{ config.options[idx]=input.value; saveAdminSettings(); renderConfigurableFields(); });
+      remove.addEventListener('click',()=>{ config.options.splice(idx,1); if(!config.options.length) config.options.push(''); saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); });
+      list.appendChild(row);
+    });
+  }
+  function renderAdminSettings(){
+    if($('staffMode')) $('staffMode').value = adminSettings.staff.mode;
+    if($('solicitorMode')) $('solicitorMode').value = adminSettings.solicitor.mode;
+    renderOptionList('staff');
+    renderOptionList('solicitor');
+  }
+  function renderConfigurableFields(){
+    renderConfigurableControl('staff','teamMember','Team Member','Your name',true);
+    renderConfigurableControl('solicitor','iaSolicitor','Solicitor / Conveyancer','Name of solicitor or conveyancer',false);
+  }
+  function preserveDraftDropdownValue(kind, value){
+    value = (value || '').trim();
+    if(!value || adminSettings[kind].mode !== 'select') return;
+    if(!adminSettings[kind].options.includes(value)){
+      adminSettings[kind].options.push(value);
+      saveAdminSettings();
+    }
   }
   function copyAppointmentToIA(){
     if($('iaClientNames')) $('iaClientNames').value = fieldText('clientName');
@@ -262,12 +527,20 @@
     clearGenerated();
     toast('Appointment details copied into IA fields.');
   }
-  fields.forEach(id => { const el=$(id); if(el) el.addEventListener('input',()=>{updateName(); clearGenerated();}); });
-  fields.forEach(id => { const el=$(id); if(el) el.addEventListener('change',()=>{updateName(); clearGenerated(); if(id==='iaForm') updateIaDetails();}); });
+  renderConfigurableFields();
+  renderAdminSettings();
+  fields.forEach(bindFieldEvents);
+  document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); }));
+  $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode=$('staffMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
+  $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
+  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push(''); saveAdminSettings(); renderAdminSettings(); });
+  $('addSolicitorOption').addEventListener('click',()=>{ adminSettings.solicitor.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   updateName();
   updateIaDetails();
+  updateEoiDetails();
+  updateActionButtons();
 
-  function clearGenerated(){ lastPdfBlob=null; lastPdfName=''; }
+  function clearGenerated(){ lastPdfBlob=null; lastPdfName=''; previewPageIndex=0; updateActionButtons(); }
 
   function makePhotoUI(){
     const wrap=$('photos'); wrap.innerHTML='';
@@ -345,6 +618,15 @@
   sig.addEventListener('pointercancel', ()=>drawing=false);
   $('clearSignature').addEventListener('click', clearSig);
 
+  const sig2=$('signature2'); const sctx2=sig2.getContext('2d'); let drawing2=false; let hasSignature2=false;
+  function clearSig2(){ sctx2.clearRect(0,0,sig2.width,sig2.height); hasSignature2=false; clearGenerated(); }
+  function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
+  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); });
+  sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); clearGenerated(); });
+  sig2.addEventListener('pointerup', e=>{ drawing2=false; try{sig2.releasePointerCapture(e.pointerId)}catch{} });
+  sig2.addEventListener('pointercancel', ()=>drawing2=false);
+  $('clearSignature2').addEventListener('click', clearSig2);
+
   function drawRoundRect(ctx,x,y,w,h,r,fill,stroke){
     ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
     if(fill) ctx.fill(); if(stroke) ctx.stroke();
@@ -355,6 +637,17 @@
     for(let i=0;i<words.length;i++){
       const word=words[i];
       if(word==='\n') { ctx.fillText(line,x,y); y+=lineHeight; line=''; lines++; if(maxLines&&lines>=maxLines)return y; continue; }
+      if(ctx.measureText(word).width>maxWidth){
+        if(line){ ctx.fillText(line,x,y); y+=lineHeight; lines++; line=''; if(maxLines&&lines>=maxLines)return y; }
+        let chunk='';
+        for(const ch of word){
+          const test=chunk+ch;
+          if(ctx.measureText(test).width>maxWidth && chunk){ ctx.fillText(chunk,x,y); y+=lineHeight; lines++; chunk=ch; if(maxLines&&lines>=maxLines)return y; }
+          else chunk=test;
+        }
+        line=chunk;
+        continue;
+      }
       const test=line ? line+' '+word : word;
       if(ctx.measureText(test).width>maxWidth && line){ ctx.fillText(line,x,y); y+=lineHeight; line=word; lines++; if(maxLines&&lines>=maxLines)return y; }
       else line=test;
@@ -363,15 +656,42 @@
     return y;
   }
   function fieldText(id){ return ($(id).value || '').trim(); }
-  function drawField(ctx,label,value,x,y,w,h){
-    ctx.fillStyle='#00086d'; ctx.font='700 18px Arial'; ctx.fillText(label,x,y);
-    ctx.strokeStyle='#e3e4ee'; ctx.fillStyle='#fff'; ctx.lineWidth=2; drawRoundRect(ctx,x,y+10,w,h,8,true,true);
-    ctx.fillStyle=value?'#172033':'#9aa0af'; ctx.font='18px Arial'; wrapText(ctx,value || '—',x+12,y+38,w-24,22,2);
+  function formatDate(value){
+    if(!value) return '';
+    const parts = value.split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
   }
-  function drawCheckbox(ctx,checked,text,x,y){
-    ctx.strokeStyle='#d1ab6f'; ctx.fillStyle='#fff'; ctx.lineWidth=3; ctx.strokeRect(x,y,26,26);
-    if(checked){ ctx.strokeStyle='#00086d'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(x+6,y+14); ctx.lineTo(x+12,y+21); ctx.lineTo(x+23,y+6); ctx.stroke(); }
-    ctx.fillStyle='#172033'; ctx.font='18px Arial'; wrapText(ctx,text,x+42,y+20,800,23,2);
+  function drawPageFrame(ctx,title,subtitle,pageNumber,totalPages){
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,595,842);
+    ctx.fillStyle='#00086d'; ctx.font='700 22px Arial'; ctx.fillText(title,42,50);
+    if(subtitle){ ctx.fillStyle='#737887'; ctx.font='12px Arial'; wrapText(ctx,subtitle,42,72,420,15,2); }
+    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(42,94); ctx.lineTo(553,94); ctx.stroke();
+    ctx.fillStyle='#737887'; ctx.font='10px Arial'; ctx.fillText(`Page ${pageNumber} of ${totalPages} | Generated locally on device`,42,820);
+  }
+  function drawLineValue(ctx,label,value,x,y,w,opts={}){
+    const labelW = opts.labelW || 95;
+    const lineH = opts.lineH || 24;
+    const maxLines = opts.maxLines || 1;
+    const lineY = y + (opts.lineOffset || 10);
+    ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText(label,x,y);
+    ctx.strokeStyle='#cfd3df'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x+labelW,lineY); ctx.lineTo(x+w,lineY); ctx.stroke();
+    ctx.fillStyle=value?'#172033':'#9aa0af';
+    const valueX = x + labelW + 5;
+    const valueW = w - labelW - 8;
+    if(value && maxLines === 1 && opts.fit !== false){
+      let size = opts.fontSize || 11.5;
+      const weight = opts.fontWeight || '400';
+      while(size > 8){
+        ctx.font = `${weight} ${size}px Arial`;
+        if(ctx.measureText(value).width <= valueW) break;
+        size -= 0.5;
+      }
+      if(ctx.measureText(value).width <= valueW) ctx.fillText(value, valueX, y - 2);
+      else wrapText(ctx,value,valueX,y-2,valueW,lineH,1);
+    } else {
+      ctx.font=opts.font || '11.5px Arial';
+      wrapText(ctx,value || '',valueX,y-2,valueW,lineH,maxLines);
+    }
   }
   function drawImageContain(ctx,img,x,y,w,h,rotation){
     ctx.save();
@@ -386,77 +706,32 @@
     ctx.drawImage(img,-drawW/2,-drawH/2,drawW,drawH);
     ctx.restore();
   }
-  function drawPlaceholder(ctx,x,y,w,h,label){
-    ctx.strokeStyle='#d1ab6f'; ctx.fillStyle='#fbf8f2'; ctx.lineWidth=3; ctx.setLineDash([10,8]); drawRoundRect(ctx,x,y,w,h,12,true,true); ctx.setLineDash([]);
-    ctx.fillStyle='#d1ab6f'; ctx.font='700 34px Arial'; ctx.textAlign='center'; ctx.fillText('+',x+w/2,y+h/2-5);
-    ctx.fillStyle='#737887'; ctx.font='15px Arial'; ctx.fillText(label,x+w/2,y+h/2+24); ctx.textAlign='left';
-  }
-
-  function drawAppointmentPage(scale=2){
-    const W=595, H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d');
-    ctx.scale(scale,scale);
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-    // header
-    ctx.fillStyle='#00086d'; ctx.font='700 24px Arial'; ctx.fillText('Sales Reservation Appointment Checklist',50,56);
-    ctx.fillStyle='#737887'; ctx.font='13px Arial'; ctx.fillText(`${fieldText('date') || 'YYYY-MM-DD'}  |  Complete before leaving appointment`,50,78);
-    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(50,92); ctx.lineTo(545,92); ctx.stroke();
-
-    ctx.fillStyle='#f6f6fb'; drawRoundRect(ctx,50,112,495,114,10,true,false);
-    drawField(ctx,'Date:',fieldText('date'),68,132,135,44);
-    drawField(ctx,'Team Member:',fieldText('teamMember'),225,132,145,44);
-    drawField(ctx,'Client:',fieldText('clientName'),392,132,135,44);
-    drawField(ctx,'Phone:',fieldText('clientPhone'),68,183,135,34);
-    drawField(ctx,'Email:',fieldText('clientEmail'),225,183,145,34);
-    drawField(ctx,'Address:',fieldText('clientAddress'),392,183,135,34);
-
-    ctx.fillStyle='#00086d'; ctx.font='700 19px Arial'; ctx.fillText('Pre-Departure Checklist',68,262);
-    drawCheckbox(ctx,$('item1').checked,'Reservation Form is fully completed and signed by the client',76,282);
-    drawCheckbox(ctx,$('item2').checked,'Email addresses have been verified and double-checked',76,318);
-    drawCheckbox(ctx,$('item3').checked,'IA form details are completed and the correct Perth/Brisbane template is selected, if required',76,354);
-    drawCheckbox(ctx,$('item4').checked,'Clear photos of all client ID documents have been taken',76,390);
-
-    ctx.strokeStyle='#e7e7ef'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(68,432); ctx.lineTo(527,432); ctx.stroke();
-    ctx.fillStyle='#00086d'; ctx.font='700 19px Arial'; ctx.fillText('Client ID Photos',68,462);
-    ctx.fillStyle='#737887'; ctx.font='13px Arial'; ctx.fillText('Photo thumbnails shown below. Full-size photo pages may follow.',68,480);
-    const boxes=[[68,500],[315,500],[68,615],[315,615]];
-    photos.forEach((p,i)=>{
-      const [x,y]=boxes[i];
-      if(p.img){ ctx.strokeStyle='#d1ab6f'; ctx.fillStyle='#fff'; ctx.lineWidth=2; drawRoundRect(ctx,x,y,212,92,10,true,true); drawImageContain(ctx,p.img,x+4,y+4,204,68,p.rotation); ctx.fillStyle='#737887'; ctx.font='11px Arial'; ctx.fillText(p.label + (p.name ? ' - '+p.name.slice(0,28) : ''),x+8,y+84); }
-      else drawPlaceholder(ctx,x,y,212,92,p.label);
-    });
-
-    ctx.strokeStyle='#e7e7ef'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(68,728); ctx.lineTo(527,728); ctx.stroke();
-    ctx.fillStyle='#00086d'; ctx.font='700 19px Arial'; ctx.fillText('Client Signature',68,755);
-    ctx.strokeStyle='#e3e4ee'; ctx.fillStyle='#fff'; ctx.lineWidth=2; drawRoundRect(ctx,68,768,250,52,8,true,true);
-    if(hasSignature) ctx.drawImage(sig,76,772,234,43); else { ctx.fillStyle='#9aa0af'; ctx.font='15px Arial'; ctx.fillText('No signature captured',82,800); }
-    ctx.fillStyle='#00086d'; ctx.font='700 15px Arial'; ctx.fillText('Additional Notes:',335,755);
-    ctx.strokeStyle='#e3e4ee'; ctx.fillStyle='#fff'; drawRoundRect(ctx,335,768,192,52,8,true,true);
-    ctx.fillStyle='#172033'; ctx.font='12px Arial'; wrapText(ctx,fieldText('notes'),345,786,172,14,3);
-
-    ctx.fillStyle='#737887'; ctx.font='10px Arial'; ctx.fillText('Generated locally on device | Sales Appointment Capture',50,834);
-    return c;
-  }
-
-  function drawPhotoPage(photo, pageNumber, scale=2){
+  function drawPhotoPage(photo, pageNumber, totalPages, scale=2){
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#00086d'; ctx.font='700 24px Arial'; ctx.fillText(`${photo.label}`,50,55);
-    ctx.fillStyle='#737887'; ctx.font='13px Arial'; ctx.fillText(`${fieldText('clientName') || 'Client'}  |  ${fieldText('date') || 'Date'}  |  ${photo.name || 'Attached photo'}`,50,78);
-    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(50,92); ctx.lineTo(545,92); ctx.stroke();
-    ctx.strokeStyle='#e7e7ef'; ctx.fillStyle='#fbfbfe'; ctx.lineWidth=2; drawRoundRect(ctx,50,115,495,650,12,true,true);
-    drawImageContain(ctx,photo.img,62,127,471,626,photo.rotation);
-    ctx.fillStyle='#737887'; ctx.font='11px Arial'; ctx.fillText(`Page ${pageNumber} | Generated locally on device`,50,815);
+    drawPageFrame(ctx, photo.label, `${fieldText('clientName') || 'Client'} | ${formatDate(fieldText('date')) || 'Date'} | ${photo.name || 'Attached photo'}`, pageNumber, totalPages);
+    const contentX=42, contentY=118, contentW=511, contentH=655;
+    const pad=12;
+    const rot = ((photo.rotation||0)%360+360)%360;
+    const imgW = rot===90 || rot===270 ? photo.img.height : photo.img.width;
+    const imgH = rot===90 || rot===270 ? photo.img.width : photo.img.height;
+    const fit = Math.min((contentW-pad*2)/imgW, (contentH-pad*2)/imgH);
+    const drawW = imgW * fit;
+    const drawH = imgH * fit;
+    const frameW = Math.min(contentW, drawW + pad*2);
+    const frameH = Math.min(contentH, drawH + pad*2);
+    const frameX = contentX + (contentW - frameW) / 2;
+    const frameY = contentY + (contentH - frameH) / 2;
+    ctx.strokeStyle='#e7e7ef'; ctx.fillStyle='#fbfbfe'; ctx.lineWidth=1.5; drawRoundRect(ctx,frameX,frameY,frameW,frameH,10,true,true);
+    drawImageContain(ctx,photo.img,frameX+pad,frameY+pad,frameW-pad*2,frameH-pad*2,photo.rotation);
     return c;
   }
 
   function formattedDateForIA(){
     const value = fieldText('iaDate') || fieldText('date');
-    if(!value) return '';
-    const parts = value.split('-');
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
+    return formatDate(value);
   }
 
-  function drawIAPage(city, pageNumber, scale=2){
+  function drawIAPage(city, pageNumber, totalPages, scale=2){
     const img = iaImageCache[city];
     if(!img) throw new Error('IA form image has not loaded.');
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
@@ -477,7 +752,7 @@
       ctx.fillStyle = '#fff';
       ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
     }
-    function overlayText(text, sx, sy, sw, font='700 13px Arial', lineHeight=16, maxLines=2){
+    function overlayText(text, sx, sy, sw, font='700 12px Arial', lineHeight=14, maxLines=2){
       text = (text || '').trim();
       if(!text) return;
       const p = map(sx, sy);
@@ -485,19 +760,43 @@
       ctx.font = font;
       wrapText(ctx, text, p.x, p.y, maxW(sw), lineHeight, maxLines);
     }
+    function overlayFitText(text, sx, sy, sw, weight='700', maxSize=12, minSize=8){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, sy);
+      const width = maxW(sw);
+      let size = maxSize;
+      ctx.fillStyle = '#111';
+      while(size > minSize){
+        ctx.font = `${weight} ${size}px Arial`;
+        if(ctx.measureText(text).width <= width) break;
+        size -= 0.5;
+      }
+      ctx.font = `${weight} ${size}px Arial`;
+      if(ctx.measureText(text).width <= width){
+        ctx.fillText(text, p.x, p.y);
+      } else {
+        wrapText(ctx, text, p.x, p.y, width, size + 2, 2);
+      }
+    }
 
     const iaClientNames = fieldText('iaClientNames') || fieldText('clientName');
     const iaAddress = fieldText('iaAddress') || fieldText('clientAddress');
     const iaProperty = fieldText('iaProperty') || fieldText('appointmentLocation') || fieldText('clientAddress');
     const iaAmount = fieldText('iaAmount') || '$10,000';
 
-    overlayText(iaClientNames, 300, 333, 850, '700 13px Arial', 16, 2);
-    overlayText(iaAddress, 225, 382, 900, '700 13px Arial', 16, 2);
-    overlayText(iaProperty, 225, 431, 900, '700 13px Arial', 16, 2);
-    overlayText(fieldText('iaSolicitor'), 395, 560, 670, '14px Arial', 16, 1);
-    whiteOut(735, 755, 125, 38);
-    overlayText(iaAmount, 738, 781, 140, '700 13px Arial', 16, 1);
-    overlayText(formattedDateForIA(), 188, 1224, 430, '700 13px Arial', 16, 1);
+    whiteOut(292, 312, 875, 50);
+    whiteOut(214, 362, 940, 50);
+    whiteOut(214, 411, 940, 50);
+    whiteOut(386, 540, 700, 36);
+    whiteOut(728, 752, 145, 42);
+    whiteOut(176, 1206, 450, 36);
+    overlayFitText(iaClientNames, 300, 337, 850, '700', 12, 8);
+    overlayFitText(iaAddress, 225, 389, 900, '700', 11, 7.5);
+    overlayFitText(iaProperty, 225, 442, 900, '700', 11, 7.5);
+    overlayFitText(fieldText('iaSolicitor'), 395, 564, 670, '400', 12, 8);
+    overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
+    overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
 
     if($('iaApplySignature') && $('iaApplySignature').checked && hasSignature){
       const p1 = map(130, 1364);
@@ -505,26 +804,130 @@
       ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
     }
 
+    ctx.fillStyle='rgba(255,255,255,.94)';
+    ctx.fillRect(38,808,519,20);
+    ctx.fillStyle='#737887'; ctx.font='10px Arial';
+    ctx.fillText(`Page ${pageNumber} of ${totalPages} | Irrevocable Authority | Generated locally on device`,42,822);
+
     return c;
   }
 
-  async function refreshPreview(){
+  function eoiValue(id, fallbackId){
+    const own = fieldText(id);
+    if(own) return own;
+    return fallbackId ? fieldText(fallbackId) : '';
+  }
+  function drawSmallCheck(ctx,checked,label,x,y,w){
+    ctx.strokeStyle='#d1ab6f'; ctx.fillStyle='#fff'; ctx.lineWidth=1.4; ctx.strokeRect(x,y,12,12);
+    if(checked){ ctx.strokeStyle='#00086d'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+3,y+6); ctx.lineTo(x+6,y+10); ctx.lineTo(x+11,y+2); ctx.stroke(); }
+    ctx.fillStyle='#172033'; ctx.font='10.5px Arial'; wrapText(ctx,label,x+18,y+10,w-18,13,2);
+  }
+  function drawSignatureBox(ctx,label,sourceCanvas,hasSource,x,y,w,h){
+    ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText(label,x,y);
+    ctx.strokeStyle='#cfd3df'; ctx.fillStyle='#fff'; ctx.lineWidth=1; drawRoundRect(ctx,x,y+7,w,h,5,true,true);
+    if(hasSource) ctx.drawImage(sourceCanvas,x+8,y+13,w-16,h-12);
+    else { ctx.fillStyle='#9aa0af'; ctx.font='10px Arial'; ctx.fillText('Signature not captured',x+10,y+34); }
+  }
+  function drawEoiPage(pageNumber,totalPages,scale=2){
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    drawPageFrame(ctx,'Expression of Interest Form',`${eoiValue('eoiClient1Name','clientName') || 'Client'} | ${formatDate(fieldText('eoiDate') || fieldText('date')) || 'Date'}`, pageNumber, totalPages);
+
+    const left=42, right=553;
+    let y=122;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Client details',left,y); y+=22;
+    drawLineValue(ctx,'Name:',eoiValue('eoiClient1Name','clientName'),left,y,250,{labelW:48,maxLines:1});
+    drawLineValue(ctx,'Mobile:',eoiValue('eoiClient1Mobile','clientPhone'),315,y,238,{labelW:52,maxLines:1}); y+=28;
+    drawLineValue(ctx,'Address:',eoiValue('eoiClient1Address','clientAddress'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=30;
+    drawLineValue(ctx,'Email Address:',eoiValue('eoiClient1Email','clientEmail'),left,y,511,{labelW:88,maxLines:1}); y+=33;
+
+    drawLineValue(ctx,'Name:',fieldText('eoiClient2Name'),left,y,250,{labelW:48,maxLines:1});
+    drawLineValue(ctx,'Mobile:',fieldText('eoiClient2Mobile'),315,y,238,{labelW:52,maxLines:1}); y+=28;
+    drawLineValue(ctx,'Address:',fieldText('eoiClient2Address'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=30;
+    drawLineValue(ctx,'Email Address:',fieldText('eoiClient2Email'),left,y,511,{labelW:88,maxLines:1}); y+=38;
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Ownership',left,y); y+=18;
+    const ownership=eoiOwnership();
+    drawSmallCheck(ctx,ownership==='sole','Sole Owner',left,y,150);
+    drawSmallCheck(ctx,ownership==='joint','Joint Tenants 50/50',215,y,170);
+    drawSmallCheck(ctx,ownership==='common','Tenants in Common',410,y,140); y+=28;
+    drawLineValue(ctx,'Shares:',fieldText('eoiCommonShares'),left,y,511,{labelW:55,maxLines:1}); y+=38;
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Proposed land, house or house-and-land sale details',left,y); y+=22;
+    drawLineValue(ctx,'Sale Type:',fieldText('eoiSaleType'),left,y,250,{labelW:68,maxLines:1});
+    drawLineValue(ctx,'Finance:',fieldText('eoiFinancePercent'),315,y,238,{labelW:64,maxLines:1}); y+=28;
+    drawLineValue(ctx,'Address of Sale:',fieldText('eoiSaleAddress') || fieldText('iaProperty') || fieldText('appointmentLocation'),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=34;
+    drawLineValue(ctx,'Land:',fieldText('eoiPriceLand'),left,y,150,{labelW:42,maxLines:1});
+    drawLineValue(ctx,'House:',fieldText('eoiPriceHouse'),222,y,150,{labelW:46,maxLines:1});
+    drawLineValue(ctx,'H/L Total:',fieldText('eoiPriceTotal'),405,y,148,{labelW:64,maxLines:1}); y+=40;
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Appointment and office details',left,y); y+=22;
+    drawLineValue(ctx,'Next Appointment:',fieldText('eoiNextAppointment'),left,y,300,{labelW:112,maxLines:1});
+    drawLineValue(ctx,'ID Attached:',fieldText('eoiIdAttached'),378,y,175,{labelW:78,maxLines:1}); y+=28;
+    drawLineValue(ctx,'Staff Member:',eoiValue('eoiStaffMember','teamMember'),left,y,250,{labelW:88,maxLines:1});
+    drawLineValue(ctx,'Date:',formatDate(fieldText('eoiDate') || fieldText('date')),315,y,238,{labelW:42,maxLines:1}); y+=30;
+    drawSmallCheck(ctx,fieldText('eoiBranch')==='Brisbane','Brisbane',left,y,140);
+    drawSmallCheck(ctx,fieldText('eoiBranch')==='Perth','Perth',180,y,120); y+=28;
+
+    ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText('Comments:',left,y);
+    ctx.strokeStyle='#cfd3df'; ctx.fillStyle='#fff'; ctx.lineWidth=1; drawRoundRect(ctx,left,y+7,511,62,5,true,true);
+    ctx.fillStyle='#172033'; ctx.font='10.5px Arial'; wrapText(ctx,fieldText('eoiComments') || fieldText('notes'),left+10,y+25,491,13,4);
+    y+=88;
+
+    drawSignatureBox(ctx,'Signature 1',$('signature'),hasSignature,left,y,235,54);
+    drawSignatureBox(ctx,'Signature 2',sig2,hasSignature2,318,y,235,54);
+    return c;
+  }
+
+  function outputPlan(){
+    const selectedIA = $('iaForm').value;
+    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const selectedPhotos = photos.filter(p=>p.img);
+    const totalPages = (includeEOI ? 1 : 0) + (selectedIA ? 1 : 0) + selectedPhotos.length;
+    return { selectedIA, includeEOI, selectedPhotos, totalPages };
+  }
+  async function drawOutputPage(index, totalPages, scale){
+    const plan = outputPlan();
+    let offset = 0;
+    if(plan.includeEOI){
+      if(index === offset){
+        return drawEoiPage(index + 1, totalPages, scale);
+      }
+      offset++;
+    }
+    if(plan.selectedIA){
+      if(index === offset){
+        await ensureIAImage(plan.selectedIA);
+        return drawIAPage(plan.selectedIA, index + 1, totalPages, scale);
+      }
+      offset++;
+    }
+    const photo = plan.selectedPhotos[index - offset];
+    if(photo) return drawPhotoPage(photo, index + 1, totalPages, scale);
+    return null;
+  }
+  function updatePreviewControls(totalPages){
+    const label = $('previewPageLabel');
+    const prev = $('previewPrev');
+    const next = $('previewNext');
+    if(!label || !prev || !next) return;
+    label.textContent = totalPages ? `Page ${previewPageIndex + 1} of ${totalPages}` : 'No output pages';
+    prev.disabled = totalPages < 2;
+    next.disabled = totalPages < 2;
+  }
+  async function refreshPreview(delta=0){
     const paper=$('previewPaper');
     paper.innerHTML='';
     try{
-      const selectedIA = $('iaForm').value;
-      if(selectedIA){
-        await ensureIAImage(selectedIA);
-        const c = drawIAPage(selectedIA, 1, 1.25);
-        paper.appendChild(c);
+      const plan = outputPlan();
+      if(!plan.totalPages){
+        previewPageIndex = 0;
+        updatePreviewControls(0);
+        paper.textContent = 'Final PDF will include selected client forms and attached ID/photo pages only. The staff checklist is not included.';
       } else {
-        const firstPhoto = photos.find(p=>p.img);
-        if(firstPhoto){
-          const c = drawPhotoPage(firstPhoto, 1, 1.25);
-          paper.appendChild(c);
-        } else {
-          paper.textContent = 'Final PDF will include the selected IA form and attached ID/photo pages only. The staff checklist is not included.';
-        }
+        previewPageIndex = (previewPageIndex + delta + plan.totalPages) % plan.totalPages;
+        updatePreviewControls(plan.totalPages);
+        const c = await drawOutputPage(previewPageIndex, plan.totalPages, 1.25);
+        paper.appendChild(c);
       }
       status('Preview refreshed.');
     }catch(err){
@@ -570,50 +973,71 @@
     status('Generating clean output PDF...');
     const scale = $('compressPhotos').checked ? 2 : 3;
     const canvases=[];
-    let pageNumber = 1;
-    const selectedIA = $('iaForm').value;
-    if(selectedIA){
-      await ensureIAImage(selectedIA);
-      canvases.push(drawIAPage(selectedIA, pageNumber++, scale));
+    const plan = outputPlan();
+    if(plan.includeEOI && eoiOwnership()==='common' && !fieldText('eoiCommonShares')){
+      throw new Error('Enter percentage shares for Tenants in Common before generating the EOI form.');
     }
-    photos.filter(p=>p.img).forEach(p=>canvases.push(drawPhotoPage(p,pageNumber++,scale)));
-    if(!canvases.length){
-      throw new Error('Nothing selected for the final PDF. Select an IA form and/or attach at least one ID image.');
+    if(!plan.totalPages){
+      throw new Error('Nothing selected for the final PDF. Select an IA form, include the EOI form, and/or attach at least one ID image.');
+    }
+    for(let i=0;i<plan.totalPages;i++){
+      canvases.push(await drawOutputPage(i, plan.totalPages, scale));
     }
     const quality = $('compressPhotos').checked ? 0.78 : 0.92;
     const blob=makePDF(canvases, quality);
     lastPdfBlob=blob; lastPdfName=pdfFileName();
-    status(`Generated ${lastPdfName} (${(blob.size/1024/1024).toFixed(2)} MB). Clean PDF includes IA/images only.`);
+    status(`Generated ${lastPdfName} (${(blob.size/1024/1024).toFixed(2)} MB). Clean PDF includes selected forms/images only.`);
+    updateActionButtons();
     return {blob, name:lastPdfName};
   }
   function downloadBlob(blob,name){
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
   }
-  async function generateAndDownload(){
-    try{ const {blob,name}= await buildPdf(); downloadBlob(blob,name); refreshPreview(); toast('PDF download started.'); }
+  async function generatePdfOnly(){
+    try{ await buildPdf(); refreshPreview(); toast('PDF generated. Use Download PDF or Share PDF.'); }
     catch(err){ console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status('PDF generation failed.'); }
+  }
+  async function downloadPdf(){
+    try{
+      if(!lastPdfBlob) await buildPdf();
+      downloadBlob(lastPdfBlob,lastPdfName || pdfFileName());
+      toast('PDF download started.');
+    }catch(err){ console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status('PDF download failed.'); }
   }
   async function sharePdf(){
     try{
       if(!lastPdfBlob) await buildPdf();
       const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
-      if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      if(canSharePdf()){
         await navigator.share({title:'Sales Appointment PDF', text:'Completed sales appointment PDF', files:[file]}); toast('Share sheet opened.');
-      } else { downloadBlob(lastPdfBlob,lastPdfName || pdfFileName()); toast('Sharing is not available in this browser, so the PDF was downloaded.'); }
+      } else { toast('Sharing is not available in this browser. Use Download PDF instead.'); updateActionButtons(); }
     }catch(err){ if(err && err.name !== 'AbortError'){ console.error(err); toast(err && err.message ? err.message : 'Could not share PDF.'); } }
   }
 
   function getDraft(){
     const data={}; fields.forEach(id=>{const el=$(id); if(!el)return; data[id]=(el.type==='checkbox')?el.checked:el.value;});
+    data.eoiOwnership=eoiOwnership();
     data.signature=hasSignature?sig.toDataURL('image/png'):null;
+    data.signature2=hasSignature2?sig2.toDataURL('image/png'):null;
     data.photos=photos.map(p=>({label:p.label,dataURL:p.dataURL,rotation:p.rotation,name:p.name}));
     return data;
   }
   async function setDraft(data){
     if(!data) return;
+    preserveDraftDropdownValue('staff', data.teamMember);
+    preserveDraftDropdownValue('solicitor', data.iaSolicitor);
+    renderAdminSettings();
+    renderConfigurableFields();
     fields.forEach(id=>{const el=$(id); if(!el || data[id]===undefined)return; if(el.type==='checkbox')el.checked=!!data[id]; else el.value=data[id];});
+    if(data.eoiOwnership){
+      const ownershipEl=document.querySelector(`input[name="eoiOwnership"][value="${data.eoiOwnership}"]`);
+      if(ownershipEl) ownershipEl.checked=true;
+    }
     clearSig();
     if(data.signature){ const im=await loadImage(data.signature); sctx.drawImage(im,0,0,sig.width,sig.height); hasSignature=true; }
+    clearSig2();
+    const signature2Data = data.signature2 || data.eoiSignature2;
+    if(signature2Data){ const im2=await loadImage(signature2Data); sctx2.drawImage(im2,0,0,sig2.width,sig2.height); hasSignature2=true; }
     if(Array.isArray(data.photos)){
       for(let i=0;i<photos.length;i++){
         const d=data.photos[i];
@@ -622,7 +1046,7 @@
         renderPhotoBox(i);
       }
     }
-    updateName(); updateIaDetails(); clearGenerated(); refreshPreview();
+    updateName(); updateIaDetails(); updateEoiDetails(); clearGenerated(); refreshPreview();
   }
   function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
   async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
@@ -631,14 +1055,21 @@
     fields.forEach(id=>{ const el=$(id); if(!el)return; if(el.type==='checkbox') el.checked=(id==='includeFullPhotos'||id==='compressPhotos'||id==='iaApplySignature'); else el.value=''; });
     $('date').value=localDateISO();
     if($('iaDate')) $('iaDate').value = $('date').value;
+    if($('eoiDate')) $('eoiDate').value = $('date').value;
     if($('iaAmount')) $('iaAmount').value = '$10,000';
-    photos.forEach((_,i)=>removePhoto(i)); clearSig(); updateName(); updateIaDetails(); refreshPreview(); toast('Form reset.');
+    const sole=document.querySelector('input[name="eoiOwnership"][value="sole"]'); if(sole) sole.checked=true;
+    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); updateName(); updateIaDetails(); updateEoiDetails(); refreshPreview(); toast('Form reset.');
   }
 
-  $('generateTop').addEventListener('click',generateAndDownload);
-  $('generateBottom').addEventListener('click',generateAndDownload);
+  $('generateTop').addEventListener('click',generatePdfOnly);
+  $('generateBottom').addEventListener('click',generatePdfOnly);
+  $('downloadTop').addEventListener('click',downloadPdf);
+  $('downloadBottom').addEventListener('click',downloadPdf);
   $('shareTop').addEventListener('click',sharePdf);
-  $('previewTop').addEventListener('click',refreshPreview);
+  $('shareBottom').addEventListener('click',sharePdf);
+  $('previewTop').addEventListener('click',()=>refreshPreview());
+  $('previewPrev').addEventListener('click',()=>refreshPreview(-1));
+  $('previewNext').addEventListener('click',()=>refreshPreview(1));
   $('saveDraft').addEventListener('click',saveDraft);
   $('loadDraft').addEventListener('click',loadDraft);
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyAppointmentToIA);
