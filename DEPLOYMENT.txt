@@ -1,0 +1,166 @@
+Sales Appointment Capture PWA - Vercel Deployment Guide
+======================================================
+
+Folder contents
+---------------
+
+sales-capture-vercel-pwa/
+  README.md
+  DEPLOYMENT.txt
+  index.html
+  manifest.webmanifest
+  service-worker.js
+  vercel.json
+  icons/
+    icon-192.png
+    icon-512.png
+
+What this app does
+------------------
+
+This is an offline-capable Progressive Web App (PWA) for sales staff.
+
+It allows staff to:
+
+- Enter appointment/client details
+- Select Perth or Brisbane Irrevocable Authority template
+- Fill IA fields
+- Capture a client signature
+- Attach/take ID images
+- Generate a clean final PDF locally on the device
+
+The generated PDF includes only:
+
+- The selected filled IA form, if selected
+- The attached ID/photo pages
+
+The staff checklist is for internal appointment use only and is not included in the final PDF.
+
+Deploying to Vercel
+-------------------
+
+Option A - GitHub repo root
+
+1. Unzip this folder.
+2. Open the folder called sales-capture-vercel-pwa.
+3. Push the CONTENTS of that folder to a new GitHub repository.
+
+Your GitHub repository should look like this:
+
+  README.md
+  DEPLOYMENT.txt
+  index.html
+  manifest.webmanifest
+  service-worker.js
+  vercel.json
+  icons/
+    icon-192.png
+    icon-512.png
+
+4. Go to https://vercel.com
+5. Create a New Project.
+6. Import the GitHub repository.
+7. Use these settings:
+
+   Framework Preset: Other
+   Build Command: leave blank
+   Output Directory: leave blank
+   Install Command: leave blank
+   Root Directory: repo root
+
+8. Click Deploy.
+
+Option B - Keep the folder inside a larger repo
+
+If your GitHub repository looks like this:
+
+  sales-capture-vercel-pwa/
+    README.md
+    DEPLOYMENT.txt
+    index.html
+    manifest.webmanifest
+    service-worker.js
+    vercel.json
+    icons/
+      icon-192.png
+      icon-512.png
+
+Then in Vercel set:
+
+  Root Directory: sales-capture-vercel-pwa
+  Framework Preset: Other
+  Build Command: leave blank
+  Output Directory: leave blank
+  Install Command: leave blank
+
+Staff offline installation instructions
+---------------------------------------
+
+Each staff member should do this before going to appointments:
+
+1. Open the deployed Vercel URL while online.
+2. Wait for the page to fully load.
+3. On iPhone/iPad:
+   - Use Safari.
+   - Tap Share.
+   - Tap Add to Home Screen.
+4. On Android:
+   - Use Chrome.
+   - Tap Install App or Add to Home Screen.
+5. Open the app from the home screen once while still online.
+6. Confirm the app loads.
+
+After this, the app should work offline for:
+
+- Loading the form
+- Filling details
+- Attaching photos
+- Capturing signature
+- Generating the final PDF
+
+Important offline notes
+-----------------------
+
+- Staff must open the app once while online before relying on offline mode.
+- After app updates, staff should open the app once online again so the new version caches.
+- iPhones/iPads should use Safari for Add to Home Screen.
+- If a device is very low on storage, iOS/Android may eventually clear cached web app data.
+
+Updating the app
+----------------
+
+When you change index.html or other app files, also update this line in service-worker.js:
+
+  const CACHE_VERSION = 'v1.0.0';
+
+For example, change it to:
+
+  const CACHE_VERSION = 'v1.0.1';
+
+Then commit, push to GitHub, and let Vercel redeploy.
+
+Staff should then open the app while online to receive the latest cached version.
+
+Troubleshooting
+---------------
+
+If staff still see an old version:
+
+1. Confirm CACHE_VERSION was increased in service-worker.js.
+2. Ask staff to open the app while online.
+3. Refresh the app.
+4. If needed, remove the home screen app and add it again.
+
+If the app will not open offline:
+
+1. Confirm the staff member opened it once while online.
+2. Confirm the service-worker.js file deployed correctly.
+3. Confirm the app is being served over HTTPS. Vercel does this automatically.
+4. Ask them to open the app from the home screen after loading it online.
+
+Security/privacy note
+---------------------
+
+The app generates PDFs locally in the browser. Client details and photos are not uploaded by this app unless you later add a cloud upload/sync feature.
+
+Staff should still store, share and delete generated PDFs according to company privacy and ID-document handling policies.
