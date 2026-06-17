@@ -75,6 +75,11 @@
     .adminOption{display:flex;gap:8px;align-items:center}
     .adminOption input{flex:1}
     .adminActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .settingsOverlay{position:fixed;inset:0;background:rgba(16,24,40,.48);z-index:60;padding:18px;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+    .settingsOverlay.hidden{display:none!important}
+    .settingsPanel{width:min(760px,100%);margin:28px auto}
+    .settingsHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .settingsHeader h2{margin:0}
     .previewWrap{position:sticky;top:14px}
     .paper{width:100%;max-width:420px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.12);overflow:hidden;aspect-ratio:595/842;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:800;text-align:center;padding:18px}
     .paper canvas{width:100%;display:block}
@@ -82,6 +87,8 @@
     .footerInner{max-width:1120px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .footerInner .name{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px}
     .required{color:var(--danger)}
+    .invalidField{border-color:var(--danger)!important;box-shadow:0 0 0 4px rgba(180,35,24,.12)!important}
+    .fieldError{color:var(--danger);font-size:12px;font-weight:700;line-height:1.35;margin:6px 0 0}
     .hidden{display:none!important}
     .toast{position:fixed;right:14px;bottom:92px;background:#101828;color:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);z-index:50;max-width:360px;opacity:0;transform:translateY(10px);transition:.22s ease;pointer-events:none;font-size:14px;line-height:1.35}
     .toast.show{opacity:1;transform:translateY(0)}
@@ -108,6 +115,7 @@
         <button class="btn ghost" id="previewTop">↻ Refresh Preview</button>
         <button class="btn ghost" id="saveDraft">💾 Save Draft</button>
         <button class="btn ghost" id="loadDraft">↩ Load Draft</button>
+        <button class="btn ghost" id="openSettings">Settings</button>
       </div>
       <div class="status" id="status">Ready.</div>
     </section>
@@ -116,7 +124,7 @@
       <main>
         <section class="card">
           <h2>1. Appointment & client information</h2>
-          <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
+          <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file. Client address is the residential/contact address; appointment location is the meeting location.</p>
           <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="date"></div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
@@ -127,45 +135,14 @@
             <div><label for="clientEmail">Client Email</label><input id="clientEmail" type="email" placeholder="email@example.com"></div>
           </div>
           <div class="fields two" style="margin-top:12px">
-            <div><label for="clientAddress">Client Address</label><input id="clientAddress" type="text" placeholder="Street address"></div>
-            <div><label for="appointmentLocation">Appointment Location</label><input id="appointmentLocation" type="text" placeholder="If different from client address"></div>
-          </div>
-        </section>
-
-        <section class="card" id="iaDetailsCard">
-          <h2>2. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
-          <p class="hint">Choose Perth or Brisbane and complete the fields below. If selected, the matching IA template is filled and added as a page in the final PDF.</p>
-          <div class="fields two">
-            <div>
-              <label for="iaForm">Include IA template?</label>
-              <select id="iaForm">
-                <option value="">Do not include an IA form</option>
-                <option value="perth">Include Perth IA Form</option>
-                <option value="brisbane">Include Brisbane IA Form</option>
-              </select>
-            </div>
-            <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
-          </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name above"></div>
-            <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to Client Address above"></div>
-          </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaProperty">Property</label><input id="iaProperty" type="text" placeholder="Property address or description"></div>
-            <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
-          </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaDate">IA Date</label><input id="iaDate" type="date"></div>
-            <div style="align-self:end"><button type="button" class="btn small" id="copyIAFields">Copy appointment details into IA fields</button></div>
-          </div>
-          <div class="toggleRow">
-            <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
+            <div><label for="clientAddress">Client Residential / Contact Address</label><input id="clientAddress" type="text" placeholder="Client residential/contact address"></div>
+            <div><label for="appointmentLocation">Appointment / Meeting Location</label><input id="appointmentLocation" type="text" placeholder="Meeting location, not the property sold address"></div>
           </div>
         </section>
 
         <section class="card" id="eoiDetailsCard">
-          <h2>3. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
-          <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 defaults from the appointment details.</p>
+          <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 defaults from the appointment details. Use this section as the source for sale/property details.</p>
           <div class="toggleRow" style="margin-bottom:12px">
             <label><input type="checkbox" id="includeEOI"> Include Expression of Interest form in final PDF</label>
           </div>
@@ -178,7 +155,7 @@
             </div>
             <div class="fields two" style="margin-top:12px">
               <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
-              <div><label for="eoiClient1Address">Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to Client Address above"></div>
+              <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
             </div>
           </div>
 
@@ -190,7 +167,7 @@
             </div>
             <div class="fields two" style="margin-top:12px">
               <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Second client email"></div>
-              <div><label for="eoiClient2Address">Address</label><input id="eoiClient2Address" type="text" placeholder="Second client address"></div>
+              <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Second client residential/contact address"></div>
             </div>
           </div>
 
@@ -216,7 +193,7 @@
                   <option value="House and Land">House and Land</option>
                 </select>
               </div>
-              <div><label for="eoiSaleAddress">Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property / sale address"></div>
+              <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property being sold"><p class="hint" style="margin:6px 0 0">This is the property being sold, not necessarily the client's residential address.</p></div>
             </div>
             <div class="fields three" style="margin-top:12px">
               <div><label for="eoiPriceLand">Land Price</label><input id="eoiPriceLand" type="text" placeholder="$"></div>
@@ -257,37 +234,39 @@
           </div>
         </section>
 
-        <section class="card" id="adminSettingsCard">
-          <h2>4. Admin Settings</h2>
-          <p class="hint">Configure whether staff and solicitor fields are free-text or dropdown fields. Settings are saved on this device.</p>
+        <section class="card" id="iaDetailsCard">
+          <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div class="fields two">
             <div>
-              <label for="staffMode">Staff Member field type</label>
-              <select id="staffMode">
-                <option value="text">Free-text input</option>
-                <option value="select">Dropdown/select</option>
+              <label for="iaForm">Include IA template?</label>
+              <select id="iaForm">
+                <option value="">Do not include an IA form</option>
+                <option value="perth">Include Perth IA Form</option>
+                <option value="brisbane">Include Brisbane IA Form</option>
               </select>
-              <div class="adminList" id="staffOptionsList"></div>
-              <div class="adminActions">
-                <button type="button" class="btn small" id="addStaffOption">Add staff option</button>
-              </div>
             </div>
-            <div>
-              <label for="solicitorMode">Solicitor / Conveyancer field type</label>
-              <select id="solicitorMode">
-                <option value="text">Free-text input</option>
-                <option value="select">Dropdown/select</option>
-              </select>
-              <div class="adminList" id="solicitorOptionsList"></div>
-              <div class="adminActions">
-                <button type="button" class="btn small" id="addSolicitorOption">Add solicitor option</button>
-              </div>
-            </div>
+            <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
+          </div>
+          <div class="fields two" style="margin-top:12px">
+            <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name above"></div>
+            <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to client residential/contact address"></div>
+          </div>
+          <div class="fields two" style="margin-top:12px">
+            <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Use Copy EOI details to IA, or enter property sold address"></div>
+            <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
+          </div>
+          <div class="fields two" style="margin-top:12px">
+            <div><label for="iaDate">IA Date</label><input id="iaDate" type="date"></div>
+            <div style="align-self:end"><button type="button" class="btn small" id="copyIAFields">Copy EOI details to IA</button></div>
+          </div>
+          <div class="toggleRow">
+            <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
           </div>
         </section>
 
         <section class="card">
-          <h2>5. Pre-departure checklist</h2>
+          <h2>4. Pre-departure checklist</h2>
           <div class="checklist">
             <label class="check"><input id="item1" type="checkbox"><span>Reservation Form is fully completed and signed by the client</span></label>
             <label class="check"><input id="item2" type="checkbox"><span>Email addresses have been verified and double-checked</span></label>
@@ -297,7 +276,7 @@
         </section>
 
         <section class="card">
-          <h2>6. Attach client ID/photos</h2>
+          <h2>5. Attach client ID/photos</h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
           <div class="toggleRow">
@@ -308,7 +287,7 @@
         </section>
 
         <section class="card">
-          <h2>7. Final signatures & notes</h2>
+          <h2>6. Final signatures & notes</h2>
           <p class="hint">Capture final signatures once. These are applied to the relevant generated forms.</p>
           <div class="sigWrap">
             <canvas id="signature" width="900" height="250"></canvas>
@@ -344,9 +323,45 @@
     </div>
   </div>
 
+  <div class="settingsOverlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <section class="card settingsPanel" id="adminSettingsCard">
+      <div class="settingsHeader">
+        <div>
+          <h2 id="settingsTitle">Admin Settings</h2>
+          <p class="hint">Configure staff and solicitor fields for this device. These settings are not part of the client appointment form.</p>
+        </div>
+        <button type="button" class="btn small" id="closeSettings">Close</button>
+      </div>
+      <div class="fields two">
+        <div>
+          <label for="staffMode">Staff Member field type</label>
+          <select id="staffMode">
+            <option value="text">Free-text input</option>
+            <option value="select">Dropdown/select</option>
+          </select>
+          <div class="adminList" id="staffOptionsList"></div>
+          <div class="adminActions">
+            <button type="button" class="btn small" id="addStaffOption">Add staff option</button>
+          </div>
+        </div>
+        <div>
+          <label for="solicitorMode">Solicitor / Conveyancer field type</label>
+          <select id="solicitorMode">
+            <option value="text">Free-text input</option>
+            <option value="select">Dropdown/select</option>
+          </select>
+          <div class="adminList" id="solicitorOptionsList"></div>
+          <div class="adminActions">
+            <button type="button" class="btn small" id="addSolicitorOption">Add solicitor option</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div class="footerBar">
     <div class="footerInner">
-      <div class="name" id="fileNamePreview">Sales Appointment - YYYY-MM-DD - ClientName.pdf</div>
+      <div class="name" id="fileNamePreview">Sales Appointment - DD-MM-YYYY - ClientName.pdf</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="resetForm">Reset</button>
         <button class="btn dark" id="generateBottom">Generate PDF</button>
@@ -399,17 +414,82 @@
     clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3200);
   }
   function status(msg){ $('status').textContent = msg; }
+  function clearValidation(){
+    document.querySelectorAll('.invalidField').forEach(el=>{
+      el.classList.remove('invalidField');
+      el.removeAttribute('aria-invalid');
+    });
+    document.querySelectorAll('.fieldError').forEach(el=>el.remove());
+  }
+  function setFieldError(id, message){
+    const el=$(id);
+    if(!el) return;
+    el.classList.add('invalidField');
+    el.setAttribute('aria-invalid','true');
+    const msg=document.createElement('div');
+    msg.className='fieldError';
+    msg.textContent=message;
+    const parent=el.parentElement || el;
+    parent.appendChild(msg);
+  }
+  function requireField(errors, id, message){
+    if(!fieldText(id)) errors.push({id,message});
+  }
+  function validateBeforePdf(plan){
+    clearValidation();
+    const errors=[];
+    if(!plan.totalPages){
+      errors.push({id:null,message:'Select an IA form, include the EOI form, and/or attach at least one ID image.'});
+    }
+    requireField(errors,'date','Enter the appointment date.');
+    requireField(errors,'teamMember','Enter the staff member.');
+    requireField(errors,'clientName','Enter the client name.');
+    if(plan.includeEOI){
+      if(!eoiValue('eoiClient1Name','clientName')) errors.push({id:'eoiClient1Name',message:'Enter Client 1 name or complete Client Name above.'});
+      requireField(errors,'eoiSaleAddress','Enter the property sold address for the EOI form.');
+      if(eoiOwnership()==='common') requireField(errors,'eoiCommonShares','Enter percentage shares for Tenants in Common.');
+    }
+    if(plan.selectedIA){
+      if(!(fieldText('iaClientNames') || eoiValue('eoiClient1Name','clientName'))) errors.push({id:'iaClientNames',message:'Enter client name(s) for the IA form.'});
+      if(!(fieldText('iaAddress') || eoiValue('eoiClient1Address','clientAddress'))) errors.push({id:'iaAddress',message:'Enter the client residential/contact address for the IA form.'});
+      if(!(fieldText('iaProperty') || fieldText('eoiSaleAddress'))) errors.push({id:'iaProperty',message:'Enter the property sold address for the IA form.'});
+      requireField(errors,'iaSolicitor','Enter the solicitor or conveyancer for the IA form.');
+      requireField(errors,'iaAmount','Enter the authority amount for the IA form.');
+    }
+    errors.filter(err=>err.id).forEach(err=>setFieldError(err.id,err.message));
+    if(errors.length){
+      const first=errors[0];
+      if(first.id && $(first.id)) $(first.id).scrollIntoView({behavior:'smooth',block:'center'});
+      const validationError = new Error(errors.map(err=>err.message).join(' '));
+      validationError.isValidation = true;
+      throw validationError;
+    }
+  }
   function safePart(s, fallback){
     s = (s || '').trim() || fallback;
     return s.replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').slice(0,80);
   }
   function pdfFileName(){
-    const date = $('date').value || 'YYYY-MM-DD';
+    const dateVal = $('date').value;
+    const date = dateVal ? formatDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
     const team = safePart($('teamMember').value,'TeamMember');
     const client = safePart($('clientName').value,'ClientName');
     return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
   }
   function updateName(){ $('fileNamePreview').textContent = pdfFileName(); }
+  function openSettings(){
+    const overlay=$('settingsOverlay');
+    if(!overlay) return;
+    overlay.classList.remove('hidden');
+    const first=$('staffMode');
+    if(first) first.focus();
+  }
+  function closeSettings(){
+    const overlay=$('settingsOverlay');
+    if(overlay) overlay.classList.add('hidden');
+    const opener=$('openSettings');
+    if(opener) opener.focus();
+  }
   function canSharePdf(){
     if(!navigator.share || !lastPdfBlob) return false;
     if(!navigator.canShare) return true;
@@ -464,8 +544,8 @@
     const el=$(id);
     if(!el || el.dataset.bound === 'true') return;
     el.dataset.bound = 'true';
-    el.addEventListener('input',()=>{ updateName(); clearGenerated(); });
-    el.addEventListener('change',()=>{ updateName(); clearGenerated(); if(id==='iaForm') updateIaDetails(); if(id==='includeEOI') updateEoiDetails(); });
+    el.addEventListener('input',()=>{ updateName(); clearGenerated(); clearValidation(); });
+    el.addEventListener('change',()=>{ updateName(); clearGenerated(); clearValidation(); if(id==='iaForm') updateIaDetails(); if(id==='includeEOI') updateEoiDetails(); });
   }
   function renderConfigurableControl(kind, fieldId, label, placeholder, required){
     const config = adminSettings[kind];
@@ -496,7 +576,7 @@
       row.innerHTML = `<input type="text" value="${value.replace(/"/g,'&quot;')}" aria-label="${kind} option ${idx+1}"><button type="button" class="btn small danger">Remove</button>`;
       const input = row.querySelector('input');
       const remove = row.querySelector('button');
-      input.addEventListener('input',()=>{ config.options[idx]=input.value; saveAdminSettings(); renderConfigurableFields(); });
+      input.addEventListener('change',()=>{ config.options[idx]=input.value; saveAdminSettings(); renderConfigurableFields(); });
       remove.addEventListener('click',()=>{ config.options.splice(idx,1); if(!config.options.length) config.options.push(''); saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); });
       list.appendChild(row);
     });
@@ -519,13 +599,18 @@
       saveAdminSettings();
     }
   }
-  function copyAppointmentToIA(){
-    if($('iaClientNames')) $('iaClientNames').value = fieldText('clientName');
-    if($('iaAddress')) $('iaAddress').value = fieldText('clientAddress');
-    if($('iaProperty')) $('iaProperty').value = fieldText('appointmentLocation') || fieldText('clientAddress');
-    if($('iaDate')) $('iaDate').value = $('date').value || localDateISO();
+  function copyEOIToIA(){
+    const client1Name = fieldText('eoiClient1Name') || fieldText('clientName');
+    const client2Name = fieldText('eoiClient2Name');
+    const names = (client1Name && client2Name && !client1Name.toLowerCase().includes(client2Name.toLowerCase()))
+      ? `${client1Name} & ${client2Name}`
+      : (client1Name || client2Name);
+    if($('iaClientNames')) $('iaClientNames').value = names;
+    if($('iaAddress')) $('iaAddress').value = eoiValue('eoiClient1Address','clientAddress');
+    if($('iaProperty')) $('iaProperty').value = fieldText('eoiSaleAddress');
+    if($('iaDate')) $('iaDate').value = $('eoiDate').value || $('date').value || localDateISO();
     clearGenerated();
-    toast('Appointment details copied into IA fields.');
+    toast('EOI details copied into IA fields.');
   }
   renderConfigurableFields();
   renderAdminSettings();
@@ -780,9 +865,9 @@
       }
     }
 
-    const iaClientNames = fieldText('iaClientNames') || fieldText('clientName');
-    const iaAddress = fieldText('iaAddress') || fieldText('clientAddress');
-    const iaProperty = fieldText('iaProperty') || fieldText('appointmentLocation') || fieldText('clientAddress');
+    const iaClientNames = fieldText('iaClientNames') || eoiValue('eoiClient1Name','clientName');
+    const iaAddress = fieldText('iaAddress') || eoiValue('eoiClient1Address','clientAddress');
+    const iaProperty = fieldText('iaProperty') || fieldText('eoiSaleAddress');
     const iaAmount = fieldText('iaAmount') || '$10,000';
 
     whiteOut(292, 312, 875, 50);
@@ -855,7 +940,7 @@
     ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Proposed land, house or house-and-land sale details',left,y); y+=22;
     drawLineValue(ctx,'Sale Type:',fieldText('eoiSaleType'),left,y,250,{labelW:68,maxLines:1});
     drawLineValue(ctx,'Finance:',fieldText('eoiFinancePercent'),315,y,238,{labelW:64,maxLines:1}); y+=28;
-    drawLineValue(ctx,'Address of Sale:',fieldText('eoiSaleAddress') || fieldText('iaProperty') || fieldText('appointmentLocation'),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=34;
+    drawLineValue(ctx,'Address of Sale:',fieldText('eoiSaleAddress') || fieldText('iaProperty'),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=34;
     drawLineValue(ctx,'Land:',fieldText('eoiPriceLand'),left,y,150,{labelW:42,maxLines:1});
     drawLineValue(ctx,'House:',fieldText('eoiPriceHouse'),222,y,150,{labelW:46,maxLines:1});
     drawLineValue(ctx,'H/L Total:',fieldText('eoiPriceTotal'),405,y,148,{labelW:64,maxLines:1}); y+=40;
@@ -974,12 +1059,7 @@
     const scale = $('compressPhotos').checked ? 2 : 3;
     const canvases=[];
     const plan = outputPlan();
-    if(plan.includeEOI && eoiOwnership()==='common' && !fieldText('eoiCommonShares')){
-      throw new Error('Enter percentage shares for Tenants in Common before generating the EOI form.');
-    }
-    if(!plan.totalPages){
-      throw new Error('Nothing selected for the final PDF. Select an IA form, include the EOI form, and/or attach at least one ID image.');
-    }
+    validateBeforePdf(plan);
     for(let i=0;i<plan.totalPages;i++){
       canvases.push(await drawOutputPage(i, plan.totalPages, scale));
     }
@@ -995,14 +1075,14 @@
   }
   async function generatePdfOnly(){
     try{ await buildPdf(); refreshPreview(); toast('PDF generated. Use Download PDF or Share PDF.'); }
-    catch(err){ console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status('PDF generation failed.'); }
+    catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
   }
   async function downloadPdf(){
     try{
       if(!lastPdfBlob) await buildPdf();
       downloadBlob(lastPdfBlob,lastPdfName || pdfFileName());
       toast('PDF download started.');
-    }catch(err){ console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status('PDF download failed.'); }
+    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
   async function sharePdf(){
     try{
@@ -1011,7 +1091,7 @@
       if(canSharePdf()){
         await navigator.share({title:'Sales Appointment PDF', text:'Completed sales appointment PDF', files:[file]}); toast('Share sheet opened.');
       } else { toast('Sharing is not available in this browser. Use Download PDF instead.'); updateActionButtons(); }
-    }catch(err){ if(err && err.name !== 'AbortError'){ console.error(err); toast(err && err.message ? err.message : 'Could not share PDF.'); } }
+    }catch(err){ if(err && err.name !== 'AbortError'){ if(!err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not share PDF.'); if(err.isValidation) status('Please fix the highlighted fields.'); } }
   }
 
   function getDraft(){
@@ -1029,6 +1109,7 @@
     renderAdminSettings();
     renderConfigurableFields();
     fields.forEach(id=>{const el=$(id); if(!el || data[id]===undefined)return; if(el.type==='checkbox')el.checked=!!data[id]; else el.value=data[id];});
+    if((data.eoiSaleAddress === undefined || !String(data.eoiSaleAddress).trim()) && data.iaProperty && $('eoiSaleAddress')) $('eoiSaleAddress').value = data.iaProperty;
     if(data.eoiOwnership){
       const ownershipEl=document.querySelector(`input[name="eoiOwnership"][value="${data.eoiOwnership}"]`);
       if(ownershipEl) ownershipEl.checked=true;
@@ -1072,7 +1153,11 @@
   $('previewNext').addEventListener('click',()=>refreshPreview(1));
   $('saveDraft').addEventListener('click',saveDraft);
   $('loadDraft').addEventListener('click',loadDraft);
-  if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyAppointmentToIA);
+  $('openSettings').addEventListener('click',openSettings);
+  $('closeSettings').addEventListener('click',closeSettings);
+  $('settingsOverlay').addEventListener('click',e=>{ if(e.target===$('settingsOverlay')) closeSettings(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
+  if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
   refreshPreview();
 })();
