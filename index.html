@@ -101,6 +101,84 @@
     .toast{position:fixed;right:14px;bottom:92px;background:#101828;color:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);z-index:50;max-width:360px;opacity:0;transform:translateY(10px);transition:.22s ease;pointer-events:none;font-size:14px;line-height:1.35}
     .toast.show{opacity:1;transform:translateY(0)}
     .legal{font-size:12px;color:var(--muted);line-height:1.45;margin:10px 0 0}
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      margin-left: auto;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      transition: all 0.2s ease;
+    }
+    .badge-complete {
+      background-color: #ecfdf3;
+      color: var(--success);
+      border: 1px solid #d1fadf;
+    }
+    .badge-incomplete {
+      background-color: #fef3c7;
+      color: #b54708;
+      border: 1px solid #fedf89;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      border: 1px solid transparent;
+    }
+    .status-required {
+      background-color: #fee4e2;
+      color: var(--danger);
+      border-color: #fec3c0;
+    }
+    .status-captured {
+      background-color: #ecfdf3;
+      color: var(--success);
+      border-color: #d1fadf;
+    }
+    .status-optional {
+      background-color: #f2f4f7;
+      color: #344054;
+      border-color: #eaecf0;
+    }
+    .photos {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+    .photoGroup {
+      border: 1px solid var(--line);
+      background-color: var(--soft);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .photoGroupHeader {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--navy);
+      margin: 0 0 12px;
+    }
+    .photoGrid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 600px) {
+      .photoGrid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
     @media print{.hero,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
   </style>
 
@@ -131,7 +209,7 @@
     <div class="grid">
       <main>
         <section class="card">
-          <h2>1. Appointment & client information</h2>
+          <h2>1. Appointment & client information <span class="badge badge-incomplete" id="appointmentBadge">⚠ Incomplete</span></h2>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file. Client address is the residential/contact address; appointment location is the meeting location.</p>
           <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" placeholder="DD/MM/YYYY"></div>
@@ -162,7 +240,7 @@
         </section>
 
         <section class="card" id="eoiDetailsCard">
-          <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-complete" id="eoiBadge">✓ Complete</span></h2>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 defaults from the appointment details. Use this section as the source for sale/property details.</p>
           <div class="toggleRow" style="margin-bottom:12px">
             <label><input type="checkbox" id="includeEOI"> Include Expression of Interest form in final PDF</label>
@@ -294,7 +372,7 @@
         </section>
 
         <section class="card" id="iaDetailsCard">
-          <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-complete" id="iaBadge">✓ Complete</span></h2>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div class="fields two">
             <div>
@@ -335,7 +413,7 @@
         </section>
 
         <section class="card">
-          <h2>5. Attach client ID/photos</h2>
+          <h2>5. Attach client ID/photos <span class="badge badge-incomplete" id="photoBadge">⚠ Incomplete</span></h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
           <div class="toggleRow">
@@ -346,24 +424,30 @@
         </section>
 
         <section class="card">
-          <h2>6. Final signatures & notes</h2>
+          <h2>6. Final signatures & notes <span class="badge badge-incomplete" id="signatureBadge">⚠ Incomplete</span></h2>
           <p class="hint">Capture final signatures once. These are applied to the relevant generated forms.</p>
           <div class="sigWrap">
             <canvas id="signature" width="900" height="250"></canvas>
             <div class="sigTools">
-              <span class="hint" style="margin:0">Signature 1</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-weight:800;font-size:13px">Signature 1</span>
+                <span class="status-badge status-required" id="sig1Status">Required</span>
+              </div>
               <button class="btn small danger" id="clearSignature">Clear signature 1</button>
             </div>
           </div>
           <div class="sigWrap" style="margin-top:12px">
             <canvas id="signature2" width="900" height="250"></canvas>
             <div class="sigTools">
-              <span class="hint" style="margin:0">Signature 2</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-weight:800;font-size:13px">Signature 2</span>
+                <span class="status-badge status-optional" id="sig2Status">Optional</span>
+              </div>
               <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
             </div>
           </div>
           <div style="margin-top:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
-          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.0.9</p>
+          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.1.0</p>
         </section>
       </main>
 
@@ -416,7 +500,7 @@
         </div>
       </div>
       <div style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
-        Version 1.0.9
+        Version 1.1.0
       </div>
     </section>
   </div>
@@ -691,30 +775,150 @@
   updateIaDetails();
   updateEoiDetails();
   updateActionButtons();
+  clearGenerated();
 
-  function clearGenerated(){ lastPdfBlob=null; lastPdfName=''; previewPageIndex=0; updateActionButtons(); }
+  function clearGenerated(){
+    lastPdfBlob=null;
+    lastPdfName='';
+    previewPageIndex=0;
+    updateActionButtons();
+    updateSectionProgress();
+    updateSignatureStatuses();
+  }
 
   function makePhotoUI(){
     const wrap=$('photos'); wrap.innerHTML='';
+    
+    // Group 1: Client 1
+    const group1 = document.createElement('div');
+    group1.className = 'photoGroup';
+    group1.innerHTML = `<h3 class="photoGroupHeader">Client 1</h3>`;
+    const grid1 = document.createElement('div');
+    grid1.className = 'photoGrid';
+    group1.appendChild(grid1);
+    wrap.appendChild(group1);
+
+    // Group 2: Client 2
+    const group2 = document.createElement('div');
+    group2.className = 'photoGroup';
+    group2.innerHTML = `<h3 class="photoGroupHeader">Client 2</h3>`;
+    const grid2 = document.createElement('div');
+    grid2.className = 'photoGrid';
+    group2.appendChild(grid2);
+    wrap.appendChild(group2);
+
     photos.forEach((p,idx)=>{
       const box=document.createElement('div'); box.className='photoBox'; box.id=`photoBox${idx}`;
       box.innerHTML=`
         <input class="fileInput" id="photoInput${idx}" type="file" accept="image/*" capture="environment" aria-label="Attach ${p.label}">
         <div class="photoHeader">
-          <strong>${p.label}</strong>
+          <strong>${p.label.replace('Client 1 ', '').replace('Client 2 ', '')}</strong>
           <div class="photoActions">
             <button type="button" class="btn small" id="rotate${idx}">Rotate</button>
             <button type="button" class="btn small danger" id="remove${idx}">Remove</button>
           </div>
         </div>
         <div class="photoPreview" id="photoPreview${idx}"><div><div style="font-size:32px;color:var(--gold);font-weight:900">＋</div><div>Tap to attach photo</div></div></div>`;
-      wrap.appendChild(box);
+      
+      if(idx < 2){
+        grid1.appendChild(box);
+      } else {
+        grid2.appendChild(box);
+      }
+      
       $(`photoInput${idx}`).addEventListener('change', e=>handlePhoto(idx, e.target.files && e.target.files[0]));
       $(`rotate${idx}`).addEventListener('click', e=>{e.stopPropagation(); rotatePhoto(idx);});
       $(`remove${idx}`).addEventListener('click', e=>{e.stopPropagation(); removePhoto(idx);});
     });
   }
   makePhotoUI();
+
+  function updateSectionProgress(){
+    // Section 1: Appointment & Client Information
+    const s1Complete = fieldText('date') && fieldText('teamMember') && fieldText('clientName');
+    updateBadge('appointmentBadge', s1Complete);
+
+    // Section 2: Expression of Interest
+    let s2Complete = true;
+    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    if (includeEOI) {
+      s2Complete = !!fieldText('eoiSaleAddress');
+    }
+    updateBadge('eoiBadge', s2Complete);
+
+    // Section 3: Irrevocable Authority
+    let s3Complete = true;
+    const iaFormVal = $('iaForm') ? $('iaForm').value : '';
+    if (iaFormVal) {
+      s3Complete = fieldText('iaProperty') && fieldText('iaClientNames');
+    }
+    updateBadge('iaBadge', s3Complete);
+
+    // Section 4: Client ID Documents
+    let s4Complete = false;
+    const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
+    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
+    const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+    if (hasC2) {
+      s4Complete = hasC1Photo && hasC2Photo;
+    } else {
+      s4Complete = hasC1Photo;
+    }
+    updateBadge('photoBadge', s4Complete);
+
+    // Section 5: Signatures & Completion
+    let s5Complete = false;
+    if (hasC2) {
+      s5Complete = hasSignature && hasSignature2;
+    } else {
+      s5Complete = hasSignature;
+    }
+    updateBadge('signatureBadge', s5Complete);
+  }
+
+  function updateBadge(id, isComplete){
+    const badge = $(id);
+    if (!badge) return;
+    if (isComplete) {
+      badge.textContent = '✓ Complete';
+      badge.className = 'badge badge-complete';
+    } else {
+      badge.textContent = '⚠ Incomplete';
+      badge.className = 'badge badge-incomplete';
+    }
+  }
+
+  function updateSignatureStatuses() {
+    // Sig 1 Status
+    const sig1 = $('sig1Status');
+    if (sig1) {
+      if (hasSignature) {
+        sig1.textContent = '✓ Captured';
+        sig1.className = 'status-badge status-captured';
+      } else {
+        sig1.textContent = 'Required';
+        sig1.className = 'status-badge status-required';
+      }
+    }
+
+    // Sig 2 Status
+    const sig2 = $('sig2Status');
+    if (sig2) {
+      const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
+      if (hasSignature2) {
+        sig2.textContent = '✓ Captured';
+        sig2.className = 'status-badge status-captured';
+      } else {
+        if (hasC2) {
+          sig2.textContent = 'Required';
+          sig2.className = 'status-badge status-required';
+        } else {
+          sig2.textContent = 'Optional';
+          sig2.className = 'status-badge status-optional';
+        }
+      }
+    }
+  }
 
   function readAsDataURL(file){
     return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
@@ -774,7 +978,7 @@
     clearGenerated();
   }
   function pos(e){ const r=sig.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig.width/r.width, y:(e.clientY-r.top)*sig.height/r.height}; }
-  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); });
+  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); });
   sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); clearGenerated(); });
   sig.addEventListener('pointerup', e=>{ drawing=false; try{sig.releasePointerCapture(e.pointerId)}catch{} });
   sig.addEventListener('pointercancel', ()=>drawing=false);
@@ -788,7 +992,7 @@
     clearGenerated();
   }
   function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
-  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); });
+  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); });
   sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); clearGenerated(); });
   sig2.addEventListener('pointerup', e=>{ drawing2=false; try{sig2.releasePointerCapture(e.pointerId)}catch{} });
   sig2.addEventListener('pointercancel', ()=>drawing2=false);
