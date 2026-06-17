@@ -20,7 +20,7 @@
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;font-family:Inter, Arial, Helvetica, sans-serif;color:var(--ink);background:linear-gradient(180deg,#f7f7fc 0%,#ffffff 100%)}
     button,input,textarea{font:inherit}
-    .app{max-width:1120px;margin:0 auto;padding:18px 14px 110px}
+    .app{max-width:1120px;margin:0 auto;padding:18px 14px 130px}
     .hero{background:linear-gradient(135deg,var(--navy),#1820a2);color:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
     .hero:after{content:"";position:absolute;right:-110px;top:-120px;width:330px;height:330px;border-radius:50%;background:rgba(209,171,111,.25)}
     .hero h1{margin:0;font-size:clamp(24px,4vw,38px);letter-spacing:-.03em}
@@ -86,6 +86,14 @@
     .footerBar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:20;padding:10px max(12px,env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right));box-shadow:0 -10px 30px rgba(15,23,42,.1)}
     .footerInner{max-width:1120px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     .footerInner .name{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px}
+    .footerButtons{display:flex;gap:8px;flex-wrap:wrap}
+    @media (max-width:767px){
+      .footerInner{flex-direction:column;align-items:stretch;gap:6px}
+      .footerInner .name{text-align:center;max-width:100%;font-size:11px;margin-bottom:4px}
+      .footerButtons{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%}
+      .footerButtons .btn{padding:8px 4px;font-size:11px;justify-content:center;box-shadow:none;border:1px solid var(--line);width:100%}
+      .footerButtons .btn .btn-text{display:none}
+    }
     .required{color:var(--danger)}
     .invalidField{border-color:var(--danger)!important;box-shadow:0 0 0 4px rgba(180,35,24,.12)!important}
     .fieldError{color:var(--danger);font-size:12px;font-weight:700;line-height:1.35;margin:6px 0 0}
@@ -355,7 +363,7 @@
             </div>
           </div>
           <div style="margin-top:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
-          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy.</p>
+          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.0.9</p>
         </section>
       </main>
 
@@ -407,17 +415,31 @@
           </div>
         </div>
       </div>
+      <div style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
+        Version 1.0.9
+      </div>
     </section>
   </div>
 
   <div class="footerBar">
     <div class="footerInner">
       <div class="name" id="fileNamePreview">Sales Appointment - DD-MM-YYYY - ClientName.pdf</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="resetForm">Reset</button>
-        <button class="btn dark" id="generateBottom">Generate PDF</button>
-        <button class="btn" id="downloadBottom" disabled>Download PDF</button>
-        <button class="btn" id="shareBottom" disabled>Share PDF</button>
+      <div class="footerButtons">
+        <button class="btn" id="resetForm" title="Reset Form">
+          <span class="btn-icon">🗑️</span><span class="btn-text">Reset</span>
+        </button>
+        <button class="btn" id="saveDraftBottom" title="Save Draft">
+          <span class="btn-icon">💾</span><span class="btn-text">Save</span>
+        </button>
+        <button class="btn dark" id="generateBottom" title="Generate PDF">
+          <span class="btn-icon">⚡</span><span class="btn-text">Generate</span>
+        </button>
+        <button class="btn" id="downloadBottom" disabled title="Download PDF">
+          <span class="btn-icon">📥</span><span class="btn-text">Download</span>
+        </button>
+        <button class="btn" id="shareBottom" disabled title="Share PDF">
+          <span class="btn-icon">📤</span><span class="btn-text">Share</span>
+        </button>
       </div>
     </div>
   </div>
@@ -496,18 +518,6 @@
     requireField(errors,'date','Enter the appointment date.');
     requireField(errors,'teamMember','Enter the staff member.');
     requireField(errors,'clientName','Enter the client name.');
-    if(plan.includeEOI){
-      if(!eoiValue('eoiClient1Name','clientName')) errors.push({id:'eoiClient1Name',message:'Enter Client 1 name or complete Client Name above.'});
-      requireField(errors,'eoiSaleAddress','Enter the property sold address for the EOI form.');
-      if(eoiOwnership()==='common') requireField(errors,'eoiCommonShares','Enter percentage shares for Tenants in Common.');
-    }
-    if(plan.selectedIA){
-      if(!(fieldText('iaClientNames') || eoiValue('eoiClient1Name','clientName'))) errors.push({id:'iaClientNames',message:'Enter client name(s) for the IA form.'});
-      if(!(fieldText('iaAddress') || eoiValue('eoiClient1Address','clientAddress'))) errors.push({id:'iaAddress',message:'Enter the client residential/contact address for the IA form.'});
-      if(!(fieldText('iaProperty') || fieldText('eoiSaleAddress'))) errors.push({id:'iaProperty',message:'Enter the property sold address for the IA form.'});
-      requireField(errors,'iaSolicitor','Enter the solicitor or conveyancer for the IA form.');
-      requireField(errors,'iaAmount','Enter the authority amount for the IA form.');
-    }
     errors.filter(err=>err.id).forEach(err=>setFieldError(err.id,err.message));
     if(errors.length){
       const first=errors[0];
@@ -748,11 +758,21 @@
     }
   }
   function rotatePhoto(idx){ if(!photos[idx].img) return; photos[idx].rotation=(photos[idx].rotation+90)%360; renderPhotoBox(idx); clearGenerated(); }
-  function removePhoto(idx){ photos[idx]={label:photoLabels[idx], file:null, dataURL:null, img:null, rotation:0, name:''}; renderPhotoBox(idx); clearGenerated(); }
+  function removePhoto(idx){
+    if(photos[idx].img && !confirm('Are you sure you want to remove this photo?')) return;
+    photos[idx]={label:photoLabels[idx], file:null, dataURL:null, img:null, rotation:0, name:''};
+    renderPhotoBox(idx);
+    clearGenerated();
+  }
 
   // Signature pad
   const sig=$('signature'); const sctx=sig.getContext('2d'); let drawing=false; let hasSignature=false;
-  function clearSig(){ sctx.clearRect(0,0,sig.width,sig.height); hasSignature=false; clearGenerated(); }
+  function clearSig(){
+    if(hasSignature && !confirm('Are you sure you want to clear Signature 1?')) return;
+    sctx.clearRect(0,0,sig.width,sig.height);
+    hasSignature=false;
+    clearGenerated();
+  }
   function pos(e){ const r=sig.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig.width/r.width, y:(e.clientY-r.top)*sig.height/r.height}; }
   sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); });
   sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); clearGenerated(); });
@@ -761,7 +781,12 @@
   $('clearSignature').addEventListener('click', clearSig);
 
   const sig2=$('signature2'); const sctx2=sig2.getContext('2d'); let drawing2=false; let hasSignature2=false;
-  function clearSig2(){ sctx2.clearRect(0,0,sig2.width,sig2.height); hasSignature2=false; clearGenerated(); }
+  function clearSig2(){
+    if(hasSignature2 && !confirm('Are you sure you want to clear Signature 2?')) return;
+    sctx2.clearRect(0,0,sig2.width,sig2.height);
+    hasSignature2=false;
+    clearGenerated();
+  }
   function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
   sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); });
   sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); clearGenerated(); });
@@ -1312,6 +1337,7 @@
   $('previewPrev').addEventListener('click',()=>refreshPreview(-1));
   $('previewNext').addEventListener('click',()=>refreshPreview(1));
   $('saveDraft').addEventListener('click',saveDraft);
+  if($('saveDraftBottom')) $('saveDraftBottom').addEventListener('click',saveDraft);
   $('loadDraft').addEventListener('click',loadDraft);
   $('openSettings').addEventListener('click',openSettings);
   $('closeSettings').addEventListener('click',closeSettings);
