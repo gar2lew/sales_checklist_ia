@@ -6,8 +6,8 @@
   <title>Sales Appointment Capture</title>
   <style>
     :root{
-      --navy:#00086d;
-      --gold:#d1ab6f;
+      --navy:#1e3a5f;
+      --gold:#b8933a;
       --ink:#172033;
       --muted:#737887;
       --line:#e7e7ef;
@@ -125,6 +125,11 @@
       color: #b54708;
       border: 1px solid #fedf89;
     }
+    .badge-not-required {
+      background-color: #f2f4f7;
+      color: #344054;
+      border: 1px solid #eaecf0;
+    }
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -179,10 +184,31 @@
         grid-template-columns: 1fr 1fr;
       }
     }
-    @media print{.hero,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
+    .appHeader {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .headerInner {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .appLogo {
+      max-height: 40px;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+    @media print{.hero,.appHeader,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
   </style>
 
-  <meta name="theme-color" content="#00086d" />
+  <meta name="theme-color" content="#1e3a5f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Sales Capture" />
@@ -191,6 +217,11 @@
 </head>
 <body>
   <div class="app">
+    <header class="appHeader">
+      <div class="headerInner">
+        <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
+      </div>
+    </header>
     <section class="hero">
       <h1>Sales Appointment Capture</h1>
       <p>Use the checklist while in the appointment to make sure everything is collected. The final PDF is kept clean: it includes selected client forms and attached ID/photo pages - not the staff checklist or upload controls.</p>
@@ -240,7 +271,7 @@
         </section>
 
         <section class="card" id="eoiDetailsCard">
-          <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-complete" id="eoiBadge">✓ Complete</span></h2>
+          <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-not-required" id="eoiBadge">Not Required</span></h2>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 defaults from the appointment details. Use this section as the source for sale/property details.</p>
           <div class="toggleRow" style="margin-bottom:12px">
             <label><input type="checkbox" id="includeEOI"> Include Expression of Interest form in final PDF</label>
@@ -372,7 +403,7 @@
         </section>
 
         <section class="card" id="iaDetailsCard">
-          <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-complete" id="iaBadge">✓ Complete</span></h2>
+          <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-not-required" id="iaBadge">Not Required</span></h2>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div class="fields two">
             <div>
@@ -447,7 +478,7 @@
             </div>
           </div>
           <div style="margin-top:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
-          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.1.0</p>
+          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.2.0</p>
         </section>
       </main>
 
@@ -500,7 +531,7 @@
         </div>
       </div>
       <div style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
-        Version 1.1.0
+        Version 1.2.0
       </div>
     </section>
   </div>
@@ -836,35 +867,37 @@
   function updateSectionProgress(){
     // Section 1: Appointment & Client Information
     const s1Complete = fieldText('date') && fieldText('teamMember') && fieldText('clientName');
-    updateBadge('appointmentBadge', s1Complete);
+    updateBadge('appointmentBadge', s1Complete ? 'complete' : 'incomplete');
 
     // Section 2: Expression of Interest
-    let s2Complete = true;
     const includeEOI = $('includeEOI') && $('includeEOI').checked;
-    if (includeEOI) {
-      s2Complete = !!fieldText('eoiSaleAddress');
+    if (!includeEOI) {
+      updateBadge('eoiBadge', 'not-required');
+    } else {
+      const s2Complete = fieldText('eoiSaleAddress') && (fieldText('eoiClient1Name') || fieldText('clientName')) && (fieldText('eoiDate') || fieldText('date')) && (fieldText('eoiStaffMember') || fieldText('teamMember'));
+      updateBadge('eoiBadge', s2Complete ? 'complete' : 'incomplete');
     }
-    updateBadge('eoiBadge', s2Complete);
 
     // Section 3: Irrevocable Authority
-    let s3Complete = true;
     const iaFormVal = $('iaForm') ? $('iaForm').value : '';
-    if (iaFormVal) {
-      s3Complete = fieldText('iaProperty') && fieldText('iaClientNames');
+    if (!iaFormVal) {
+      updateBadge('iaBadge', 'not-required');
+    } else {
+      const s3Complete = fieldText('iaClientNames') && fieldText('iaAddress') && fieldText('iaProperty');
+      updateBadge('iaBadge', s3Complete ? 'complete' : 'incomplete');
     }
-    updateBadge('iaBadge', s3Complete);
 
     // Section 4: Client ID Documents
-    let s4Complete = false;
     const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
     const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
     const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+    let s4Complete = false;
     if (hasC2) {
       s4Complete = hasC1Photo && hasC2Photo;
     } else {
       s4Complete = hasC1Photo;
     }
-    updateBadge('photoBadge', s4Complete);
+    updateBadge('photoBadge', s4Complete ? 'complete' : 'incomplete');
 
     // Section 5: Signatures & Completion
     let s5Complete = false;
@@ -873,18 +906,21 @@
     } else {
       s5Complete = hasSignature;
     }
-    updateBadge('signatureBadge', s5Complete);
+    updateBadge('signatureBadge', s5Complete ? 'complete' : 'incomplete');
   }
 
-  function updateBadge(id, isComplete){
+  function updateBadge(id, state){
     const badge = $(id);
     if (!badge) return;
-    if (isComplete) {
+    if (state === 'complete') {
       badge.textContent = '✓ Complete';
       badge.className = 'badge badge-complete';
-    } else {
+    } else if (state === 'incomplete') {
       badge.textContent = '⚠ Incomplete';
       badge.className = 'badge badge-incomplete';
+    } else {
+      badge.textContent = 'Not Required';
+      badge.className = 'badge badge-not-required';
     }
   }
 
