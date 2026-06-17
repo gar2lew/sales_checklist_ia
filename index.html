@@ -126,7 +126,7 @@
           <h2>1. Appointment & client information</h2>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file. Client address is the residential/contact address; appointment location is the meeting location.</p>
           <div class="fields three">
-            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="date"></div>
+            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" placeholder="DD/MM/YYYY"></div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientName">Client Name <span class="required">*</span></label><input id="clientName" type="text" placeholder="Client name"></div>
           </div>
@@ -225,7 +225,7 @@
                   <option value="Perth">Perth</option>
                 </select>
               </div>
-              <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="date"></div>
+              <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" placeholder="DD/MM/YYYY"></div>
             </div>
             <div class="fields two" style="margin-top:12px">
               <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
@@ -257,7 +257,7 @@
             <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
           </div>
           <div class="fields two" style="margin-top:12px">
-            <div><label for="iaDate">IA Date</label><input id="iaDate" type="date"></div>
+            <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" placeholder="DD/MM/YYYY"></div>
             <div style="align-self:end"><button type="button" class="btn small" id="copyIAFields">Copy EOI details to IA</button></div>
           </div>
           <div class="toggleRow">
@@ -405,7 +405,7 @@
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().slice(0,10);
   }
-  $('date').value = localDateISO();
+  $('date').value = formatDisplayDate(localDateISO());
   if($('iaDate')) $('iaDate').value = $('date').value;
   if($('eoiDate')) $('eoiDate').value = $('date').value;
 
@@ -471,7 +471,7 @@
   }
   function pdfFileName(){
     const dateVal = $('date').value;
-    const date = dateVal ? formatDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+    const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
     const team = safePart($('teamMember').value,'TeamMember');
     const client = safePart($('clientName').value,'ClientName');
     return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
@@ -741,11 +741,35 @@
     return y;
   }
   function fieldText(id){ return ($(id).value || '').trim(); }
-  function formatDate(value){
+  function formatDisplayDate(value){
     if(!value) return '';
-    const parts = value.split('-');
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
+    const str = String(value).trim();
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
+      const parts = str.split('-');
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    if(/^\d{2}-\d{2}-\d{4}$/.test(str)){
+      return str.replace(/-/g, '/');
+    }
+    if(value instanceof Date && !isNaN(value)){
+      const dd = String(value.getDate()).padStart(2, '0');
+      const mm = String(value.getMonth() + 1).padStart(2, '0');
+      const yyyy = value.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    try {
+      const parsed = new Date(value);
+      if(!isNaN(parsed.getTime())){
+        const dd = String(parsed.getDate()).padStart(2, '0');
+        const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+        const yyyy = parsed.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      }
+    } catch(e){}
+    return value;
   }
+
   function drawPageFrame(ctx,title,subtitle,pageNumber,totalPages){
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,595,842);
     ctx.fillStyle='#00086d'; ctx.font='700 22px Arial'; ctx.fillText(title,42,50);
@@ -793,7 +817,7 @@
   }
   function drawPhotoPage(photo, pageNumber, totalPages, scale=2){
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
-    drawPageFrame(ctx, photo.label, `${fieldText('clientName') || 'Client'} | ${formatDate(fieldText('date')) || 'Date'} | ${photo.name || 'Attached photo'}`, pageNumber, totalPages);
+    drawPageFrame(ctx, photo.label, `${fieldText('clientName') || 'Client'} | ${formatDisplayDate(fieldText('date')) || 'Date'} | ${photo.name || 'Attached photo'}`, pageNumber, totalPages);
     const contentX=42, contentY=118, contentW=511, contentH=655;
     const pad=12;
     const rot = ((photo.rotation||0)%360+360)%360;
@@ -813,7 +837,7 @@
 
   function formattedDateForIA(){
     const value = fieldText('iaDate') || fieldText('date');
-    return formatDate(value);
+    return formatDisplayDate(value);
   }
 
   function drawIAPage(city, pageNumber, totalPages, scale=2){
@@ -915,7 +939,7 @@
   }
   function drawEoiPage(pageNumber,totalPages,scale=2){
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
-    drawPageFrame(ctx,'Expression of Interest Form',`${eoiValue('eoiClient1Name','clientName') || 'Client'} | ${formatDate(fieldText('eoiDate') || fieldText('date')) || 'Date'}`, pageNumber, totalPages);
+    drawPageFrame(ctx,'Expression of Interest Form',`${eoiValue('eoiClient1Name','clientName') || 'Client'} | ${formatDisplayDate(fieldText('eoiDate') || fieldText('date')) || 'Date'}`, pageNumber, totalPages);
 
     const left=42, right=553;
     let y=122;
@@ -949,7 +973,7 @@
     drawLineValue(ctx,'Next Appointment:',fieldText('eoiNextAppointment'),left,y,300,{labelW:112,maxLines:1});
     drawLineValue(ctx,'ID Attached:',fieldText('eoiIdAttached'),378,y,175,{labelW:78,maxLines:1}); y+=28;
     drawLineValue(ctx,'Staff Member:',eoiValue('eoiStaffMember','teamMember'),left,y,250,{labelW:88,maxLines:1});
-    drawLineValue(ctx,'Date:',formatDate(fieldText('eoiDate') || fieldText('date')),315,y,238,{labelW:42,maxLines:1}); y+=30;
+    drawLineValue(ctx,'Date:',formatDisplayDate(fieldText('eoiDate') || fieldText('date')),315,y,238,{labelW:42,maxLines:1}); y+=30;
     drawSmallCheck(ctx,fieldText('eoiBranch')==='Brisbane','Brisbane',left,y,140);
     drawSmallCheck(ctx,fieldText('eoiBranch')==='Perth','Perth',180,y,120); y+=28;
 
@@ -1108,7 +1132,18 @@
     preserveDraftDropdownValue('solicitor', data.iaSolicitor);
     renderAdminSettings();
     renderConfigurableFields();
-    fields.forEach(id=>{const el=$(id); if(!el || data[id]===undefined)return; if(el.type==='checkbox')el.checked=!!data[id]; else el.value=data[id];});
+    fields.forEach(id=>{
+      const el=$(id);
+      if(!el || data[id]===undefined)return;
+      if(el.type==='checkbox') el.checked=!!data[id];
+      else {
+        if(id==='date' || id==='iaDate' || id==='eoiDate'){
+          el.value = formatDisplayDate(data[id]);
+        } else {
+          el.value = data[id];
+        }
+      }
+    });
     if((data.eoiSaleAddress === undefined || !String(data.eoiSaleAddress).trim()) && data.iaProperty && $('eoiSaleAddress')) $('eoiSaleAddress').value = data.iaProperty;
     if(data.eoiOwnership){
       const ownershipEl=document.querySelector(`input[name="eoiOwnership"][value="${data.eoiOwnership}"]`);
@@ -1134,7 +1169,7 @@
   function resetForm(){
     if(!confirm('Clear all entered information, photos, and signature?')) return;
     fields.forEach(id=>{ const el=$(id); if(!el)return; if(el.type==='checkbox') el.checked=(id==='includeFullPhotos'||id==='compressPhotos'||id==='iaApplySignature'); else el.value=''; });
-    $('date').value=localDateISO();
+    $('date').value=formatDisplayDate(localDateISO());
     if($('iaDate')) $('iaDate').value = $('date').value;
     if($('eoiDate')) $('eoiDate').value = $('date').value;
     if($('iaAmount')) $('iaAmount').value = '$10,000';
