@@ -20,7 +20,7 @@
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;font-family:Inter, Arial, Helvetica, sans-serif;color:var(--ink);background:linear-gradient(180deg,#f7f7fc 0%,#ffffff 100%)}
     button,input,textarea{font:inherit}
-    .app{max-width:1120px;margin:0 auto;padding:18px 14px 130px}
+    .app{max-width:1120px;margin:0 auto;padding:0 14px 130px}
     .hero{background:linear-gradient(135deg,var(--navy),#1820a2);color:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
     .hero:after{content:"";position:absolute;right:-110px;top:-120px;width:330px;height:330px;border-radius:50%;background:rgba(209,171,111,.25)}
     .hero h1{margin:0;font-size:clamp(24px,4vw,38px);letter-spacing:-.03em}
@@ -184,18 +184,114 @@
         grid-template-columns: 1fr 1fr;
       }
     }
-    .appHeader {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    /* Compact Sticky Toolbar CSS */
+    .stickyHeader {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #ffffff;
+      border-bottom: 2px solid var(--line);
+      box-shadow: 0 4px 12px rgba(30, 58, 95, 0.08);
+      padding: 8px 14px;
+      margin: 0 -14px 20px -14px;
+      border-radius: 0;
     }
     .headerInner {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      max-width: 1092px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .headerBrand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .brandText {
+      display: flex;
+      flex-direction: column;
+    }
+    .brandTitle {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .brandVersion {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .statusBadge {
+      font-size: 12px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      padding: 4px 8px;
+      border-radius: 8px;
+      color: var(--navy);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .statusBadge span {
+      color: var(--gold);
+    }
+    .headerActions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .actionGroup {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--soft);
+      padding: 4px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+    }
+    .btn.toolbar-btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 16px;
+      box-shadow: none;
+      background: transparent;
+      color: var(--navy);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn.toolbar-btn:hover {
+      background: rgba(30, 58, 95, 0.08);
+      transform: none;
+    }
+    .btn.toolbar-btn.primary {
+      background: var(--gold);
+      color: #111;
+    }
+    .btn.toolbar-btn.primary:hover {
+      background: #a37c2b;
+    }
+    .btn.toolbar-btn.ghost-dark {
+      color: var(--navy);
+    }
+    .btn.toolbar-btn.ghost-dark:disabled {
+      color: var(--muted);
+      cursor: not-allowed;
+      background: transparent;
+    }
+    .btn.toolbar-btn.ghost-dark:not(:disabled):hover {
+      background: rgba(30, 58, 95, 0.08);
     }
     .appLogo {
       max-height: 40px;
@@ -205,7 +301,68 @@
       object-fit: contain;
       display: block;
     }
-    @media print{.hero,.appHeader,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
+    .liveSummaryContainer {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 10px;
+    }
+    .summaryHeader {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--navy);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .summarySection {
+      margin-bottom: 12px;
+    }
+    .summarySection h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 6px;
+      letter-spacing: 0.04em;
+      font-weight: 800;
+    }
+    .summaryRow {
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    .summaryRow strong {
+      color: #30364a;
+    }
+    .alertSection {
+      background: #fdf5d6;
+      border: 1px solid #f9ebbe;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #7d5a00;
+    }
+    .alertSection h4 {
+      color: #7d5a00;
+      border: 0;
+      margin-bottom: 4px;
+    }
+    .missingList {
+      margin: 4px 0 0;
+      padding-left: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #7d5a00;
+    }
+    .missingList li {
+      margin-bottom: 3px;
+    }
+    @media print{.hero,.appHeader,#liveSummary,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
   </style>
 
   <meta name="theme-color" content="#1e3a5f" />
@@ -217,25 +374,36 @@
 </head>
 <body>
   <div class="app">
-    <header class="appHeader">
+    <header class="appHeader stickyHeader">
       <div class="headerInner">
-        <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
+        <div class="headerBrand">
+          <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
+          <div class="brandText">
+            <span class="brandTitle">Sales Appointment Capture</span>
+            <span class="brandVersion">Version 1.4.0</span>
+          </div>
+          <div class="statusBadge">Status: <span id="status">Ready.</span></div>
+        </div>
+        
+        <div class="headerActions">
+          <div class="actionGroup">
+            <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
+            <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
+          </div>
+          
+          <div class="actionGroup">
+            <button class="btn toolbar-btn primary" id="generateTop">Generate PDF</button>
+            <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
+            <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
+            <button class="btn toolbar-btn ghost-dark" id="previewTop">↻ Refresh Preview</button>
+          </div>
+          
+          <div class="actionGroup">
+            <button class="btn toolbar-btn" id="openSettings">Settings</button>
+          </div>
+        </div>
       </div>
     </header>
-    <section class="hero">
-      <h1>Sales Appointment Capture</h1>
-      <p>Use the checklist while in the appointment to make sure everything is collected. The final PDF is kept clean: it includes selected client forms and attached ID/photo pages - not the staff checklist or upload controls.</p>
-      <div class="toolbar">
-        <button class="btn primary" id="generateTop">Generate PDF</button>
-        <button class="btn ghost" id="downloadTop" disabled>Download PDF</button>
-        <button class="btn ghost" id="shareTop" disabled>Share PDF</button>
-        <button class="btn ghost" id="previewTop">↻ Refresh Preview</button>
-        <button class="btn ghost" id="saveDraft">💾 Save Draft</button>
-        <button class="btn ghost" id="loadDraft">↩ Load Draft</button>
-        <button class="btn ghost" id="openSettings">Settings</button>
-      </div>
-      <div class="status" id="status">Ready.</div>
-    </section>
 
     <div class="grid">
       <main>
@@ -277,127 +445,129 @@
             <label><input type="checkbox" id="includeEOI"> Include Expression of Interest form in final PDF</label>
           </div>
 
-          <div class="subsection">
-            <h3>Client 1</h3>
-            <div class="fields two">
-              <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Defaults to Client Name above"></div>
-              <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Defaults to Client Phone above"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
-              <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
-            </div>
-          </div>
-
-          <div class="subsection">
-            <h3>Client 2</h3>
-            <div class="fields two">
-              <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Defaults to Client 2 Name above"></div>
-              <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Defaults to Client 2 Phone above"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Defaults to Client 2 Email above"></div>
-              <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
-            </div>
-          </div>
-
-          <div class="subsection">
-            <h3>Ownership</h3>
-            <div class="optionGrid">
-              <label class="radioCard"><input type="radio" name="eoiOwnership" value="sole" checked> Sole Owner</label>
-              <label class="radioCard"><input type="radio" name="eoiOwnership" value="joint"> Joint Tenants 50/50</label>
-              <label class="radioCard"><input type="radio" name="eoiOwnership" value="common"> Tenants in Common</label>
-            </div>
-            <div style="margin-top:12px"><label for="eoiCommonShares">Tenants in Common percentage shares</label><input id="eoiCommonShares" type="text" placeholder="Example: Client 1 60%, Client 2 40%"></div>
-          </div>
-
-          <div class="subsection">
-            <h3>Sale details</h3>
-            <div class="fields two">
-              <div>
-                <label for="eoiSaleType">Proposed Sale Type</label>
-                <select id="eoiSaleType">
-                  <option value="">Select sale type</option>
-                  <option value="Land">Land</option>
-                  <option value="House">House</option>
-                  <option value="House and Land">House and Land</option>
-                </select>
+          <div id="eoiFormContent" style="display:none">
+            <div class="subsection">
+              <h3>Client 1</h3>
+              <div class="fields two">
+                <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Defaults to Client Name above"></div>
+                <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Defaults to Client Phone above"></div>
               </div>
-              <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property being sold"><p class="hint" style="margin:6px 0 0">This is the property being sold, not necessarily the client's residential address.</p></div>
-            </div>
-            <div class="fields three" style="margin-top:12px">
-              <div><label for="eoiPriceLand">Land Price</label><input id="eoiPriceLand" type="text" placeholder="$"></div>
-              <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
-              <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div>
-                <label for="eoiFinancePercent">Percentage of Finance</label>
-                <select id="eoiFinancePercent">
-                  <option value="">Select %</option>
-                  <option value="10%">10%</option>
-                  <option value="20%">20%</option>
-                  <option value="30%">30%</option>
-                  <option value="40%">40%</option>
-                  <option value="50%">50%</option>
-                  <option value="60%">60%</option>
-                  <option value="70%">70%</option>
-                  <option value="80%">80%</option>
-                  <option value="90%">90%</option>
-                </select>
+              <div class="fields two" style="margin-top:12px">
+                <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
+                <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
               </div>
-              <div class="fields two" style="gap:12px; margin: 0; padding: 0">
-                <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="text" placeholder="DD/MM/YYYY"></div>
+            </div>
+
+            <div class="subsection">
+              <h3>Client 2</h3>
+              <div class="fields two">
+                <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Defaults to Client 2 Name above"></div>
+                <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Defaults to Client 2 Phone above"></div>
+              </div>
+              <div class="fields two" style="margin-top:12px">
+                <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Defaults to Client 2 Email above"></div>
+                <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
+              </div>
+            </div>
+
+            <div class="subsection">
+              <h3>Ownership</h3>
+              <div class="optionGrid">
+                <label class="radioCard"><input type="radio" name="eoiOwnership" value="sole" checked> Sole Owner</label>
+                <label class="radioCard"><input type="radio" name="eoiOwnership" value="joint"> Joint Tenants 50/50</label>
+                <label class="radioCard"><input type="radio" name="eoiOwnership" value="common"> Tenants in Common</label>
+              </div>
+              <div style="margin-top:12px"><label for="eoiCommonShares">Tenants in Common percentage shares</label><input id="eoiCommonShares" type="text" placeholder="Example: Client 1 60%, Client 2 40%"></div>
+            </div>
+
+            <div class="subsection">
+              <h3>Sale details</h3>
+              <div class="fields two">
                 <div>
-                  <label for="eoiNextApptTime">Next Appointment Time</label>
-                  <select id="eoiNextApptTime">
-                    <option value="">Select time</option>
-                    <option value="8:00 AM">8:00 AM</option>
-                    <option value="8:30 AM">8:30 AM</option>
-                    <option value="9:00 AM">9:00 AM</option>
-                    <option value="9:30 AM">9:30 AM</option>
-                    <option value="10:00 AM">10:00 AM</option>
-                    <option value="10:30 AM">10:30 AM</option>
-                    <option value="11:00 AM">11:00 AM</option>
-                    <option value="11:30 AM">11:30 AM</option>
-                    <option value="12:00 PM">12:00 PM</option>
-                    <option value="12:30 PM">12:30 PM</option>
-                    <option value="1:00 PM">1:00 PM</option>
-                    <option value="1:30 PM">1:30 PM</option>
-                    <option value="2:00 PM">2:00 PM</option>
-                    <option value="2:30 PM">2:30 PM</option>
-                    <option value="3:00 PM">3:00 PM</option>
-                    <option value="3:30 PM">3:30 PM</option>
-                    <option value="4:00 PM">4:00 PM</option>
-                    <option value="4:30 PM">4:30 PM</option>
-                    <option value="5:00 PM">5:00 PM</option>
-                    <option value="5:30 PM">5:30 PM</option>
-                    <option value="6:00 PM">6:00 PM</option>
+                  <label for="eoiSaleType">Proposed Sale Type</label>
+                  <select id="eoiSaleType">
+                    <option value="">Select sale type</option>
+                    <option value="Land">Land</option>
+                    <option value="House">House</option>
+                    <option value="House and Land">House and Land</option>
                   </select>
                 </div>
+                <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property being sold"><p class="hint" style="margin:6px 0 0">This is the property being sold, not necessarily the client's residential address.</p></div>
               </div>
+              <div class="fields three" style="margin-top:12px">
+                <div><label for="eoiPriceLand">Land Price</label><input id="eoiPriceLand" type="text" placeholder="$"></div>
+                <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
+                <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
+              </div>
+              <div class="fields two" style="margin-top:12px">
+                <div>
+                  <label for="eoiFinancePercent">Percentage of Finance</label>
+                  <select id="eoiFinancePercent">
+                    <option value="">Select %</option>
+                    <option value="10%">10%</option>
+                    <option value="20%">20%</option>
+                    <option value="30%">30%</option>
+                    <option value="40%">40%</option>
+                    <option value="50%">50%</option>
+                    <option value="60%">60%</option>
+                    <option value="70%">70%</option>
+                    <option value="80%">80%</option>
+                    <option value="90%">90%</option>
+                  </select>
+                </div>
+                <div class="fields two" style="gap:12px; margin: 0; padding: 0">
+                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="text" placeholder="DD/MM/YYYY"></div>
+                  <div>
+                    <label for="eoiNextApptTime">Next Appointment Time</label>
+                    <select id="eoiNextApptTime">
+                      <option value="">Select time</option>
+                      <option value="8:00 AM">8:00 AM</option>
+                      <option value="8:30 AM">8:30 AM</option>
+                      <option value="9:00 AM">9:00 AM</option>
+                      <option value="9:30 AM">9:30 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="10:30 AM">10:30 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="11:30 AM">11:30 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="12:30 PM">12:30 PM</option>
+                      <option value="1:00 PM">1:00 PM</option>
+                      <option value="1:30 PM">1:30 PM</option>
+                      <option value="2:00 PM">2:00 PM</option>
+                      <option value="2:30 PM">2:30 PM</option>
+                      <option value="3:00 PM">3:00 PM</option>
+                      <option value="3:30 PM">3:30 PM</option>
+                      <option value="4:00 PM">4:00 PM</option>
+                      <option value="4:30 PM">4:30 PM</option>
+                      <option value="5:00 PM">5:00 PM</option>
+                      <option value="5:30 PM">5:30 PM</option>
+                      <option value="6:00 PM">6:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <!-- Keep hidden/legacy field for draft compatibility -->
+              <input type="hidden" id="eoiNextAppointment" value="">
+              <input type="hidden" id="eoiIdAttached" value="">
             </div>
-            <!-- Keep hidden/legacy field for draft compatibility -->
-            <input type="hidden" id="eoiNextAppointment" value="">
-            <input type="hidden" id="eoiIdAttached" value="">
-          </div>
 
-          <div class="subsection">
-            <h3>Completion details</h3>
-            <div class="fields two">
-              <div>
-                <label for="eoiBranch">Branch Location</label>
-                <select id="eoiBranch">
-                  <option value="">Select branch</option>
-                  <option value="Brisbane">Brisbane</option>
-                  <option value="Perth">Perth</option>
-                </select>
+            <div class="subsection">
+              <h3>Completion details</h3>
+              <div class="fields two">
+                <div>
+                  <label for="eoiBranch">Branch Location</label>
+                  <select id="eoiBranch">
+                    <option value="">Select branch</option>
+                    <option value="Brisbane">Brisbane</option>
+                    <option value="Perth">Perth</option>
+                  </select>
+                </div>
+                <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" placeholder="DD/MM/YYYY"></div>
               </div>
-              <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" placeholder="DD/MM/YYYY"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
-              <div><label for="eoiComments">Comments</label><textarea id="eoiComments" placeholder="Comments for the EOI form"></textarea></div>
+              <div class="fields two" style="margin-top:12px">
+                <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
+                <div><label for="eoiComments">Comments</label><textarea id="eoiComments" placeholder="Comments for the EOI form"></textarea></div>
+              </div>
             </div>
           </div>
         </section>
@@ -405,7 +575,7 @@
         <section class="card" id="iaDetailsCard">
           <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span> <span class="badge badge-not-required" id="iaBadge">Not Required</span></h2>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
-          <div class="fields two">
+          <div class="fields">
             <div>
               <label for="iaForm">Include IA template?</label>
               <select id="iaForm">
@@ -414,37 +584,30 @@
                 <option value="brisbane">Include Brisbane IA Form</option>
               </select>
             </div>
-            <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
           </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name above"></div>
-            <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to client residential/contact address"></div>
-          </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Use Copy EOI details to IA, or enter property sold address"></div>
-            <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
-          </div>
-          <div class="fields two" style="margin-top:12px">
-            <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" placeholder="DD/MM/YYYY"></div>
-            <div style="align-self:end"><button type="button" class="btn small" id="copyIAFields">Copy EOI details to IA</button></div>
-          </div>
-          <div class="toggleRow">
-            <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
+
+          <div id="iaFormContent" style="display:none">
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
+              <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name above"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to client residential/contact address"></div>
+              <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Use Copy EOI details to IA, or enter property sold address"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
+              <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" placeholder="DD/MM/YYYY"></div>
+            </div>
+            <div class="toggleRow" style="margin-top:12px; justify-content:space-between; align-items:center">
+              <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
+              <button type="button" class="btn small" id="copyIAFields">Copy EOI details to IA</button>
+            </div>
           </div>
         </section>
 
         <section class="card">
-          <h2>4. Pre-departure checklist</h2>
-          <div class="checklist">
-            <label class="check"><input id="item1" type="checkbox"><span>Reservation Form is fully completed and signed by the client</span></label>
-            <label class="check"><input id="item2" type="checkbox"><span>Email addresses have been verified and double-checked</span></label>
-            <label class="check"><input id="item3" type="checkbox"><span>IA form details are completed and the correct Perth/Brisbane template is selected, if required</span></label>
-            <label class="check"><input id="item4" type="checkbox"><span>Clear photos of all client ID documents have been taken</span></label>
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>5. Attach client ID/photos <span class="badge badge-incomplete" id="photoBadge">⚠ Incomplete</span></h2>
+          <h2>4. Client ID Documents <span class="badge badge-incomplete" id="photoBadge">⚠ Incomplete</span></h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
           <div class="toggleRow">
@@ -455,30 +618,47 @@
         </section>
 
         <section class="card">
-          <h2>6. Final signatures & notes <span class="badge badge-incomplete" id="signatureBadge">⚠ Incomplete</span></h2>
-          <p class="hint">Capture final signatures once. These are applied to the relevant generated forms.</p>
-          <div class="sigWrap">
-            <canvas id="signature" width="900" height="250"></canvas>
-            <div class="sigTools">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-weight:800;font-size:13px">Signature 1</span>
-                <span class="status-badge status-required" id="sig1Status">Required</span>
-              </div>
-              <button class="btn small danger" id="clearSignature">Clear signature 1</button>
+          <h2>5. Signatures & Completion <span class="badge badge-incomplete" id="signatureBadge">⚠ Incomplete</span></h2>
+          <p class="hint">Complete the pre-departure checklist and notes, then capture final signatures to sign off on the captures.</p>
+          
+          <div class="subsection" style="margin-top:0; padding-top:0; border-top:0">
+            <h3>Pre-departure checklist</h3>
+            <div class="checklist">
+              <label class="check"><input id="item1" type="checkbox"><span>Reservation Form is fully completed and signed by the client</span></label>
+              <label class="check"><input id="item2" type="checkbox"><span>Email addresses have been verified and double-checked</span></label>
+              <label class="check"><input id="item3" type="checkbox"><span>IA form details are completed and the correct Perth/Brisbane template is selected, if required</span></label>
+              <label class="check"><input id="item4" type="checkbox"><span>Clear photos of all client ID documents have been taken</span></label>
             </div>
           </div>
-          <div class="sigWrap" style="margin-top:12px">
-            <canvas id="signature2" width="900" height="250"></canvas>
-            <div class="sigTools">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-weight:800;font-size:13px">Signature 2</span>
-                <span class="status-badge status-optional" id="sig2Status">Optional</span>
+
+          <div class="subsection">
+            <div style="margin-bottom:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
+          </div>
+
+          <div class="subsection">
+            <h3>Signatures</h3>
+            <div class="sigWrap">
+              <canvas id="signature" width="900" height="250"></canvas>
+              <div class="sigTools">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-weight:800;font-size:13px">Signature 1</span>
+                  <span class="status-badge status-required" id="sig1Status">Required</span>
+                </div>
+                <button class="btn small danger" id="clearSignature">Clear signature 1</button>
               </div>
-              <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
+            </div>
+            <div class="sigWrap" style="margin-top:12px">
+              <canvas id="signature2" width="900" height="250"></canvas>
+              <div class="sigTools">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-weight:800;font-size:13px">Signature 2</span>
+                  <span class="status-badge status-optional" id="sig2Status">Optional</span>
+                </div>
+                <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
+              </div>
             </div>
           </div>
-          <div style="margin-top:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
-          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.2.0</p>
+          <p class="legal">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | Version 1.4.0</p>
         </section>
       </main>
 
@@ -491,7 +671,39 @@
             <span class="hint" id="previewPageLabel" style="margin:0">No output pages</span>
             <button type="button" class="btn small" id="previewNext">Next</button>
           </div>
-          <div class="paper" id="previewPaper">Click “Refresh Preview”</div>
+          <div class="liveSummaryContainer" id="liveSummary">
+            <div class="summaryHeader">Appointment Summary</div>
+            
+            <div class="summarySection">
+              <h4>Client Information</h4>
+              <div class="summaryRow"><strong>Client 1:</strong> <span id="sumClient1">Empty</span></div>
+              <div id="sumClient2Row" class="summaryRow" style="display:none"><strong>Client 2:</strong> <span id="sumClient2">Empty</span></div>
+            </div>
+
+            <div class="summarySection">
+              <h4>Documents & Forms</h4>
+              <div class="summaryRow"><strong>Expression of Interest:</strong> <span id="sumEOI">Not Included</span></div>
+              <div class="summaryRow"><strong>Irrevocable Authority:</strong> <span id="sumIA">Not Included</span></div>
+            </div>
+
+            <div class="summarySection">
+              <h4>Checklists & Verification</h4>
+              <div class="summaryRow"><strong>ID Uploads:</strong> <span id="sumIDCount">0 of 4 uploaded</span></div>
+              <div class="summaryRow"><strong>PWA Checklist:</strong> <span id="sumChecklistCount">0 of 4 checked</span></div>
+            </div>
+
+            <div class="summarySection">
+              <h4>Signatures</h4>
+              <div class="summaryRow"><strong>Signature 1:</strong> <span id="sumSig1">Missing</span></div>
+              <div class="summaryRow"><strong>Signature 2:</strong> <span id="sumSig2">Not Required</span></div>
+            </div>
+
+            <div class="summarySection alertSection" id="sumMissingSection" style="display:none">
+              <h4>Pending Requirements</h4>
+              <ul id="sumMissingList" class="missingList"></ul>
+            </div>
+          </div>
+          <div class="paper" id="previewPaper" style="display:none">Click “Refresh Preview”</div>
         </section>
       </aside>
     </div>
@@ -531,7 +743,7 @@
         </div>
       </div>
       <div style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
-        Version 1.2.0
+        Version 1.4.0
       </div>
     </section>
   </div>
@@ -658,7 +870,17 @@
     }
     return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
   }
-  function updateName(){ $('fileNamePreview').textContent = pdfFileName(); }
+  function updatePhotoUIGroups(){
+    const group2 = $('photoGroupClient2');
+    if(group2){
+      const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
+      group2.style.display = hasC2 ? 'block' : 'none';
+    }
+  }
+  function updateName(){ 
+    $('fileNamePreview').textContent = pdfFileName(); 
+    updatePhotoUIGroups();
+  }
   function openSettings(){
     const overlay=$('settingsOverlay');
     if(!overlay) return;
@@ -698,11 +920,15 @@
     const selected = $('iaForm') && $('iaForm').value;
     const card = $('iaDetailsCard');
     if(card) card.style.borderColor = selected ? 'rgba(209,171,111,.75)' : '';
+    const content = $('iaFormContent');
+    if(content) content.style.display = selected ? 'block' : 'none';
   }
   function updateEoiDetails(){
     const included = $('includeEOI') && $('includeEOI').checked;
     const card = $('eoiDetailsCard');
     if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
+    const content = $('eoiFormContent');
+    if(content) content.style.display = included ? 'block' : 'none';
   }
   function eoiOwnership(){
     const selected = document.querySelector('input[name="eoiOwnership"]:checked');
@@ -815,6 +1041,7 @@
     updateActionButtons();
     updateSectionProgress();
     updateSignatureStatuses();
+    renderLiveSummary();
   }
 
   function makePhotoUI(){
@@ -831,6 +1058,7 @@
 
     // Group 2: Client 2
     const group2 = document.createElement('div');
+    group2.id = 'photoGroupClient2';
     group2.className = 'photoGroup';
     group2.innerHTML = `<h3 class="photoGroupHeader">Client 2</h3>`;
     const grid2 = document.createElement('div');
@@ -863,6 +1091,150 @@
     });
   }
   makePhotoUI();
+  updatePhotoUIGroups();
+
+  function renderLiveSummary() {
+    const liveSummary = $('liveSummary');
+    const previewPaper = $('previewPaper');
+    
+    if (lastPdfBlob) {
+      if (liveSummary) liveSummary.style.display = 'none';
+      if (previewPaper) previewPaper.style.display = 'block';
+      return;
+    }
+
+    if (liveSummary) liveSummary.style.display = 'block';
+    if (previewPaper) previewPaper.style.display = 'none';
+
+    // Client 1 Name
+    const c1Name = fieldText('clientName');
+    const sumC1 = $('sumClient1');
+    if (sumC1) {
+      sumC1.textContent = c1Name || 'Missing client name';
+      sumC1.style.color = c1Name ? 'var(--navy)' : 'var(--danger)';
+    }
+
+    // Client 2 Name
+    const c2Name = fieldText('client2Name');
+    const sumC2 = $('sumClient2');
+    const sumC2Row = $('sumClient2Row');
+    if (sumC2Row) {
+      if (c2Name) {
+        sumC2Row.style.display = 'flex';
+        if (sumC2) {
+          sumC2.textContent = c2Name;
+          sumC2.style.color = 'var(--navy)';
+        }
+      } else {
+        sumC2Row.style.display = 'none';
+      }
+    }
+
+    // EOI
+    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const sumEOI = $('sumEOI');
+    if (sumEOI) {
+      if (includeEOI) {
+        const eoiAddr = fieldText('eoiSaleAddress');
+        sumEOI.textContent = eoiAddr ? `Yes (${eoiAddr})` : 'Yes (Missing Sale Address)';
+        sumEOI.style.color = eoiAddr ? 'var(--success)' : 'var(--danger)';
+      } else {
+        sumEOI.textContent = 'Not Included';
+        sumEOI.style.color = 'var(--muted)';
+      }
+    }
+
+    // IA
+    const iaFormVal = $('iaForm') ? $('iaForm').value : '';
+    const sumIA = $('sumIA');
+    if (sumIA) {
+      if (iaFormVal) {
+        const iaProp = fieldText('iaProperty');
+        sumIA.textContent = `${iaFormVal.toUpperCase()} (${iaProp || 'Missing Property'})`;
+        sumIA.style.color = iaProp ? 'var(--success)' : 'var(--danger)';
+      } else {
+        sumIA.textContent = 'Not Included';
+        sumIA.style.color = 'var(--muted)';
+      }
+    }
+
+    // ID Photos Upload
+    const uploadedPhotosCount = photos.filter(p => p.img).length;
+    const sumIDCount = $('sumIDCount');
+    if (sumIDCount) {
+      sumIDCount.textContent = `${uploadedPhotosCount} of 4 attached`;
+      sumIDCount.style.color = uploadedPhotosCount > 0 ? 'var(--navy)' : 'var(--muted)';
+    }
+
+    // Checklist
+    const checkedCount = [1, 2, 3, 4].filter(i => $(`item${i}`) && $(`item${i}`).checked).length;
+    const sumChecklistCount = $('sumChecklistCount');
+    if (sumChecklistCount) {
+      sumChecklistCount.textContent = `${checkedCount} of 4 checked`;
+      sumChecklistCount.style.color = checkedCount === 4 ? 'var(--success)' : 'var(--navy)';
+    }
+
+    // Signatures
+    const sumSig1 = $('sumSig1');
+    if (sumSig1) {
+      sumSig1.textContent = hasSignature ? '✓ Captured' : 'Missing';
+      sumSig1.style.color = hasSignature ? 'var(--success)' : 'var(--danger)';
+    }
+
+    const sumSig2 = $('sumSig2');
+    if (sumSig2) {
+      const hasC2 = c2Name.length > 0;
+      if (hasSignature2) {
+        sumSig2.textContent = '✓ Captured';
+        sumSig2.style.color = 'var(--success)';
+      } else {
+        if (hasC2) {
+          sumSig2.textContent = 'Missing';
+          sumSig2.style.color = 'var(--danger)';
+        } else {
+          sumSig2.textContent = 'Not Required';
+          sumSig2.style.color = 'var(--muted)';
+        }
+      }
+    }
+
+    // Missing required items
+    const missing = [];
+    if (!fieldText('date')) missing.push('Appointment Date');
+    if (!fieldText('teamMember')) missing.push('Staff Member / Team Member');
+    if (!c1Name) missing.push('Client 1 Name');
+    
+    if (includeEOI && !fieldText('eoiSaleAddress')) missing.push('EOI Sale Address');
+    
+    if (iaFormVal) {
+      if (!fieldText('iaClientNames')) missing.push('IA Client Name(s)');
+      if (!fieldText('iaAddress')) missing.push('IA Client Address');
+      if (!fieldText('iaProperty')) missing.push('IA Property Sold Address');
+    }
+
+    const hasC2 = c2Name.length > 0;
+    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
+    if (!hasC1Photo) missing.push('Client 1 ID photo (Front or Back)');
+    if (hasC2) {
+      const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+      if (!hasC2Photo) missing.push('Client 2 ID photo (Front or Back)');
+    }
+
+    if (!hasSignature) missing.push('Signature 1');
+    if (hasC2 && !hasSignature2) missing.push('Signature 2');
+
+    const sumMissingSection = $('sumMissingSection');
+    const sumMissingList = $('sumMissingList');
+    if (sumMissingSection && sumMissingList) {
+      if (missing.length > 0) {
+        sumMissingSection.style.display = 'block';
+        sumMissingList.innerHTML = missing.map(m => `<li>${m}</li>`).join('');
+      } else {
+        sumMissingSection.style.display = 'none';
+        sumMissingList.innerHTML = '';
+      }
+    }
+  }
 
   function updateSectionProgress(){
     // Section 1: Appointment & Client Information
@@ -1399,6 +1771,9 @@
   async function refreshPreview(delta=0){
     const paper=$('previewPaper');
     paper.innerHTML='';
+    const liveSummary = $('liveSummary');
+    if (liveSummary) liveSummary.style.display = 'none';
+    if (paper) paper.style.display = 'block';
     try{
       const plan = outputPlan();
       if(!plan.totalPages){
