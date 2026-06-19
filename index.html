@@ -362,7 +362,107 @@
     .missingList li {
       margin-bottom: 3px;
     }
-    @media print{.hero,.appHeader,#liveSummary,.footerBar,.previewWrap .card:first-child,.toast{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
+    .appointment-summary-card {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(15,23,42,.035);
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      min-height: 90px;
+    }
+    .summary-card-header {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .appointment-status {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+    .summary-card-body {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    .summary-card-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .summary-card-col-title {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 4px;
+      letter-spacing: 0.03em;
+    }
+    .summary-card-item {
+      font-size: 11px;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      margin-bottom: 3px;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+      white-space: nowrap;
+    }
+    .summary-card-item:hover {
+      color: var(--navy);
+      text-decoration: underline;
+    }
+    .summary-card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-right: 5px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .summary-card-icon.completed-icon {
+      color: var(--success);
+    }
+    .summary-card-icon.completed-icon::before {
+      content: "✓";
+      font-weight: 900;
+    }
+    .summary-card-icon.circle {
+      color: #cdd1df;
+    }
+    .summary-card-icon.circle::before {
+      content: "○";
+      font-weight: 400;
+    }
+    .field-highlight {
+      outline: 3px solid var(--gold) !important;
+      outline-offset: 2px;
+      transition: outline 0.15s ease;
+    }
+    @media (max-width: 900px) {
+      .summary-card-body {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+    }
+    @media (max-width: 600px) {
+      .summary-card-body {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+    @media print{.hero,.appHeader,#liveSummary,.footerBar,.previewWrap .card:first-child,.toast,.appointment-summary-card{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
   </style>
 
   <meta name="theme-color" content="#1e3a5f" />
@@ -407,16 +507,56 @@
 
     <div class="grid">
       <main>
+        <section class="card appointment-summary-card full" id="appointmentSummaryCard">
+          <div class="summary-card-header">
+            <span>Appointment Summary</span>
+            <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+          </div>
+          <div class="summary-card-body">
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">CLIENT 1</div>
+              <span class="summary-card-item" data-target="clientName"><span class="summary-card-icon circle" id="indicator-clientName"></span>Name</span>
+              <span class="summary-card-item" data-target="clientPhone"><span class="summary-card-icon circle" id="indicator-clientPhone"></span>Phone</span>
+              <span class="summary-card-item" data-target="clientEmail"><span class="summary-card-icon circle" id="indicator-clientEmail"></span>Email</span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">CLIENT 2</div>
+              <span class="summary-card-item" data-target="client2Name"><span class="summary-card-icon circle" id="indicator-client2Name"></span>Name</span>
+              <span class="summary-card-item" data-target="client2Phone"><span class="summary-card-icon circle" id="indicator-client2Phone"></span>Phone</span>
+              <span class="summary-card-item" data-target="client2Email"><span class="summary-card-icon circle" id="indicator-client2Email"></span>Email</span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PROPERTY</div>
+              <span class="summary-card-item" data-target="clientAddress"><span class="summary-card-icon circle" id="indicator-clientAddress"></span>Residential Address</span>
+              <span class="summary-card-item" data-target="propertySaleAddress"><span class="summary-card-icon circle" id="indicator-propertySaleAddress"></span>Property Sale Address</span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">FORMS</div>
+              <span class="summary-card-item" data-target="includeEOI"><span class="summary-card-icon circle" id="indicator-includeEOI"></span>EOI Enabled</span>
+              <span class="summary-card-item" data-target="iaForm"><span class="summary-card-icon circle" id="indicator-iaForm"></span>IA Enabled</span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PHOTOS</div>
+              <span class="summary-card-item" data-target="clientIdSection"><span id="label-photos">0 / 4 Uploaded</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">SIGNATURES</div>
+              <span class="summary-card-item" data-target="signaturesSection"><span id="label-signatures">0 / 2 Captured</span></span>
+            </div>
+          </div>
+        </section>
+
         <section class="card">
           <h2>1. Appointment & client information</h2>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file. Client address is the residential/contact address; appointment location is the meeting location.</p>
           <div class="fields three">
-            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" placeholder="DD/MM/YYYY"></div>
+            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="date"></div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientAddress">Client Residential / Contact Address</label><input id="clientAddress" type="text" placeholder="Client residential/contact address"></div>
           </div>
           <div class="fields two" style="margin-top:12px">
             <div><label for="appointmentLocation">Appointment / Meeting Location</label><input id="appointmentLocation" type="text" placeholder="Meeting location, not the property sold address"></div>
+            <div><label for="propertySaleAddress">Property Sale Address</label><input id="propertySaleAddress" type="text" placeholder="Property being sold"></div>
           </div>
           
           <div class="subsection" style="margin-top:16px">
@@ -435,7 +575,6 @@
               <div><label for="client2Phone">Contact Number</label><input id="client2Phone" type="tel" placeholder="Client 2 phone"></div>
               <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com"></div>
             </div>
-          </div>
         </section>
 
         <section class="card" id="eoiDetailsCard">
@@ -446,30 +585,47 @@
           </div>
 
           <div id="eoiFormContent">
-            <div class="subsection">
-              <h3>Client 1</h3>
-              <div class="fields two">
-                <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Defaults to Client Name above"></div>
-                <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Defaults to Client Phone above"></div>
+            <div class="toggleRow" style="margin-bottom:12px" id="eoiOverridesToggleContainer">
+              <label><input type="checkbox" id="showEoiOverrides"> Edit EOI client & property details manually (override defaults)</label>
+            </div>
+
+            <!-- Toggleable overrides container -->
+            <div id="eoiOverridesContent" style="display: none">
+              <div class="subsection">
+                <h3>Client 1 EOI Details (Overrides)</h3>
+                <div class="fields two">
+                  <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Defaults to Client Name above"></div>
+                  <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Defaults to Client Phone above"></div>
+                </div>
+                <div class="fields two" style="margin-top:12px">
+                  <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
+                  <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
+                </div>
               </div>
-              <div class="fields two" style="margin-top:12px">
-                <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Defaults to Client Email above"></div>
-                <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
+
+              <div class="subsection">
+                <h3>Client 2 EOI Details (Overrides)</h3>
+                <div class="fields two">
+                  <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Defaults to Client 2 Name above"></div>
+                  <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Defaults to Client 2 Phone above"></div>
+                </div>
+                <div class="fields two" style="margin-top:12px">
+                  <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Defaults to Client 2 Email above"></div>
+                  <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
+                </div>
+              </div>
+
+              <div class="subsection">
+                <h3>Other EOI Overrides</h3>
+                <div class="fields three">
+                  <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Defaults to Property Sale Address above"></div>
+                  <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="date"></div>
+                  <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
+                </div>
               </div>
             </div>
 
-            <div class="subsection">
-              <h3>Client 2</h3>
-              <div class="fields two">
-                <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Defaults to Client 2 Name above"></div>
-                <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Defaults to Client 2 Phone above"></div>
-              </div>
-              <div class="fields two" style="margin-top:12px">
-                <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Defaults to Client 2 Email above"></div>
-                <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Defaults to client residential/contact address above"></div>
-              </div>
-            </div>
-
+            <!-- Core EOI fields always visible when EOI included -->
             <div class="subsection">
               <h3>Ownership</h3>
               <div class="optionGrid">
@@ -492,7 +648,6 @@
                     <option value="House and Land">House and Land</option>
                   </select>
                 </div>
-                <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property being sold"><p class="hint" style="margin:6px 0 0">This is the property being sold, not necessarily the client's residential address.</p></div>
               </div>
               <div class="fields three" style="margin-top:12px">
                 <div><label for="eoiPriceLand">Land Price</label><input id="eoiPriceLand" type="text" placeholder="$"></div>
@@ -516,7 +671,7 @@
                   </select>
                 </div>
                 <div class="fields two" style="gap:12px; margin: 0; padding: 0">
-                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="text" placeholder="DD/MM/YYYY"></div>
+                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date"></div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
                     <select id="eoiNextApptTime">
@@ -562,14 +717,8 @@
                     <option value="Perth">Perth</option>
                   </select>
                 </div>
-                <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" placeholder="DD/MM/YYYY"></div>
-              </div>
-              <div class="fields two" style="margin-top:12px">
-                <div><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Defaults to Team Member above"></div>
                 <div><label for="eoiComments">Comments</label><textarea id="eoiComments" placeholder="Comments for the EOI form"></textarea></div>
               </div>
-            </div>
-          </div>
         </section>
 
         <section class="card" id="iaDetailsCard">
@@ -587,17 +736,28 @@
           </div>
 
           <div id="iaFormContent">
+            <div class="toggleRow" style="margin-bottom:12px" id="iaOverridesToggleContainer">
+              <label><input type="checkbox" id="showIaOverrides"> Edit IA client & property details manually (override defaults)</label>
+            </div>
+
+            <!-- Toggleable overrides container -->
+            <div id="iaOverridesContent" style="display: none">
+              <div class="fields two">
+                <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name(s)"></div>
+                <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to client residential address"></div>
+              </div>
+              <div class="fields" style="margin-top:12px">
+                <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Defaults to Property Sale Address"></div>
+              </div>
+            </div>
+
+            <!-- Always visible IA fields -->
             <div class="fields two" style="margin-top:12px">
               <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
-              <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Defaults to Client Name above"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Defaults to client residential/contact address"></div>
-              <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Use Copy EOI details to IA, or enter property sold address"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
               <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
-              <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" placeholder="DD/MM/YYYY"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="iaDate">IA Date</label><input id="iaDate" type="date"></div>
             </div>
             <div class="toggleRow" style="margin-top:12px; justify-content:space-between; align-items:center">
               <label><input type="checkbox" id="iaApplySignature" checked> Apply final Signature 1 to IA form</label>
@@ -606,7 +766,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="clientIdSection">
           <h2>4. Client ID Documents</h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
@@ -617,7 +777,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="signaturesSection">
           <h2>5. Signatures & Notes</h2>
           <p class="hint">Capture final signatures and add any additional notes for this appointment.</p>
           
@@ -776,10 +936,10 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const fields = [
-    'date','teamMember','clientName','clientPhone','clientEmail','clientAddress','appointmentLocation',
+    'date','teamMember','clientName','clientPhone','clientEmail','clientAddress','appointmentLocation','propertySaleAddress',
     'client2Name','client2Phone','client2Email',
-    'iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature',
-    'includeEOI','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
+    'iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature','showIaOverrides',
+    'includeEOI','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
     'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
     'notes','includeFullPhotos','compressPhotos','item1','item2','item3','item4'
   ];
@@ -807,7 +967,7 @@
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().slice(0,10);
   }
-  $('date').value = formatDisplayDate(localDateISO());
+  $('date').value = localDateISO();
   if($('iaDate')) $('iaDate').value = $('date').value;
   if($('eoiDate')) $('eoiDate').value = $('date').value;
 
@@ -915,6 +1075,16 @@
       el.title = canShare ? '' : 'Sharing is not supported in this browser.';
     });
   }
+  function updateIaOverrides() {
+    const showOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+    const content = $('iaOverridesContent');
+    if (content) content.style.display = showOverrides ? 'block' : 'none';
+  }
+  function updateEoiOverrides() {
+    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    const content = $('eoiOverridesContent');
+    if (content) content.style.display = showOverrides ? 'block' : 'none';
+  }
   function updateIaDetails(){
     // Keep the IA section visible so staff can always find the Perth/Brisbane option.
     const selected = $('iaForm') && $('iaForm').value;
@@ -922,6 +1092,7 @@
     if(card) card.style.borderColor = selected ? 'rgba(209,171,111,.75)' : '';
     const content = $('iaFormContent');
     if(content) content.style.display = 'block';
+    updateIaOverrides();
   }
   function updateEoiDetails(){
     const included = $('includeEOI') && $('includeEOI').checked;
@@ -929,6 +1100,7 @@
     if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
     const content = $('eoiFormContent');
     if(content) content.style.display = 'block';
+    updateEoiOverrides();
   }
   function eoiOwnership(){
     const selected = document.querySelector('input[name="eoiOwnership"]:checked');
@@ -953,7 +1125,14 @@
     if(!el || el.dataset.bound === 'true') return;
     el.dataset.bound = 'true';
     el.addEventListener('input',()=>{ updateName(); clearGenerated(); clearValidation(); if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal(); });
-    el.addEventListener('change',()=>{ updateName(); clearGenerated(); clearValidation(); if(id==='iaForm') updateIaDetails(); if(id==='includeEOI') updateEoiDetails(); if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal(); });
+    el.addEventListener('change',()=>{
+      updateName();
+      clearGenerated();
+      clearValidation();
+      if(id==='iaForm' || id==='showIaOverrides') { updateIaDetails(); updateIaOverrides(); }
+      if(id==='includeEOI' || id==='showEoiOverrides') { updateEoiDetails(); updateEoiOverrides(); }
+      if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
+    });
   }
   function renderConfigurableControl(kind, fieldId, label, placeholder, required){
     const config = adminSettings[kind];
@@ -1015,8 +1194,12 @@
       : (client1Name || client2Name);
     if($('iaClientNames')) $('iaClientNames').value = names;
     if($('iaAddress')) $('iaAddress').value = eoiValue('eoiClient1Address','clientAddress');
-    if($('iaProperty')) $('iaProperty').value = fieldText('eoiSaleAddress');
+    if($('iaProperty')) $('iaProperty').value = fieldText('eoiSaleAddress') || fieldText('propertySaleAddress');
     if($('iaDate')) $('iaDate').value = $('eoiDate').value || $('date').value || localDateISO();
+    if($('showIaOverrides')) {
+      $('showIaOverrides').checked = true;
+      updateIaOverrides();
+    }
     clearGenerated();
     toast('EOI details copied into IA fields.');
   }
@@ -1042,7 +1225,109 @@
     updateSectionProgress();
     updateSignatureStatuses();
     renderLiveSummary();
+    updateSummaryCard();
   }
+
+  function updateIndicator(indicatorId, isCompleted) {
+    const el = $(indicatorId);
+    if (el) {
+      el.className = 'summary-card-icon ' + (isCompleted ? 'completed-icon' : 'circle');
+    }
+  }
+
+  function updateSummaryCard(){
+    const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
+    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
+    const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+
+    // Individual field indicators
+    updateIndicator('indicator-clientName', !!fieldText('clientName'));
+    updateIndicator('indicator-clientPhone', !!fieldText('clientPhone'));
+    updateIndicator('indicator-clientEmail', !!fieldText('clientEmail'));
+
+    updateIndicator('indicator-client2Name', !!fieldText('client2Name'));
+    updateIndicator('indicator-client2Phone', !!fieldText('client2Phone'));
+    updateIndicator('indicator-client2Email', !!fieldText('client2Email'));
+
+    updateIndicator('indicator-clientAddress', !!fieldText('clientAddress'));
+    updateIndicator('indicator-propertySaleAddress', !!fieldText('propertySaleAddress'));
+
+    updateIndicator('indicator-includeEOI', $('includeEOI') && $('includeEOI').checked);
+    updateIndicator('indicator-iaForm', !!($('iaForm') && $('iaForm').value));
+
+    // Live counts and color coding for Photos
+    const uploadedCount = photos.filter(p => p.img).length;
+    const labelPhotos = $('label-photos');
+    if (labelPhotos) {
+      labelPhotos.textContent = `${uploadedCount} / 4 Uploaded`;
+      if (uploadedCount === 0) {
+        labelPhotos.style.color = 'var(--muted)';
+      } else if (uploadedCount < 4) {
+        labelPhotos.style.color = 'var(--gold)';
+      } else {
+        labelPhotos.style.color = 'var(--success)';
+      }
+    }
+
+    // Live counts and color coding for Signatures
+    const sigsCount = (hasSignature ? 1 : 0) + (hasSignature2 ? 1 : 0);
+    const labelSignatures = $('label-signatures');
+    if (labelSignatures) {
+      labelSignatures.textContent = `${sigsCount} / 2 Captured`;
+      if (sigsCount === 0) {
+        labelSignatures.style.color = 'var(--muted)';
+      } else if (sigsCount === 1) {
+        labelSignatures.style.color = 'var(--gold)';
+      } else {
+        labelSignatures.style.color = 'var(--success)';
+      }
+    }
+
+    // Calculate missing required items
+    let missingRequired = [];
+
+    if (!fieldText('clientName')) missingRequired.push('Client 1 Name');
+    if (!fieldText('clientPhone')) missingRequired.push('Client 1 Contact Number');
+    if (!fieldText('clientAddress')) missingRequired.push('Residential Address');
+    if (!fieldText('propertySaleAddress')) missingRequired.push('Property Sale Address');
+    
+    if (!hasC1Photo) missingRequired.push('Client 1 ID Photo');
+    if (!hasSignature) missingRequired.push('Signature 1');
+
+    if (hasC2) {
+      if (!hasC2Photo) missingRequired.push('Client 2 ID Photo');
+      if (!hasSignature2) missingRequired.push('Signature 2');
+    }
+
+    const missingCount = missingRequired.length;
+    const statusEl = $('appointmentStatus');
+    if (statusEl) {
+      if (missingCount === 0) {
+        statusEl.textContent = '🟢 Ready for PDF';
+        statusEl.style.color = 'var(--success)';
+      } else {
+        statusEl.textContent = `🟠 ${missingCount} Item${missingCount > 1 ? 's' : ''} Remaining`;
+        statusEl.style.color = 'var(--gold)';
+      }
+    }
+  }
+
+  document.querySelectorAll('.summary-card-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const targetId = item.getAttribute('data-target');
+      const targetEl = $(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetEl.classList.add('field-highlight');
+        setTimeout(() => {
+          targetEl.classList.remove('field-highlight');
+        }, 1500);
+        if (targetEl.tagName === 'INPUT' || targetEl.tagName === 'SELECT' || targetEl.tagName === 'TEXTAREA') {
+          targetEl.focus();
+        }
+      }
+    });
+  });
 
   function makePhotoUI(){
     const wrap=$('photos'); wrap.innerHTML='';
@@ -1434,6 +1719,34 @@
     if(line && (!maxLines || lines<maxLines)){ ctx.fillText(line,x,y); y+=lineHeight; }
     return y;
   }
+  function formatISODate(value) {
+    if (!value) return '';
+    const str = String(value).trim();
+    const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmyMatch) {
+      const dd = dmyMatch[1].padStart(2, '0');
+      const mm = dmyMatch[2].padStart(2, '0');
+      const yyyy = dmyMatch[3];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (ymdMatch) {
+      const yyyy = ymdMatch[1];
+      const mm = ymdMatch[2].padStart(2, '0');
+      const dd = ymdMatch[3].padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    try {
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        const dd = String(parsed.getDate()).padStart(2, '0');
+        const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+        const yyyy = parsed.getFullYear();
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    } catch (e) {}
+    return '';
+  }
   function fieldText(id){ return ($(id).value || '').trim(); }
   function formatDisplayDate(value){
     if(!value) return '';
@@ -1520,9 +1833,18 @@
     const labelW = opts.labelW || 95;
     const lineH = opts.lineH || 24;
     const maxLines = opts.maxLines || 1;
-    const lineY = y + (opts.lineOffset || 10);
     ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText(label,x,y);
-    ctx.strokeStyle='#cfd3df'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x+labelW,lineY); ctx.lineTo(x+w,lineY); ctx.stroke();
+    
+    // Draw underlines
+    ctx.strokeStyle='#cfd3df'; ctx.lineWidth=1;
+    ctx.beginPath();
+    for (let i = 0; i < maxLines; i++) {
+      const lineY = y + 3 + i * lineH;
+      ctx.moveTo(x+labelW, lineY);
+      ctx.lineTo(x+w, lineY);
+    }
+    ctx.stroke();
+
     ctx.fillStyle=value?'#172033':'#9aa0af';
     const valueX = x + labelW + 5;
     const valueW = w - labelW - 8;
@@ -1534,11 +1856,11 @@
         if(ctx.measureText(value).width <= valueW) break;
         size -= 0.5;
       }
-      if(ctx.measureText(value).width <= valueW) ctx.fillText(value, valueX, y - 2);
-      else wrapText(ctx,value,valueX,y-2,valueW,lineH,1);
+      if(ctx.measureText(value).width <= valueW) ctx.fillText(value, valueX, y - 0.5);
+      else wrapText(ctx,value,valueX,y-0.5,valueW,lineH,1);
     } else {
       ctx.font=opts.font || '11.5px Arial';
-      wrapText(ctx,value || '',valueX,y-2,valueW,lineH,maxLines);
+      wrapText(ctx,value || '',valueX,y-0.5,valueW,lineH,maxLines);
     }
   }
   function drawImageContain(ctx,img,x,y,w,h,rotation){
@@ -1632,12 +1954,18 @@
       }
     }
 
-    const c1 = eoiValue('eoiClient1Name', 'clientName');
-    const c2 = eoiValue('eoiClient2Name', 'client2Name');
-    const defaultIaNames = (c1 && c2 && !c1.toLowerCase().includes(c2.toLowerCase())) ? `${c1} & ${c2}` : (c1 || c2);
-    const iaClientNames = fieldText('iaClientNames') || defaultIaNames;
-    const iaAddress = fieldText('iaAddress') || eoiValue('eoiClient1Address','clientAddress');
-    const iaProperty = fieldText('iaProperty') || fieldText('eoiSaleAddress');
+    const client1 = fieldText('clientName');
+    const client2 = fieldText('client2Name');
+    const defaultIaNames = (client1 && client2 && !client1.toLowerCase().includes(client2.toLowerCase()))
+      ? `${client1} & ${client2}`
+      : (client1 || client2);
+    const defaultIaAddress = fieldText('clientAddress');
+    const defaultIaProperty = fieldText('propertySaleAddress');
+
+    const showOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+    const iaClientNames = showOverrides ? (fieldText('iaClientNames') || defaultIaNames) : defaultIaNames;
+    const iaAddress = showOverrides ? (fieldText('iaAddress') || defaultIaAddress) : defaultIaAddress;
+    const iaProperty = showOverrides ? (fieldText('iaProperty') || defaultIaProperty) : defaultIaProperty;
     const iaAmount = fieldText('iaAmount') || '$10,000';
 
     whiteOut(315, 312, 850, 42);
@@ -1653,10 +1981,17 @@
     overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
     overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
 
-    if($('iaApplySignature') && $('iaApplySignature').checked && hasSignature){
-      const p1 = map(130, 1364);
-      const p2 = map(570, 1458);
-      ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    if($('iaApplySignature') && $('iaApplySignature').checked){
+      if(hasSignature){
+        const p1 = map(130, 1364);
+        const p2 = map(570, 1458);
+        ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+      }
+      if(hasSignature2){
+        const p1 = map(700, 1364);
+        const p2 = map(1140, 1458);
+        ctx.drawImage(sig2, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+      }
     }
 
     ctx.fillStyle='rgba(255,255,255,.94)';
@@ -1668,9 +2003,20 @@
   }
 
   function eoiValue(id, fallbackId){
-    const own = fieldText(id);
-    if(own) return own;
+    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    if (showOverrides) {
+      const own = fieldText(id);
+      if (own) return own;
+    }
     return fallbackId ? fieldText(fallbackId) : '';
+  }
+  function eoiSaleAddressValue() {
+    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    if (showOverrides) {
+      const addr = fieldText('eoiSaleAddress');
+      if (addr) return addr;
+    }
+    return fieldText('propertySaleAddress');
   }
   function drawSmallCheck(ctx,checked,label,x,y,w){
     ctx.strokeStyle='#d1ab6f'; ctx.fillStyle='#fff'; ctx.lineWidth=1.4; ctx.strokeRect(x,y,12,12);
@@ -1689,38 +2035,38 @@
 
     const left=42, right=553;
     let y=122;
-    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Client details',left,y); y+=22;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Client details',left,y); y+=20;
     drawLineValue(ctx,'Name:',eoiValue('eoiClient1Name','clientName'),left,y,250,{labelW:48,maxLines:1});
-    drawLineValue(ctx,'Mobile:',eoiValue('eoiClient1Mobile','clientPhone'),315,y,238,{labelW:52,maxLines:1}); y+=28;
-    drawLineValue(ctx,'Address:',eoiValue('eoiClient1Address','clientAddress'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=30;
-    drawLineValue(ctx,'Email Address:',eoiValue('eoiClient1Email','clientEmail'),left,y,511,{labelW:88,maxLines:1}); y+=33;
+    drawLineValue(ctx,'Mobile:',eoiValue('eoiClient1Mobile','clientPhone'),315,y,238,{labelW:52,maxLines:1}); y+=26;
+    drawLineValue(ctx,'Address:',eoiValue('eoiClient1Address','clientAddress'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=36;
+    drawLineValue(ctx,'Email Address:',eoiValue('eoiClient1Email','clientEmail'),left,y,511,{labelW:88,maxLines:1}); y+=28;
 
     drawLineValue(ctx,'Name:',eoiValue('eoiClient2Name','client2Name'),left,y,250,{labelW:48,maxLines:1});
-    drawLineValue(ctx,'Mobile:',eoiValue('eoiClient2Mobile','client2Phone'),315,y,238,{labelW:52,maxLines:1}); y+=28;
-    drawLineValue(ctx,'Address:',eoiValue('eoiClient2Address','clientAddress'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=30;
-    drawLineValue(ctx,'Email Address:',eoiValue('eoiClient2Email','client2Email'),left,y,511,{labelW:88,maxLines:1}); y+=38;
+    drawLineValue(ctx,'Mobile:',eoiValue('eoiClient2Mobile','client2Phone'),315,y,238,{labelW:52,maxLines:1}); y+=26;
+    drawLineValue(ctx,'Address:',eoiValue('eoiClient2Address','clientAddress'),left,y,511,{labelW:58,maxLines:2,lineH:13}); y+=36;
+    drawLineValue(ctx,'Email Address:',eoiValue('eoiClient2Email','client2Email'),left,y,511,{labelW:88,maxLines:1}); y+=34;
 
     ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Ownership',left,y); y+=18;
     const ownership=eoiOwnership();
     drawSmallCheck(ctx,ownership==='sole','Sole Owner',left,y,150);
     drawSmallCheck(ctx,ownership==='joint','Joint Tenants 50/50',215,y,170);
-    drawSmallCheck(ctx,ownership==='common','Tenants in Common',410,y,140); y+=28;
-    drawLineValue(ctx,'Shares:',fieldText('eoiCommonShares'),left,y,511,{labelW:55,maxLines:1}); y+=38;
+    drawSmallCheck(ctx,ownership==='common','Tenants in Common',410,y,140); y+=26;
+    drawLineValue(ctx,'Shares:',fieldText('eoiCommonShares'),left,y,511,{labelW:55,maxLines:1}); y+=34;
 
-    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Proposed land, house or house-and-land sale details',left,y); y+=22;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Proposed land, house or house-and-land sale details',left,y); y+=20;
     drawLineValue(ctx,'Sale Type:',fieldText('eoiSaleType'),left,y,250,{labelW:68,maxLines:1});
-    drawLineValue(ctx,'Finance:',fieldText('eoiFinancePercent'),315,y,238,{labelW:64,maxLines:1}); y+=28;
-    drawLineValue(ctx,'Address of Sale:',fieldText('eoiSaleAddress') || fieldText('iaProperty'),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=34;
+    drawLineValue(ctx,'Finance:',fieldText('eoiFinancePercent'),315,y,238,{labelW:64,maxLines:1}); y+=26;
+    drawLineValue(ctx,'Address of Sale:',eoiSaleAddressValue(),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=36;
     drawLineValue(ctx,'Land:',formatPrice(fieldText('eoiPriceLand')),left,y,150,{labelW:42,maxLines:1});
     drawLineValue(ctx,'House:',formatPrice(fieldText('eoiPriceHouse')),222,y,150,{labelW:46,maxLines:1});
-    drawLineValue(ctx,'H/L Total:',formatPrice(fieldText('eoiPriceTotal')),405,y,148,{labelW:64,maxLines:1}); y+=40;
+    drawLineValue(ctx,'H/L Total:',formatPrice(fieldText('eoiPriceTotal')),405,y,148,{labelW:64,maxLines:1}); y+=38;
 
-    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Appointment and office details',left,y); y+=22;
-    drawLineValue(ctx,'Next Appointment:',formatNextAppointment(),left,y,511,{labelW:112,maxLines:1}); y+=28;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Appointment and office details',left,y); y+=20;
+    drawLineValue(ctx,'Next Appointment:',formatNextAppointment(),left,y,511,{labelW:112,maxLines:1}); y+=26;
     drawLineValue(ctx,'Staff Member:',eoiValue('eoiStaffMember','teamMember'),left,y,250,{labelW:88,maxLines:1});
-    drawLineValue(ctx,'Date:',formatDisplayDate(fieldText('eoiDate') || fieldText('date')),315,y,238,{labelW:42,maxLines:1}); y+=30;
+    drawLineValue(ctx,'Date:',formatDisplayDate(fieldText('eoiDate') || fieldText('date')),315,y,238,{labelW:42,maxLines:1}); y+=28;
     drawSmallCheck(ctx,fieldText('eoiBranch')==='Brisbane','Brisbane',left,y,140);
-    drawSmallCheck(ctx,fieldText('eoiBranch')==='Perth','Perth',180,y,120); y+=28;
+    drawSmallCheck(ctx,fieldText('eoiBranch')==='Perth','Perth',180,y,120); y+=26;
 
     ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText('Comments:',left,y);
     ctx.strokeStyle='#cfd3df'; ctx.fillStyle='#fff'; ctx.lineWidth=1; drawRoundRect(ctx,left,y+7,511,62,5,true,true);
@@ -1888,7 +2234,7 @@
       if(el.type==='checkbox') el.checked=!!data[id];
       else {
         if(id==='date' || id==='iaDate' || id==='eoiDate' || id==='eoiNextApptDate'){
-          el.value = formatDisplayDate(data[id]);
+          el.value = formatISODate(data[id]);
         } else {
           el.value = data[id];
         }
@@ -1898,7 +2244,7 @@
       const val = String(data.eoiNextAppointment).trim();
       const dateMatch = val.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
       if (dateMatch && $('eoiNextApptDate')) {
-        $('eoiNextApptDate').value = formatDisplayDate(dateMatch[1]);
+        $('eoiNextApptDate').value = formatISODate(dateMatch[1]);
       }
       const timeMatch = val.match(/(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i);
       if (timeMatch && $('eoiNextApptTime')) {
@@ -1934,12 +2280,12 @@
   function resetForm(){
     if(!confirm('Clear all entered information, photos, and signature?')) return;
     fields.forEach(id=>{ const el=$(id); if(!el)return; if(el.type==='checkbox') el.checked=(id==='includeFullPhotos'||id==='compressPhotos'||id==='iaApplySignature'); else el.value=''; });
-    $('date').value=formatDisplayDate(localDateISO());
+    $('date').value=localDateISO();
     if($('iaDate')) $('iaDate').value = $('date').value;
     if($('eoiDate')) $('eoiDate').value = $('date').value;
     if($('iaAmount')) $('iaAmount').value = '$10,000';
     const sole=document.querySelector('input[name="eoiOwnership"][value="sole"]'); if(sole) sole.checked=true;
-    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); updateName(); updateIaDetails(); updateEoiDetails(); updateHLTotal(); refreshPreview(); toast('Form reset.');
+    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); updateName(); updateIaDetails(); updateEoiDetails(); updateHLTotal(); clearGenerated(); refreshPreview(); toast('Form reset.');
   }
 
   $('generateTop').addEventListener('click',generatePdfOnly);
@@ -1960,6 +2306,13 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
+  window._testState = {
+    getPhotos: () => photos,
+    setPhotoImg: (idx, val) => { photos[idx].img = val; },
+    setHasSignature: (val) => { hasSignature = val; },
+    setHasSignature2: (val) => { hasSignature2 = val; },
+    clearGenerated: clearGenerated
+  };
   refreshPreview();
 })();
 </script>
