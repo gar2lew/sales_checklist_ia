@@ -696,7 +696,7 @@
                   </select>
                 </div>
                 <div class="fields two" style="gap:12px; margin: 0; padding: 0">
-                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off"></div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
                     <select id="eoiNextApptTime">
@@ -1092,7 +1092,7 @@
     'laVidaFinanceBrokerChoice','laVidaFinanceBrokerName','laVidaFinanceBrokerEmail','laVidaFinanceBrokerPhone','laVidaConveyancerChoice','laVidaConveyancerName','laVidaConveyancerEmail','laVidaConveyancerPhone',
     'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4'
   ];
-  const dateFieldIds = ['date','eoiDate','iaDate','eoiNextApptDate'];
+  const dateFieldIds = ['date','eoiDate','iaDate'];
   const photoLabels = ['Client 1 ID Front', 'Client 1 ID Back', 'Client 2 ID Front', 'Client 2 ID Back'];
   const photos = photoLabels.map((label,i)=>({label, file:null, dataURL:null, img:null, rotation:0, name:''}));
   let hasSignature = false;
@@ -2643,6 +2643,10 @@
   }
   function updateDateDisplays(){
     dateFieldIds.forEach(normalizeDateField);
+    if($('eoiNextApptDate')){
+      const iso = formatISODate($('eoiNextApptDate').value);
+      if(iso) $('eoiNextApptDate').value = iso;
+    }
   }
 
   function formatNextAppointment(){
@@ -2831,19 +2835,16 @@
         wrapText(ctx, text, p.x, p.y, width, size + 2, 2);
       }
     }
-    function drawTemplateFieldValue(text, sx, sy, sw, sh, options={}){
+    function drawTemplateLineValue(text, sx, baselineSy, sw, options={}){
       text = (text || '').trim();
       if(!text) return;
-      const p1 = map(sx, sy);
-      const p2 = map(sx + sw, sy + sh);
-      const padLeft = options.padLeft ?? 12;
-      const padRight = options.padRight ?? 14;
-      const padY = options.padY ?? 2;
-      const width = Math.max(20, (p2.x - p1.x) - padLeft - padRight);
-      const height = Math.max(10, (p2.y - p1.y) - (padY * 2));
+      const p = map(sx, baselineSy);
+      const padLeft = options.padLeft ?? 8;
+      const padRight = options.padRight ?? 12;
+      const width = Math.max(20, maxW(sw) - padLeft - padRight);
       const weight = options.weight || '700';
-      const maxSize = options.maxSize || 11;
-      const minSize = options.minSize || 9;
+      const maxSize = options.maxSize || 10.5;
+      const minSize = options.minSize || 8.5;
       const maxLines = options.maxLines || 2;
 
       function linesForSize(size){
@@ -2889,11 +2890,11 @@
 
       let size = maxSize;
       let lines = [];
-      let lineHeight = size * 1.08;
+      const lineGap = options.lineGap ?? 2;
+      let lineHeight = size + lineGap;
       while(size >= minSize){
         lines = linesForSize(size);
-        lineHeight = size * 1.08;
-        if(lines.length <= maxLines && lines.length * lineHeight <= height + 0.5) break;
+        if(lines.length <= maxLines) break;
         size -= 0.5;
       }
       size = Math.max(size, minSize);
@@ -2908,14 +2909,12 @@
           lines[lastIndex] = `${lines[lastIndex].slice(0, -2)}...`;
         }
       }
-      lineHeight = size * 1.08;
-      const totalTextHeight = lines.length * lineHeight;
-      const firstY = p1.y + padY + (height - totalTextHeight) / 2 + (lineHeight / 2);
+      lineHeight = size + lineGap;
       const previousBaseline = ctx.textBaseline;
       ctx.fillStyle = '#111';
-      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'alphabetic';
       lines.forEach((line, index) => {
-        ctx.fillText(line, p1.x + padLeft, firstY + (index * lineHeight));
+        ctx.fillText(line, p.x + padLeft, p.y + (index * lineHeight));
       });
       ctx.textBaseline = previousBaseline;
     }
@@ -2940,9 +2939,9 @@
     whiteOut(386, 540, 700, 36);
     whiteOut(728, 752, 145, 42);
     whiteOut(176, 1206, 450, 36);
-    drawTemplateFieldValue(iaClientNames, 315, 312, 850, 42, {maxLines: 2, maxSize: 12, minSize: 10, padLeft: 28, padRight: 24});
-    drawTemplateFieldValue(iaAddress, 245, 362, 900, 42, {maxLines: 2, maxSize: 11, minSize: 9, padLeft: 30, padRight: 24});
-    drawTemplateFieldValue(iaProperty, 300, 411, 850, 42, {maxLines: 2, maxSize: 11, minSize: 9, padLeft: 30, padRight: 24});
+    drawTemplateLineValue(iaClientNames, 315, 332, 850, {maxLines: 2, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 2, maxSize: 9, minSize: 7.8, padLeft: 8, padRight: 16, lineGap: 1});
     overlayFitText(fieldText('iaSolicitor'), 395, 564, 670, '400', 12, 8);
     overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
     overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
@@ -3461,7 +3460,9 @@
       if(!el || data[id]===undefined)return;
       if(el.type==='checkbox') el.checked=!!data[id];
       else {
-        if(id==='date' || id==='iaDate' || id==='eoiDate' || id==='eoiNextApptDate'){
+        if(id==='eoiNextApptDate'){
+          el.value = formatISODate(data[id]) || '';
+        } else if(id==='date' || id==='iaDate' || id==='eoiDate'){
           el.value = formatDisplayDate(data[id]);
         } else {
           el.value = data[id];
@@ -3472,7 +3473,7 @@
       const val = String(data.eoiNextAppointment).trim();
       const dateMatch = val.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
       if (dateMatch && $('eoiNextApptDate')) {
-        $('eoiNextApptDate').value = formatDisplayDate(dateMatch[1]);
+        $('eoiNextApptDate').value = formatISODate(dateMatch[1]) || '';
       }
       const timeMatch = val.match(/(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i);
       if (timeMatch && $('eoiNextApptTime')) {
