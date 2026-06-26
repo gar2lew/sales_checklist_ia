@@ -1093,7 +1093,7 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.5.2';
+  const APP_VERSION = '1.5.3';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1350,10 +1350,11 @@
       const dateVal = $('date') ? $('date').value : '';
       const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
       const team = safePart($('teamMember') ? $('teamMember').value : '', 'TeamMember');
-      const c1 = safePart($('clientName') ? $('clientName').value : '', 'ClientName');
+      const c1 = safePart($('clientName') ? $('clientName').value : '', '');
       const c2 = safePart($('client2Name') ? $('client2Name').value : '', '');
+      // Always include Client 1 if present. Append Client 2 if present and fits.
       let client = c1 || 'ClientName';
-      if(c2 && (c1.length + c2.length < 40)){
+      if (c2 && c1 && (c1.length + c2.length + 3) <= 80){
         client = `${c1} & ${c2}`;
       }
       return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
@@ -3205,15 +3206,16 @@
     // Property field — reduce height so the white box does not intrude into the
     // black IRREVOCABLE AUTHORITY banner below. End at y=445 instead of 453.
     whiteOut(300, 411, 850, 34);
-    whiteOut(386, 540, 700, 36);
+    whiteOut(386, 540, 1100, 36);
     whiteOut(728, 752, 145, 42);
     whiteOut(176, 1206, 450, 36);
     drawTemplateLineValue(iaClientNames, 315, 332, 850, {maxLines: 2, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
     drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
     // Single line with aggressive shrinkage to keep text above the black banner.
     drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 1, maxSize: 10, minSize: 7.2, padLeft: 8, padRight: 16, lineGap: 1});
-    // TO: line — wider area to prevent long solicitor/conveyancer names from clipping.
-    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1050, '400', 12, 8);
+    // TO: line — use nearly full page width with small minimum font to handle
+    // long solicitor/conveyancer names without clipping.
+    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1100, '400', 12, 6);
     overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
     overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
 
