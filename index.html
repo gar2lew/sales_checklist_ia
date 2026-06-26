@@ -50,8 +50,6 @@
     .check{display:flex;gap:12px;align-items:flex-start;background:var(--soft);padding:12px;border-radius:14px;border:1px solid #ececf4}
     .check input{width:22px;height:22px;margin:0;accent-color:var(--navy);flex:none}
     .check span{font-weight:700;line-height:1.35}
-    .photos{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (min-width:720px){.photos{grid-template-columns:repeat(2,1fr)}}
     .photoBox{border:2px dashed rgba(209,171,111,.9);border-radius:16px;background:#fbf8f2;min-height:210px;position:relative;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:8px}
     .photoBox.hasImage{border-style:solid;background:#fff}
     .photoHeader{display:flex;justify-content:space-between;gap:8px;align-items:center;position:relative;z-index:2}
@@ -179,9 +177,9 @@
       border-color: #eaecf0;
     }
     .photos {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 16px !important;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
     .photoGroup {
       border: 1px solid var(--line);
@@ -1353,18 +1351,6 @@
       }
     };
     reader.readAsText(file);
-  }
-  function canSharePdf(){
-    if(!lastPdfBlob) return false;
-    // Web Share with files is the preferred path.
-    if(navigator.share && navigator.canShare){
-      try{
-        const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
-        return navigator.canShare({files:[file]});
-      }catch{ return false; }
-    }
-    // Fallback: any browser can do mailto + download.
-    return true;
   }
 
   // Check if native Web Share with files is available (not just basic share).
@@ -2591,8 +2577,8 @@
   }
   function pos(e){ const r=sig.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig.width/r.width, y:(e.clientY-r.top)*sig.height/r.height}; }
   sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); });
-  sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); clearGenerated(); });
-  sig.addEventListener('pointerup', e=>{ drawing=false; try{sig.releasePointerCapture(e.pointerId)}catch{} });
+  sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); });
+  sig.addEventListener('pointerup', e=>{ drawing=false; clearGenerated(); try{sig.releasePointerCapture(e.pointerId)}catch{} });
   sig.addEventListener('pointercancel', ()=>drawing=false);
   $('clearSignature').addEventListener('click', clearSig);
 
@@ -2605,8 +2591,8 @@
   }
   function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
   sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); });
-  sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); clearGenerated(); });
-  sig2.addEventListener('pointerup', e=>{ drawing2=false; try{sig2.releasePointerCapture(e.pointerId)}catch{} });
+  sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); });
+  sig2.addEventListener('pointerup', e=>{ drawing2=false; clearGenerated(); try{sig2.releasePointerCapture(e.pointerId)}catch{} });
   sig2.addEventListener('pointercancel', ()=>drawing2=false);
   $('clearSignature2').addEventListener('click', clearSig2);
 
@@ -2748,15 +2734,6 @@
     }
     // If the user already has a $ prefix or partial entry, return as-is.
     return val;
-  }
-
-  // Format a raw number string into $X,XXX currency display.
-  function formatCurrencyDisplay(val){
-    val = (val || '').trim();
-    if(!val) return '';
-    const num = parseFloat(val.replace(/[^0-9.]/g, ''));
-    if(isNaN(num)) return '';
-    return '$' + num.toLocaleString('en-US');
   }
 
   // Strip currency formatting back to a plain number string for editing.
