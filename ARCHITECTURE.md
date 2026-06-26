@@ -167,3 +167,56 @@ The JavaScript in `index.html` is organised into labelled sections:
 4. **Offline-first:** Service worker caches all assets including template images. Drafts and settings are persisted in localStorage.
 
 5. **No server:** All processing happens client-side. No analytics, no backend API, no authentication beyond the admin PIN.
+
+---
+
+## Future Extraction Plan
+
+The app currently lives in a single `index.html` file (~3900 lines). For CRM integration, it could be split into modules. Here is the recommended extraction structure:
+
+```
+src/
+  config/
+    app-config.ts           ← Section A: CONFIG object
+    builders.ts             ← Section A: EOI_BUILDERS registry
+    settings-defaults.ts    ← Section D: defaultAdminSettings
+  pdf/
+    primitives.ts           ← Section K: drawPageFrame, drawLineValue, wrapText, drawRoundRect, drawImageContain
+    footer.ts               ← Section K: generatedFooterText, drawGeneratedFooter
+    logo.ts                 ← Section J: drawSmallPageLogo, ensurePageLogo
+    pipeline.ts             ← Section N: outputPlan, drawOutputPage, makePDF, buildPdf
+    standard-eoi.ts         ← Section M: drawStandardEoiPage, drawEoiPage
+    lavida-eoi.ts           ← Section M: drawLaVidaEoiPage, laVidaFieldRects, drawLaVidaField, drawLaVidaCheckbox
+    ia-page.ts              ← Section L: drawIAPage
+    photo-page.ts           ← Section K: drawPhotoPage
+  validation/
+    index.ts                ← Section B: validateBeforePdf, requireField, requireValidDate
+  share/
+    email-template.ts       ← Section O: buildShareEmailContent
+  settings/
+    normalize.ts            ← Section D: normalizeAdminSettings, normalizeContactOptions, etc.
+    defaults.ts             ← Section D: cloneDefaultAdminSettings
+  drafts/
+    serialize.ts            ← Section P: getDraft
+    deserialize.ts          ← Section P: setDraft (minus DOM rendering parts)
+  signatures/
+    canvas.ts               ← Section I: signature canvas setup (React component wrapper)
+  photos/
+    loader.ts               ← Section J: loadImage, readAsDataURL, handlePhoto logic
+    render.ts               ← Section J: renderPhotoBox (React component wrapper)
+  utils/
+    dates.ts                ← Section B: formatDisplayDate, formatISODate, localDateISO
+    currency.ts             ← Section K: formatPrice, stripCurrency, applyPriceFormat
+    filename.ts             ← Section B: safePart, pdfFileName
+```
+
+**Key principle:** Functions that read from the DOM (`$(id)`, `fieldText(id)`, `isChecked(id)`) should be refactored to accept a `formData` object parameter. Functions that write to the DOM should become React components or be discarded.
+
+**Migration order:**
+1. Pure utility functions (no DOM dependencies) — extract first
+2. PDF drawing pipeline (canvas-based, no DOM) — extract second
+3. Validation logic (depends on `formData` fields) — extract third
+4. Share/email logic — extract fourth
+5. DOM-dependent UI — rewrite as React components (last, most effort)
+
+**Do NOT split files yet.** This plan is for reference during CRM integration. The single-file IIFE remains the production deployment until migration is complete. See `docs/CRM_INTEGRATION_NOTES.md` for the full integration plan.
