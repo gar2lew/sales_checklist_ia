@@ -1088,7 +1088,7 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.4.9';
+  const APP_VERSION = '1.5.0';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1353,24 +1353,53 @@
     reader.readAsText(file);
   }
   function canSharePdf(){
-    if(!navigator.share || !lastPdfBlob) return false;
-    if(!navigator.canShare) return true;
+    if(!lastPdfBlob) return false;
+    // Web Share with files is the preferred path.
+    if(navigator.share && navigator.canShare){
+      try{
+        const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
+        return navigator.canShare({files:[file]});
+      }catch{ return false; }
+    }
+    // Fallback: any browser can do mailto + download.
+    return true;
+  }
+
+  // Check if native Web Share with files is available (not just basic share).
+  function canSharePdfFiles(){
+    if(!lastPdfBlob) return false;
+    if(!navigator.share) return false;
+    if(!navigator.canShare) return false;
     try{
       const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
       return navigator.canShare({files:[file]});
-    }catch{
-      return false;
-    }
+    }catch{ return false; }
   }
+
+  // Is sharing or the mailto fallback possible at all? (regardless of whether a PDF exists yet)
+  function canShareFilesPossible(){
+    // Web Share with files is available.
+    if(navigator.share && navigator.canShare){
+      try{
+        const probe = new File([''], 'probe.pdf', {type:'application/pdf'});
+        if(navigator.canShare({files:[probe]})) return true;
+      }catch{}
+    }
+    // Fallback mailto path works in any browser.
+    return true;
+  }
+
   function updateActionButtons(){
     const hasPdf = !!lastPdfBlob;
     ['downloadTop','downloadBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
-    const canShare = canSharePdf();
+    // Share button is enabled whenever sharing or fallback email is possible.
+    // It can also auto-generate a PDF if one does not exist yet.
+    const sharePossible = canShareFilesPossible();
     ['shareTop','shareBottom'].forEach(id=>{
       const el=$(id);
       if(!el) return;
-      el.disabled = !hasPdf || !canShare;
-      el.title = canShare ? '' : 'Sharing is not supported in this browser.';
+      el.disabled = !sharePossible;
+      el.title = sharePossible ? '' : 'Sharing is not supported in this browser.';
     });
   }
   function updateIaOverrides() {
@@ -3472,14 +3501,85 @@
       toast('PDF download started.');
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
+  // Build the email subject/body used by both Web Share and mailto fallback.
+  function buildShareEmailContent(){
+    const fileName = lastPdfName || pdfFileName();
+    const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
+    const subject = `Sales Appointment PDF - ${fileName}`;
+    const body = `Hey Nat,\n\nPlease see Sales Appointment PDF ${fileName} attached, if you need anything further please let me know.\n\nRegards,\n${staffName}`;
+    return { subject, body, fileName, staffName };
+  }
+
   async function sharePdf(){
     try{
       if(!lastPdfBlob) await buildPdf();
+      if(!lastPdfBlob){ toast('Could not generate PDF.'); status('PDF share failed.'); return; }
+
       const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
-      if(canSharePdf()){
-        await navigator.share({title:'Sales Appointment PDF', text:'Completed sales appointment PDF', files:[file]}); toast('Share sheet opened.');
-      } else { toast('Sharing is not available in this browser. Use Download PDF instead.'); updateActionButtons(); }
-    }catch(err){ if(err && err.name !== 'AbortError'){ if(!err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not share PDF.'); if(err.isValidation) status('Please fix the highlighted fields.'); } }
+      const { subject, body } = buildShareEmailContent();
+
+      // Preferred path: native Web Share sheet with the PDF attached.
+      // Only attempt if the browser actually supports sharing files; if the
+      // native call fails or hangs (e.g. insecure context) fall back to mailto.
+      if(canSharePdfFiles()){
+        // Open the mailto link synchronously while we still have the user
+        // gesture context, so popup blockers don't block it. If native share
+        // succeeds we'll close this tab immediately.
+        const to = 'Natalie@sjssolutionscorp.com.au';
+        const cc = 'Garry@sjssolutionscorp.com.au';
+        const mailto = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const mailtoWindow = window.open(mailto, '_blank');
+        try{
+          // Some browsers (Chrome on http) expose navigator.share but never
+          // resolve/reject the call. Add a short timeout so we fall back.
+          const sharePromise = navigator.share({
+            title: subject,
+            text: body,
+            files: [file]
+          });
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('share-timeout')), 2500);
+          });
+          await Promise.race([sharePromise, timeoutPromise]);
+          // Native share succeeded — close the mailto tab we opened.
+          try{ if(mailtoWindow) mailtoWindow.close(); }catch{}
+          toast('Share sheet opened.');
+          return;
+        }catch(shareErr){
+          const msg = (shareErr && shareErr.message) || '';
+          const name = (shareErr && shareErr.name) || '';
+          // User-initiated cancel: AbortError with no message or a clear cancel phrase.
+          const userCancelled = name === 'AbortError' &&
+            (!msg || /cancel/i.test(msg)) &&
+            !/fail|timeout/i.test(msg);
+          if(userCancelled){
+            // User cancelled native share — close the mailto tab too.
+            try{ if(mailtoWindow) mailtoWindow.close(); }catch{}
+            return;
+          }
+          // Any other failure (timeout, "Share failed", etc.) — keep mailto tab
+          // open and also download the PDF so staff have it handy.
+          downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
+          toast('PDF downloaded. Email draft opened; please attach the downloaded PDF if it is not already attached.');
+          status('PDF downloaded. Email draft opened; attach the PDF to send.');
+          return;
+        }
+      }
+
+      // Fallback path (no file share support): download PDF, then open mailto.
+      downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
+      const to = 'Natalie@sjssolutionscorp.com.au';
+      const cc = 'Garry@sjssolutionscorp.com.au';
+      const mailto = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailto, '_blank');
+      toast('PDF downloaded. Email draft opened; please attach the downloaded PDF if it is not already attached.');
+      status('PDF downloaded. Email draft opened; attach the PDF to send.');
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      if(!err || !err.isValidation) console.error(err);
+      toast(err && err.message ? err.message : 'Could not share PDF.');
+      if(err && err.isValidation) status('Please fix the highlighted fields.');
+    }
   }
 
   function getDraft(){
