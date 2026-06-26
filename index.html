@@ -1016,6 +1016,13 @@
             <button type="button" class="btn small" id="addEoiTemplateOption">Add option</button>
           </div>
         </div>
+        <div class="settingsSection">
+          <h3>Additional Document Types</h3>
+          <div class="adminList" id="additionalDocTypesOptionsList"></div>
+          <div class="adminActions">
+            <button type="button" class="btn small" id="addAdditionalDocTypeOption">Add option</button>
+          </div>
+        </div>
       </div>
       <div class="settingsTabPanel hidden" id="settingsTab-pdf">
         <div class="settingsSection">
@@ -1086,7 +1093,7 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.5.1';
+  const APP_VERSION = '1.5.2';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1142,6 +1149,9 @@
     laVidaDefaults: {
       financeBrokerId: 'cooperSachrHeartOfLending',
       conveyancerId: 'hgpConveyancingRodyPapas'
+    },
+    additionalDocTypes: {
+      options: ['Medicare Card', 'Passport', 'Driver Licence', 'Utility Bill', 'Bank Statement', 'Rates Notice', 'Other']
     }
   };
   let adminSettings = loadAdminSettings();
@@ -1676,6 +1686,9 @@
       laVidaDefaults: {
         financeBrokerId: String(laVida.financeBrokerId || firstContactId(financeBrokers)),
         conveyancerId: String(laVida.conveyancerId || firstContactId(conveyancers))
+      },
+      additionalDocTypes: {
+        options: dedupeTextOptions(saved?.additionalDocTypes?.options, defaults.additionalDocTypes.options)
       }
     };
   }
@@ -1756,7 +1769,8 @@
       staff: 'staffOptionsList',
       branch: 'branchOptionsList',
       solicitor: 'solicitorOptionsList',
-      eoiTemplates: 'eoiTemplateOptionsList'
+      eoiTemplates: 'eoiTemplateOptionsList',
+      additionalDocTypes: 'additionalDocTypesOptionsList'
     };
     const list = $(listMap[kind]);
     if(!list) return;
@@ -1942,6 +1956,7 @@
     renderOptionList('branch');
     renderOptionList('solicitor');
     renderOptionList('eoiTemplates');
+    renderOptionList('additionalDocTypes');
     renderContactOptionList('laVidaFinanceBrokers','financeBrokerOptionsList');
     renderContactOptionList('laVidaConveyancers','conveyancerOptionsList');
     renderDefaultControls();
@@ -2029,6 +2044,7 @@
   $('addSolicitorOption').addEventListener('click',()=>{ adminSettings.solicitor.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addBranchOption').addEventListener('click',()=>{ adminSettings.branch.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addEoiTemplateOption').addEventListener('click',()=>{ adminSettings.eoiTemplates.options.push({value:'',label:''}); saveAdminSettings(); renderAdminSettings(); });
+  if($('addAdditionalDocTypeOption')) $('addAdditionalDocTypeOption').addEventListener('click',()=>{ adminSettings.additionalDocTypes.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   if($('addFinanceBrokerOption')) $('addFinanceBrokerOption').addEventListener('click',()=>{ adminSettings.laVidaFinanceBrokers.options.push({id:contactIdFromName('', 'broker'), name:'', email:'', phone:''}); saveAdminSettings(); renderAdminSettings(); renderLaVidaContactControls(); });
   if($('addConveyancerOption')) $('addConveyancerOption').addEventListener('click',()=>{ adminSettings.laVidaConveyancers.options.push({id:contactIdFromName('', 'conveyancer'), name:'', email:'', phone:''}); saveAdminSettings(); renderAdminSettings(); renderLaVidaContactControls(); });
   document.querySelectorAll('.settingsTab').forEach(btn=>btn.addEventListener('click',()=>setSettingsTab(btn.dataset.settingsTab)));
@@ -2243,10 +2259,24 @@
     if (!grid) return;
     grid.innerHTML = '';
 
+    // Build the document type options for the dropdown.
+    const docTypeOptions = (adminSettings.additionalDocTypes && adminSettings.additionalDocTypes.options) || [];
+    const docTypeMarkup = docTypeOptions
+      .filter(o => o !== 'Other' && o !== '__manual')
+      .map(o => `<option value="${htmlEscape(o)}">${htmlEscape(o)}</option>`)
+      .join('');
+    const docTypeSelectHTML = `<option value="">Select type</option>${docTypeMarkup}<option value="__manual">Other / Manual</option>`;
+
     const count = photos.length - 4;
     for(let i = 0; i < count; i++) {
       const idx = 4 + i;
       const p = photos[idx];
+      const existingDesc = (p.description || '').trim();
+      // Determine if existing description matches a dropdown option.
+      const matchesOption = docTypeOptions.some(o => o === existingDesc) && existingDesc !== '';
+      const selectedValue = matchesOption ? existingDesc : (existingDesc ? '__manual' : '');
+      const manualText = (!matchesOption && existingDesc) ? existingDesc : '';
+
       const box = document.createElement('div');
       box.className = 'photoBox';
       box.id = `photoBox${idx}`;
@@ -2263,8 +2293,12 @@
             </div>
             <div>
               <label style="font-size:11px; margin-bottom:2px; font-weight:800; color:#30364a">Description</label>
-              <input type="text" id="docDesc${idx}" value="${p.description || ''}" placeholder="Medicare Card, Passport, Utility Bill, Bank Statement" style="padding:6px 8px; font-size:12px; border-radius:8px">
+              <select id="docType${idx}" style="padding:6px 8px; font-size:12px; border-radius:8px" data-selected="${htmlEscape(selectedValue)}">${docTypeSelectHTML}</select>
             </div>
+          </div>
+          <div id="docTypeManual${idx}" style="${selectedValue === '__manual' ? '' : 'display:none'}">
+            <label style="font-size:11px; margin-bottom:2px; font-weight:800; color:#30364a">Manual description</label>
+            <input type="text" id="docDesc${idx}" value="${htmlEscape(manualText)}" placeholder="Enter document description" style="padding:6px 8px; font-size:12px; border-radius:8px">
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px">
@@ -2290,19 +2324,41 @@
       $(`remove${idx}`).addEventListener('click', e => { e.stopPropagation(); removePhoto(idx); });
 
       const clientSelect = $(`docClient${idx}`);
+      const typeSelect = $(`docType${idx}`);
+      const manualDiv = $(`docTypeManual${idx}`);
       const descInput = $(`docDesc${idx}`);
+
+      function updateAdditionalLabel(){
+        const desc = typeSelect.value === '__manual'
+          ? (descInput && descInput.value.trim())
+          : typeSelect.value;
+        photos[idx].description = desc || '';
+        photos[idx].label = `${photos[idx].client} – ${photos[idx].description || 'Additional Document'}`;
+        clearGenerated();
+      }
 
       clientSelect.addEventListener('change', () => {
         photos[idx].client = clientSelect.value;
-        photos[idx].label = `${photos[idx].client} – ${photos[idx].description || 'Additional Document'}`;
-        clearGenerated();
+        updateAdditionalLabel();
       });
 
-      descInput.addEventListener('input', () => {
-        photos[idx].description = descInput.value;
-        photos[idx].label = `${photos[idx].client} – ${photos[idx].description || 'Additional Document'}`;
-        clearGenerated();
+      typeSelect.addEventListener('change', () => {
+        if (typeSelect.value === '__manual') {
+          if (manualDiv) manualDiv.style.display = 'block';
+          if (descInput) descInput.focus();
+        } else {
+          if (manualDiv) manualDiv.style.display = 'none';
+          if (descInput) descInput.value = '';
+        }
+        updateAdditionalLabel();
       });
+
+      if (descInput) {
+        descInput.addEventListener('input', updateAdditionalLabel);
+      }
+
+      // Set initial dropdown value after binding listeners.
+      if (selectedValue) typeSelect.value = selectedValue;
 
       renderPhotoBox(idx);
     }
@@ -3156,7 +3212,8 @@
     drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
     // Single line with aggressive shrinkage to keep text above the black banner.
     drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 1, maxSize: 10, minSize: 7.2, padLeft: 8, padRight: 16, lineGap: 1});
-    overlayFitText(fieldText('iaSolicitor'), 395, 564, 670, '400', 12, 8);
+    // TO: line — wider area to prevent long solicitor/conveyancer names from clipping.
+    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1050, '400', 12, 8);
     overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
     overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
 
@@ -3700,6 +3757,7 @@
           // Native share succeeded — close the mailto tab we opened.
           try{ if(mailtoWindow) mailtoWindow.close(); }catch{}
           toast('Share sheet opened.');
+          status('Share sheet opened. If your email app does not attach the PDF, use the downloaded copy.');
           return;
         }catch(shareErr){
           const msg = (shareErr && shareErr.message) || '';
@@ -3716,8 +3774,8 @@
           // Any other failure (timeout, "Share failed", etc.) — keep mailto tab
           // open and also download the PDF so staff have it handy.
           downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
-          toast('PDF downloaded. Email draft opened; please attach the downloaded PDF if it is not already attached.');
-          status('PDF downloaded. Email draft opened; attach the PDF to send.');
+          toast('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
+          status('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
           return;
         }
       }
@@ -3728,8 +3786,8 @@
       const cc = 'Garry@sjssolutionscorp.com.au';
       const mailto = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(mailto, '_blank');
-      toast('PDF downloaded. Email draft opened; please attach the downloaded PDF if it is not already attached.');
-      status('PDF downloaded. Email draft opened; attach the PDF to send.');
+      toast('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
+      status('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
     }catch(err){
       if(err && err.name === 'AbortError') return;
       if(!err || !err.isValidation) console.error(err);
