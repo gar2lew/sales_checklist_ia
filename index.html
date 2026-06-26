@@ -40,6 +40,8 @@
     .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 6px 20px rgba(15,23,42,.055);padding:16px}
     .card h2{font-size:18px;margin:0 0 12px;color:var(--navy);letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
     .hint{color:var(--muted);font-size:13px;line-height:1.4;margin:0 0 12px}
+    .callout{background:#f0f4ff;border:1px solid #c8d6fa;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.45;color:#1e3a5f}
+    .callout strong{color:var(--navy)}
     .fields{display:grid;grid-template-columns:1fr;gap:12px}
     @media (min-width:720px){.fields.two{grid-template-columns:1fr 1fr}.fields.three{grid-template-columns:repeat(3,1fr)}}
     label{font-size:13px;font-weight:800;color:#30364a;display:block;margin:0 0 5px}
@@ -807,6 +809,9 @@
               <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
               <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
             </div>
+            <div id="authorityExplanation" class="callout" style="margin-top:8px; color:var(--navy)">
+              This amount authorises ASG to receive <strong id="authorityAmtLabel">$10,000</strong> from the proceeds of your loan or finance at settlement. This authority only applies if your purchase proceeds to settlement.
+            </div>
             <div class="toggleRow" style="margin-top:12px; justify-content:space-between; align-items:center">
               <div style="display:flex; gap:16px; flex-wrap:wrap">
                 <label><input type="checkbox" id="iaApplySignature1" checked> Apply Signature 1 to IA</label>
@@ -1093,7 +1098,7 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.5.3';
+  const APP_VERSION = '1.5.4';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1721,11 +1726,13 @@
         applyPriceFormat(el);
         if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
       }
+      if(id==='iaAmount'){ applyPriceFormat(el); updateAuthorityExplanation(); }
     });
     el.addEventListener('blur',()=>{
       if(id==='eoiPriceLand' || id==='eoiPriceHouse' || id==='eoiPriceTotal'){
         applyPriceFormat(el);
       }
+      if(id==='iaAmount'){ applyPriceFormat(el); updateAuthorityExplanation(); }
     });
   }
   function optionValuesFor(kind){
@@ -2004,6 +2011,7 @@
     if($('iaApplySignature1') && force) $('iaApplySignature1').checked = !!defaults.iaApplySignature1;
     if($('iaApplySignature2') && force) $('iaApplySignature2').checked = !!defaults.iaApplySignature2;
     if($('eoiTemplate') && (force || !fieldText('eoiTemplate'))) setControlValue('eoiTemplate', 'standard');
+    updateAuthorityExplanation();
   }
   function applyLaVidaDefaults(force=false){
     if(selectedEoiTemplateValue() !== 'laVidaHomes') return;
@@ -2018,12 +2026,8 @@
     renderLaVidaContactControls();
   }
   function copyEOIToIA(){
-    const client1Name = fieldText('eoiClient1Name') || fieldText('clientName');
-    const client2Name = fieldText('eoiClient2Name');
-    const names = (client1Name && client2Name && !client1Name.toLowerCase().includes(client2Name.toLowerCase()))
-      ? `${client1Name} & ${client2Name}`
-      : (client1Name || client2Name);
-    if($('iaClientNames')) $('iaClientNames').value = names;
+    // Use mergedClientNames() to include both clients when Client 2 is present.
+    if($('iaClientNames')) $('iaClientNames').value = mergedClientNames();
     if($('iaAddress')) $('iaAddress').value = eoiValue('eoiClient1Address','clientAddress');
     if($('iaProperty')) $('iaProperty').value = fieldText('eoiSaleAddress') || fieldText('propertySaleAddress');
     if($('iaDate')) $('iaDate').value = formatDisplayDate($('eoiDate').value || $('date').value || localDateISO());
@@ -2360,6 +2364,9 @@
 
       // Set initial dropdown value after binding listeners.
       if (selectedValue) typeSelect.value = selectedValue;
+      // Ensure the label is set from the initial dropdown value
+      // (programmatic assignment does not fire the change event).
+      updateAdditionalLabel();
 
       renderPhotoBox(idx);
     }
@@ -2955,10 +2962,16 @@
       if(!isNaN(num) && num > 0){
         el.value = '$' + num.toLocaleString('en-US');
       }
-    }
-  }
+	    }
+	  }
+	  function updateAuthorityExplanation(){
+	    const label = $('authorityAmtLabel');
+	    if(!label) return;
+	    const amt = formatPrice(fieldText('iaAmount')) || '$10,000';
+	    label.textContent = amt;
+	  }
 
-  function drawPageFrame(ctx,title,subtitle,pageNumber,totalPages){
+	  function drawPageFrame(ctx,title,subtitle,pageNumber,totalPages){
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,595,842);
     drawSmallPageLogo(ctx);
     ctx.fillStyle='#00086d'; ctx.font='700 22px Arial'; ctx.fillText(title,42,50);
@@ -3206,16 +3219,16 @@
     // Property field — reduce height so the white box does not intrude into the
     // black IRREVOCABLE AUTHORITY banner below. End at y=445 instead of 453.
     whiteOut(300, 411, 850, 34);
-    whiteOut(386, 540, 1100, 36);
+    // TO: line — fully cover old template wording from the printed "TO:" label
+    // through the entire field. Extra width and height prevent bleed-through.
+    whiteOut(365, 535, 1150, 45);
     whiteOut(728, 752, 145, 42);
     whiteOut(176, 1206, 450, 36);
     drawTemplateLineValue(iaClientNames, 315, 332, 850, {maxLines: 2, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
     drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
     // Single line with aggressive shrinkage to keep text above the black banner.
     drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 1, maxSize: 10, minSize: 7.2, padLeft: 8, padRight: 16, lineGap: 1});
-    // TO: line — use nearly full page width with small minimum font to handle
-    // long solicitor/conveyancer names without clipping.
-    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1100, '400', 12, 6);
+    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1150, '400', 12, 6);
     overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
     overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
 
