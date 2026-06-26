@@ -1146,6 +1146,106 @@
   };
   let adminSettings = loadAdminSettings();
 
+  // =========================================================================
+  // SECTION A: APPLICATION CONFIGURATION & EXTENSION POINTS
+  // =========================================================================
+  // Centralise hardcoded values so future changes (new builders, email
+  // templates, branding) can be made in one place.
+  const CONFIG = {
+    version: APP_VERSION,
+    adminPin: ADMIN_PIN,
+    storage: {
+      draftKey: 'salesAppointmentDraft',
+      adminSettingsKey,
+      unlockKey: ADMIN_UNLOCK_KEY,
+    },
+    pdf: {
+      canvasW: 595.28, canvasH: 841.89, // A4 in points
+      compressScale: 2, fullScale: 3,
+      compressQuality: 0.78, fullQuality: 0.92,
+    },
+    share: {
+      to: 'Natalie@sjssolutionscorp.com.au',
+      cc: 'Garry@sjssolutionscorp.com.au',
+      fallbackStaffName: 'ASG Team',
+      nativeShareTimeoutMs: 2500,
+    },
+    branding: {
+      logoPath: 'icons/asg_logo.png',
+      footerPrefix: 'Sales Appointment Capture',
+    },
+    defaults: {
+      iaAmount: '$10,000',
+      iaForm: 'perth',
+      eoiTemplate: 'standard',
+    },
+    toastDurationMs: 3200,
+    filenamePartsMaxLen: 80,
+    clientNameMergeThreshold: 40,
+  };
+
+  // Builder registry for extensible EOI template support.
+  // Each builder has an id, label, page-render function(s), and image source
+  // loader. Add new builders here without touching the PDF pipeline.
+  const EOI_BUILDERS = {
+    standard: {
+      id: 'standard',
+      label: 'Standard',
+      getPages: () => 1,
+      drawPage: (_, pageNumber, totalPages, scale) => drawEoiPage(pageNumber, totalPages, scale),
+    },
+    laVidaHomes: {
+      id: 'laVidaHomes',
+      label: 'La Vida Homes',
+      getPages: () => 2,
+      drawPage: (pageIndex, pageNumber, totalPages, scale) =>
+        drawLaVidaEoiPage(pageIndex, pageNumber, totalPages, scale),
+      ensureImages: ensureLaVidaImages,
+    },
+  };
+
+  function selectedEoiTemplateValue(){
+    const sel = $('eoiTemplate'); return sel ? sel.value : 'standard';
+  }
+  function selectedEoiTemplateLabel(){
+    const sel = $('eoiTemplate');
+    if(!sel) return 'Standard';
+    const opt = sel.selectedOptions && sel.selectedOptions[0];
+    return opt ? opt.textContent : (EOI_BUILDERS[sel.value] && EOI_BUILDERS[sel.value].label) || 'Standard';
+  }
+
+  // Shared shorthand helpers eliminate repeated DOM query patterns.
+  function isChecked(id){ const el = $(id); return !!(el && el.checked); }
+  function hasClient2(){ return fieldText('client2Name').length > 0; }
+  function mergedClientNames(){
+    const c1 = fieldText('clientName');
+    const c2 = fieldText('client2Name');
+    if(!c2) return c1 || '';
+    if(c1 && c2 && !c1.toLowerCase().includes(c2.toLowerCase())) return `${c1} & ${c2}`;
+    return c1 || c2 || '';
+  }
+  function resolvedIaField(fieldId, fallbackId){
+    // When IA overrides are enabled, use the override field; otherwise fall back.
+    const overrides = isChecked('showIaOverrides');
+    return overrides ? (fieldText(fieldId) || fieldText(fallbackId)) : fieldText(fallbackId);
+  }
+  function hasC1Photo(){ return !!(photos[0] && photos[0].img) || !!(photos[1] && photos[1].img); }
+  function hasC2Photo(){ return !!(photos[2] && photos[2].img) || !!(photos[3] && photos[3].img); }
+  function anyPhotoAttached(){ return photos.some(p => p.img); }
+
+  // Call this after any major form state change to refresh all UI panels.
+  function refreshAllUI(){
+    updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails();
+    updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview();
+  }
+  function refreshFormBindings(){
+    updateName(); clearGenerated(); clearValidation();
+  }
+
+  // =========================================================================
+  // SECTION B: UTILITY FUNCTIONS & DATE HELPERS
+  // =========================================================================
+
   function localDateISO(){
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -1200,19 +1300,16 @@
       requireValidDate(errors,'eoiDate','Enter the EOI date as DD/MM/YYYY.');
       requireValidDate(errors,'eoiNextApptDate','Enter the next appointment date as DD/MM/YYYY.');
       if (!eoiSaleAddressValue()) {
-        const showEoiOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+        const showEoiOverrides = isChecked('showEoiOverrides');
         errors.push({id: showEoiOverrides ? 'eoiSaleAddress' : 'propertySaleAddress', message:'Enter the property sale address.'});
       }
     }
     if (plan.selectedIA) {
       requireValidDate(errors,'iaDate','Enter the IA date as DD/MM/YYYY.');
-      const showIaOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
-      const c1Name = fieldText('clientName');
-      const c2Name = fieldText('client2Name');
-      const defaultIaNames = (c1Name && c2Name && !c1Name.toLowerCase().includes(c2Name.toLowerCase())) ? `${c1Name} & ${c2Name}` : (c1Name || c2Name);
-      const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || defaultIaNames) : defaultIaNames;
-      const resolvedIaAddress = showIaOverrides ? (fieldText('iaAddress') || fieldText('clientAddress')) : fieldText('clientAddress');
-      const resolvedIaProperty = showIaOverrides ? (fieldText('iaProperty') || fieldText('propertySaleAddress')) : fieldText('propertySaleAddress');
+      const showIaOverrides = isChecked('showIaOverrides');
+      const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || mergedClientNames()) : mergedClientNames();
+      const resolvedIaAddress = resolvedIaField('iaAddress', 'clientAddress');
+      const resolvedIaProperty = resolvedIaField('iaProperty', 'propertySaleAddress');
 
       if (!resolvedIaNames) {
         errors.push({id: showIaOverrides ? 'iaClientNames' : 'clientName', message:'Enter the client name.'});
@@ -1391,17 +1488,17 @@
     });
   }
   function updateIaOverrides() {
-    const showOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+    const showOverrides = isChecked('showIaOverrides');
     const content = $('iaOverridesContent');
     if (content) content.style.display = showOverrides ? 'block' : 'none';
   }
   function updateEoiOverrides() {
-    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    const showOverrides = isChecked('showEoiOverrides');
     const content = $('eoiOverridesContent');
     if (content) content.style.display = showOverrides ? 'block' : 'none';
   }
   function updateIaDetails(){
-    const included = $('includeIA') && $('includeIA').checked;
+    const included = isChecked('includeIA');
     const card = $('iaDetailsCard');
     if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
     const content = $('iaFormContent');
@@ -1409,7 +1506,7 @@
     updateIaOverrides();
   }
   function updateEoiDetails(){
-    const included = $('includeEOI') && $('includeEOI').checked;
+    const included = isChecked('includeEOI');
     const card = $('eoiDetailsCard');
     if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
     const content = $('eoiFormContent');
@@ -1420,6 +1517,9 @@
     const selected = document.querySelector('input[name="eoiOwnership"]:checked');
     return selected ? selected.value : 'sole';
   }
+  // =========================================================================
+  // SECTION D: ADMIN SETTINGS MANAGEMENT
+  // =========================================================================
   function loadAdminSettings(){
     try{
       const saved = JSON.parse(localStorage.getItem(adminSettingsKey) || 'null');
@@ -1582,12 +1682,15 @@
   function saveAdminSettings(){
     localStorage.setItem(adminSettingsKey, JSON.stringify(adminSettings));
   }
+  // =========================================================================
+  // SECTION C: FORM BINDING & UI STATE
+  // =========================================================================
   function bindFieldEvents(id){
     const el=$(id);
     if(!el || el.dataset.bound === 'true') return;
     el.dataset.bound = 'true';
     el.addEventListener('input',()=>{
-      updateName(); clearGenerated(); clearValidation();
+      refreshFormBindings();
       if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
       if(id==='eoiPriceTotal') applyPriceFormat(el);
     });
@@ -1950,6 +2053,9 @@
   updateActionButtons();
   clearGenerated();
 
+  // =========================================================================
+  // SECTION E: SUMMARY CARD & PROGRESS INDICATORS
+  // =========================================================================
   function clearGenerated(){
     lastPdfBlob=null;
     lastPdfName='';
@@ -1969,9 +2075,9 @@
   }
 
   function updateSummaryCard(){
-    const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
-    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
-    const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+    const hasC2 = hasClient2();
+    const _hasC1Photo = hasC1Photo();
+    const _hasC2Photo = hasC2Photo();
 
     // Individual field indicators
     updateIndicator('indicator-clientName', !!fieldText('clientName'));
@@ -1985,8 +2091,8 @@
     updateIndicator('indicator-clientAddress', !!fieldText('clientAddress'));
     updateIndicator('indicator-propertySaleAddress', !!fieldText('propertySaleAddress'));
 
-    updateIndicator('indicator-includeEOI', $('includeEOI') && $('includeEOI').checked);
-    updateIndicator('indicator-includeIA', $('includeIA') && $('includeIA').checked);
+    updateIndicator('indicator-includeEOI', isChecked('includeEOI'));
+    updateIndicator('indicator-includeIA', isChecked('includeIA'));
 
     // Live counts and color coding for Photos
     const totalPossiblePhotos = photos.length;
@@ -2025,17 +2131,17 @@
     if (!fieldText('clientAddress')) missingRequired.push('Client Current Address');
     if (!fieldText('propertySaleAddress')) missingRequired.push('Address of Property Sale');
 
-    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const includeEOI = isChecked('includeEOI');
     if (includeEOI) {
-      const showEoiOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+      const showEoiOverrides = isChecked('showEoiOverrides');
       if (showEoiOverrides && !fieldText('eoiSaleAddress')) {
         missingRequired.push('EOI Sale Address');
       }
     }
 
-    const includeIA = $('includeIA') && $('includeIA').checked;
+    const includeIA = isChecked('includeIA');
     if (includeIA) {
-      const showIaOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+      const showIaOverrides = isChecked('showIaOverrides');
       if (showIaOverrides) {
         if (!fieldText('iaClientNames')) missingRequired.push('IA Client Name(s)');
         if (!fieldText('iaAddress')) missingRequired.push('IA Client Address');
@@ -2043,11 +2149,11 @@
       }
     }
 
-    if (!hasC1Photo) missingRequired.push('Client 1 ID Photo');
+    if (!_hasC1Photo) missingRequired.push('Client 1 ID Photo');
     if (!hasSignature) missingRequired.push('Signature 1');
 
     if (hasC2) {
-      if (!hasC2Photo) missingRequired.push('Client 2 ID Photo');
+      if (!_hasC2Photo) missingRequired.push('Client 2 ID Photo');
       if (!hasSignature2) missingRequired.push('Signature 2');
     }
 
@@ -2081,6 +2187,9 @@
     });
   });
 
+  // =========================================================================
+  // SECTION F: PHOTO UI & ADDITIONAL DOCUMENTS
+  // =========================================================================
   function makePhotoUI(){
     const wrap=$('photos'); wrap.innerHTML='';
     
@@ -2228,6 +2337,9 @@
   renderAdditionalDocsUI();
   updatePhotoUIGroups();
 
+  // =========================================================================
+  // SECTION G: LIVE SUMMARY RENDERING
+  // =========================================================================
   function renderLiveSummary() {
     const liveSummary = $('liveSummary');
     const previewPaper = $('previewPaper');
@@ -2266,7 +2378,7 @@
     }
 
     // EOI
-    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const includeEOI = isChecked('includeEOI');
     const sumEOI = $('sumEOI');
     if (sumEOI) {
       if (includeEOI) {
@@ -2280,13 +2392,13 @@
     }
 
     // IA
-    const includeIA = $('includeIA') && $('includeIA').checked;
+    const includeIA = isChecked('includeIA');
     const sumIA = $('sumIA');
     if (sumIA) {
       if (includeIA) {
         const iaFormVal = $('iaForm') ? $('iaForm').value : '';
         const defaultIaProperty = fieldText('propertySaleAddress');
-        const showIaOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+        const showIaOverrides = isChecked('showIaOverrides');
         const resolvedIaProperty = showIaOverrides ? (fieldText('iaProperty') || defaultIaProperty) : defaultIaProperty;
         sumIA.textContent = `${iaFormVal.toUpperCase()} (${resolvedIaProperty || 'Missing Property'})`;
         sumIA.style.color = resolvedIaProperty ? 'var(--success)' : 'var(--danger)';
@@ -2349,11 +2461,10 @@
     }
     
     if (includeIA) {
-      const showIaOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
-      const defaultIaNames = (c1Name && c2Name && !c1Name.toLowerCase().includes(c2Name.toLowerCase())) ? `${c1Name} & ${c2Name}` : (c1Name || c2Name);
-      const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || defaultIaNames) : defaultIaNames;
-      const resolvedIaAddress = showIaOverrides ? (fieldText('iaAddress') || fieldText('clientAddress')) : fieldText('clientAddress');
-      const resolvedIaProperty = showIaOverrides ? (fieldText('iaProperty') || fieldText('propertySaleAddress')) : fieldText('propertySaleAddress');
+      const showIaOverrides = isChecked('showIaOverrides');
+      const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || mergedClientNames()) : mergedClientNames();
+      const resolvedIaAddress = resolvedIaField('iaAddress', 'clientAddress');
+      const resolvedIaProperty = resolvedIaField('iaProperty', 'propertySaleAddress');
 
       if (!resolvedIaNames) missing.push('IA Client Name(s)');
       if (!resolvedIaAddress) missing.push('IA Client Address');
@@ -2361,11 +2472,11 @@
     }
 
     const hasC2 = c2Name.length > 0;
-    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
-    if (!hasC1Photo) missing.push('Client 1 ID photo (Front or Back)');
+    const _hasC1Photo = hasC1Photo();
+    if (!_hasC1Photo) missing.push('Client 1 ID photo (Front or Back)');
     if (hasC2) {
-      const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
-      if (!hasC2Photo) missing.push('Client 2 ID photo (Front or Back)');
+      const _hasC2Photo = hasC2Photo();
+      if (!_hasC2Photo) missing.push('Client 2 ID photo (Front or Back)');
     }
 
     if (!hasSignature) missing.push('Signature 1');
@@ -2384,13 +2495,16 @@
     }
   }
 
+    // =========================================================================
+  // SECTION H: SECTION PROGRESS & BADGES
+  // =========================================================================
   function updateSectionProgress(){
     // Section 1: Appointment & Client Information
     const s1Complete = fieldText('date') && fieldText('teamMember') && fieldText('clientName');
     updateBadge('appointmentBadge', s1Complete ? 'complete' : 'incomplete');
 
     // Section 2: Expression of Interest
-    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const includeEOI = isChecked('includeEOI');
     if (!includeEOI) {
       updateBadge('eoiBadge', 'not-required');
     } else {
@@ -2399,14 +2513,14 @@
     }
 
     // Section 3: Irrevocable Authority
-    const includeIA = $('includeIA') && $('includeIA').checked;
+    const includeIA = isChecked('includeIA');
     if (!includeIA) {
       updateBadge('iaBadge', 'not-required');
     } else {
       const c1Name = fieldText('clientName');
       const c2Name = fieldText('client2Name');
       const defaultIaNames = (c1Name && c2Name && !c1Name.toLowerCase().includes(c2Name.toLowerCase())) ? `${c1Name} & ${c2Name}` : (c1Name || c2Name);
-      const showIaOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+      const showIaOverrides = isChecked('showIaOverrides');
       const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || defaultIaNames) : defaultIaNames;
       const resolvedIaAddress = showIaOverrides ? (fieldText('iaAddress') || fieldText('clientAddress')) : fieldText('clientAddress');
       const resolvedIaProperty = showIaOverrides ? (fieldText('iaProperty') || fieldText('propertySaleAddress')) : fieldText('propertySaleAddress');
@@ -2416,14 +2530,14 @@
     }
 
     // Section 4: Client ID Documents
-    const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
-    const hasC1Photo = (photos[0] && photos[0].img) || (photos[1] && photos[1].img);
-    const hasC2Photo = (photos[2] && photos[2].img) || (photos[3] && photos[3].img);
+    const hasC2 = hasClient2();
+    const _hasC1Photo = hasC1Photo();
+    const _hasC2Photo = hasC2Photo();
     let s4Complete = false;
     if (hasC2) {
-      s4Complete = hasC1Photo && hasC2Photo;
+      s4Complete = _hasC1Photo && _hasC2Photo;
     } else {
-      s4Complete = hasC1Photo;
+      s4Complete = _hasC1Photo;
     }
     updateBadge('photoBadge', s4Complete ? 'complete' : 'incomplete');
 
@@ -2452,6 +2566,9 @@
     }
   }
 
+    // =========================================================================
+  // SECTION I: SIGNATURE CANVAS & STATUS
+  // =========================================================================
   function updateSignatureStatuses() {
     // Sig 1 Status
     const sig1 = $('sig1Status');
@@ -2468,7 +2585,7 @@
     // Sig 2 Status
     const sig2 = $('sig2Status');
     if (sig2) {
-      const hasC2 = ($('client2Name') && $('client2Name').value.trim().length > 0);
+      const hasC2 = hasClient2();
       if (hasSignature2) {
         sig2.textContent = '✓ Captured';
         sig2.className = 'status-badge status-captured';
@@ -2487,6 +2604,9 @@
   function readAsDataURL(file){
     return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
   }
+    // =========================================================================
+  // SECTION J: IMAGE LOADING & LOGO HELPERS
+  // =========================================================================
   function loadImage(src){
     return new Promise((resolve,reject)=>{ const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=src; });
   }
@@ -2596,6 +2716,9 @@
   sig2.addEventListener('pointercancel', ()=>drawing2=false);
   $('clearSignature2').addEventListener('click', clearSig2);
 
+    // =========================================================================
+  // SECTION K: PDF DRAWING PRIMITIVES
+  // =========================================================================
   function drawRoundRect(ctx,x,y,w,h,r,fill,stroke){
     ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
     if(fill) ctx.fill(); if(stroke) ctx.stroke();
@@ -2872,6 +2995,9 @@
     return formatDisplayDate(value);
   }
 
+    // =========================================================================
+  // SECTION L: IA TEMPLATE PAGE DRAWING
+  // =========================================================================
   function drawIAPage(city, pageNumber, totalPages, scale=2){
     const img = iaImageCache[city];
     if(!img) throw new Error('IA form image has not loaded.');
@@ -3012,7 +3138,7 @@
     const defaultIaAddress = fieldText('clientAddress');
     const defaultIaProperty = fieldText('propertySaleAddress');
 
-    const showOverrides = $('showIaOverrides') && $('showIaOverrides').checked;
+    const showOverrides = isChecked('showIaOverrides');
     const iaClientNames = showOverrides ? (fieldText('iaClientNames') || defaultIaNames) : defaultIaNames;
     const iaAddress = showOverrides ? (fieldText('iaAddress') || defaultIaAddress) : defaultIaAddress;
     const iaProperty = showOverrides ? (fieldText('iaProperty') || defaultIaProperty) : defaultIaProperty;
@@ -3052,8 +3178,11 @@
     return c;
   }
 
+    // =========================================================================
+  // SECTION M: EOI & LA VIDA PAGE DRAWING
+  // =========================================================================
   function eoiValue(id, fallbackId){
-    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    const showOverrides = isChecked('showEoiOverrides');
     if (showOverrides) {
       const own = fieldText(id);
       if (own) return own;
@@ -3075,7 +3204,7 @@
     return hasSecondClientData() ? eoiValue(eoiId, fallbackId) : '';
   }
   function eoiSaleAddressValue() {
-    const showOverrides = $('showEoiOverrides') && $('showEoiOverrides').checked;
+    const showOverrides = isChecked('showEoiOverrides');
     if (showOverrides) {
       const addr = fieldText('eoiSaleAddress');
       if (addr) return addr;
@@ -3365,12 +3494,16 @@
     return c;
   }
 
+    // =========================================================================
+  // SECTION N: PDF PIPELINE ORCHESTRATION
+  // =========================================================================
   function outputPlan(){
-    const includeIA = $('includeIA') && $('includeIA').checked;
-    const selectedIA = includeIA ? ($('iaForm') ? $('iaForm').value : 'perth') : '';
-    const includeEOI = $('includeEOI') && $('includeEOI').checked;
+    const includeIA = isChecked('includeIA');
+    const selectedIA = includeIA ? ($('iaForm') ? $('iaForm').value : CONFIG.defaults.iaForm) : '';
+    const includeEOI = isChecked('includeEOI');
     const eoiTemplate = selectedEoiTemplateValue();
-    const eoiPageCount = includeEOI ? (eoiTemplate === 'laVidaHomes' ? 2 : 1) : 0;
+    const builder = EOI_BUILDERS[eoiTemplate] || EOI_BUILDERS.standard;
+    const eoiPageCount = includeEOI ? builder.getPages() : 0;
     const selectedPhotos = photos.filter(p=>p.img);
     const totalPages = eoiPageCount + (selectedIA ? 1 : 0) + selectedPhotos.length;
     return { selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages };
@@ -3382,11 +3515,9 @@
     let offset = 0;
     if(plan.includeEOI){
       if(index < offset + plan.eoiPageCount){
-        if(plan.eoiTemplate === 'laVidaHomes'){
-          await ensureLaVidaImages();
-          return drawLaVidaEoiPage(index - offset, index + 1, totalPages, scale);
-        }
-        return drawEoiPage(index + 1, totalPages, scale);
+        const builder = EOI_BUILDERS[plan.eoiTemplate] || EOI_BUILDERS.standard;
+        if(builder.ensureImages) await builder.ensureImages();
+        return builder.drawPage(index - offset, index + 1, totalPages, scale);
       }
       offset += plan.eoiPageCount;
     }
@@ -3507,6 +3638,9 @@
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
   // Build the email subject/body used by both Web Share and mailto fallback.
+    // =========================================================================
+  // SECTION O: SHARE & EMAIL
+  // =========================================================================
   function buildShareEmailContent(){
     const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
     const client1 = (fieldText('clientName') || '').trim();
@@ -3518,8 +3652,8 @@
     const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
 
     // Determine which forms are included.
-    const eoiIncluded = !!($('includeEOI') && $('includeEOI').checked);
-    const iaIncluded = !!($('includeIA') && $('includeIA').checked);
+    const eoiIncluded = isChecked('includeEOI');
+    const iaIncluded = isChecked('includeIA');
     let formsIncluded;
     if (eoiIncluded && iaIncluded) formsIncluded = 'EOI+IA';
     else if (eoiIncluded) formsIncluded = 'EOI';
@@ -3604,6 +3738,9 @@
     }
   }
 
+    // =========================================================================
+  // SECTION P: DRAFT PERSISTENCE
+  // =========================================================================
   function getDraft(){
     const data={}; fields.forEach(id=>{const el=$(id); if(!el)return; data[id]=(el.type==='checkbox')?el.checked:el.value;});
     data.eoiOwnership=eoiOwnership();
@@ -3738,7 +3875,7 @@
       }
     }
     syncLaVidaContactsFromChoices(false);
-    updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails(); updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview();
+    refreshAllUI();
   }
   function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
   async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
@@ -3764,7 +3901,7 @@
     setControlValue('iaAmount', '$10,000');
     setControlValue('iaDate', today);
     setControlValue('iaForm', 'perth');
-    updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails(); updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview();
+    refreshAllUI();
     toast('Test data loaded.');
   }
   function resetForm(){
@@ -3786,9 +3923,12 @@
     if ($('additionalDocsCount')) $('additionalDocsCount').value = '0';
     photos.length = 4;
     renderAdditionalDocsUI();
-    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails(); updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview(); toast('Form reset.');
+    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); toast('Form reset.');
   }
 
+  // =========================================================================
+  // SECTION Q: EVENT WIRING & INITIALIZATION
+  // =========================================================================
   $('generateTop').addEventListener('click',generatePdfOnly);
   $('generateBottom').addEventListener('click',generatePdfOnly);
   $('downloadTop').addEventListener('click',downloadPdf);
