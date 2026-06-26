@@ -18,16 +18,17 @@ A single-page offline-capable PWA for field staff to capture sales appointment d
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Entire application — HTML, CSS, and JS (~3900 lines). IIFE structure. |
+| `index.html` | Entry point — HTML structure (~630 lines). References external CSS and JS. |
+| `css/app.css` | All application CSS (~480 lines). |
+| `js/app.js` | All application JavaScript (~2940 lines). IIFE structure, no build step. |
 | `service-worker.js` | PWA offline cache. Caches app shell assets. |
 | `manifest.webmanifest` | PWA manifest for installability. |
 | `vercel.json` | Vercel deployment config. |
 | `icons/` | App icons and ASG company logo. |
 | `lavida-template-page-1.jpg` | La Vida Homes EOI template (page 1). |
 | `lavida-template-page-2.jpg` | La Vida Homes EOI template (page 2). |
-| `docs/` | Developer documentation (this directory). |
+| `docs/` | Developer documentation. |
 | `ARCHITECTURE.md` | High-level architecture overview. |
-| `DEPLOYMENT.txt` | Deployment instructions. |
 
 ## Current production version
 
