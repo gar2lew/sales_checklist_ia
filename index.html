@@ -1080,7 +1080,7 @@
 (function(){
   'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.4.7';
+  const APP_VERSION = '1.4.8';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1231,16 +1231,21 @@
     return s.replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').slice(0,80);
   }
   function pdfFileName(){
-    const dateVal = $('date').value;
-    const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
-    const team = safePart($('teamMember').value,'TeamMember');
-    const c1 = safePart($('clientName').value,'ClientName');
-    const c2 = safePart($('client2Name') ? $('client2Name').value : '','');
-    let client = c1;
-    if(c2 && (c1.length + c2.length < 40)){
-      client = `${c1} & ${c2}`;
+    try {
+      const dateVal = $('date') ? $('date').value : '';
+      const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+      const team = safePart($('teamMember') ? $('teamMember').value : '', 'TeamMember');
+      const c1 = safePart($('clientName') ? $('clientName').value : '', 'ClientName');
+      const c2 = safePart($('client2Name') ? $('client2Name').value : '', '');
+      let client = c1 || 'ClientName';
+      if(c2 && (c1.length + c2.length < 40)){
+        client = `${c1} & ${c2}`;
+      }
+      return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
+    } catch (e) {
+      console.error('pdfFileName failed:', e);
+      return `Sales Appointment - ${new Date().toISOString().slice(0,10)}.pdf`;
     }
-    return `Sales Appointment - ${date} - ${client} - ${team}.pdf`;
   }
   function updatePhotoUIGroups(){
     const group2 = $('photoGroupClient2');
@@ -3398,8 +3403,15 @@
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
   }
   async function generatePdfOnly(){
-    try{ await buildPdf(); refreshPreview(); toast('PDF generated. Use Download PDF or Share PDF.'); }
-    catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
+    try{
+      await buildPdf();
+      await refreshPreview();
+      // Re-assert the generated status after refreshPreview overwrites it.
+      const _name = lastPdfName || pdfFileName();
+      const _size = lastPdfBlob ? (lastPdfBlob.size/1024/1024).toFixed(2) : '0.00';
+      status(`PDF ready: ${_name} (${_size} MB). Use Download PDF or Share PDF.`);
+      toast('PDF generated. Use Download PDF or Share PDF.');
+    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
   }
   async function downloadPdf(){
     try{
