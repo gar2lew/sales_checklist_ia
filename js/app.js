@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.1';
+  const APP_VERSION = '1.6.2';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -2171,18 +2171,18 @@
     // Property field — reduce height so the white box does not intrude into the
     // black IRREVOCABLE AUTHORITY banner below. End at y=445 instead of 453.
     whiteOut(300, 411, 850, 34);
-    // TO: line — fully cover old template wording from the printed "TO:" label
-    // through the entire field. Extra width and height prevent bleed-through.
-    whiteOut(365, 535, 1150, 45);
-    whiteOut(728, 752, 145, 42);
-    whiteOut(176, 1206, 450, 36);
+    // TO: line — white-out only the dynamic value area after the printed
+    // "TO: Solicitor/Conveyancer:" label so the label itself stays visible.
+    whiteOut(630, 535, 885, 45);
+    whiteOut(758, 752, 152, 44);
+    whiteOut(225, 1206, 401, 36);
     drawTemplateLineValue(iaClientNames, 315, 332, 850, {maxLines: 2, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
     drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
     // Single line with aggressive shrinkage to keep text above the black banner.
     drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 1, maxSize: 10, minSize: 7.2, padLeft: 8, padRight: 16, lineGap: 1});
-    overlayFitText(fieldText('iaSolicitor'), 386, 564, 1150, '400', 12, 6);
-    overlayText(iaAmount, 738, 782, 140, '700 12px Arial', 14, 1);
-    overlayText(formattedDateForIA(), 188, 1228, 430, '700 12px Arial', 14, 1);
+    overlayFitText(fieldText('iaSolicitor'), 640, 564, 875, '400', 12, 6);
+    overlayText(iaAmount, 763, 783, 140, '800 13px Arial', 15, 1);
+    overlayText(formattedDateForIA(), 235, 1225, 391, '700 12px Arial', 14, 1);
 
     if(hasSignature && $('iaApplySignature1') && $('iaApplySignature1').checked){
       const p1 = map(130, 1364);
