@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.0';
+  const APP_VERSION = '1.6.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -35,6 +35,9 @@
   let pageLogoImage = null;
   let lastPdfBlob = null;
   let lastPdfName = '';
+  let lastIndividualPdfs = null;  // [{ blob, name }] — cached individual PDFs
+  let lastZipBlob = null;         // Blob — cached ZIP
+  let lastZipName = '';           // string — cached ZIP filename
   let previewPageIndex = 0;
   const adminSettingsKey = 'salesAppointmentAdminSettings';
   const defaultAdminSettings = {
@@ -276,6 +279,43 @@
       return `Sales Appointment - ${new Date().toISOString().slice(0,10)}.pdf`;
     }
   }
+  function clientNamesForFilename(){
+    const c1 = safePart(fieldText('clientName'), '');
+    const c2 = safePart(fieldText('client2Name'), '');
+    if (c1 && c2 && (c1.length + c2.length + 3) <= 80) return `${c1} & ${c2}`;
+    return c1 || 'Client';
+  }
+  function zipFileName(){
+    const clientNames = clientNamesForFilename();
+    const dateVal = $('date') ? $('date').value : '';
+    const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+    return `${clientNames} - Separated Appointment Documents - ${date}.zip`;
+  }
+  function individualEoiFilename(){
+    const clientNames = clientNamesForFilename();
+    const property = safePart(fieldText('propertySaleAddress'), 'Property');
+    const staffName = safePart(fieldText('teamMember'), 'TeamMember');
+    const dateVal = $('date') ? $('date').value : '';
+    const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+    return `EOI - ${clientNames} - ${property} - ${staffName} - ${date}.pdf`;
+  }
+  function individualIaFilename(){
+    const clientNames = clientNamesForFilename();
+    const staffName = safePart(fieldText('teamMember'), 'TeamMember');
+    const dateVal = $('date') ? $('date').value : '';
+    const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+    return `IA - ${clientNames} - ${staffName} - ${date}.pdf`;
+  }
+  function individualPhotoFilename(photo, idx){
+    const ID_FRONT_BACK = ['Client 1 - ID Front', 'Client 1 - ID Back', 'Client 2 - ID Front', 'Client 2 - ID Back'];
+    if (idx < 4) {
+      return `${ID_FRONT_BACK[idx]}.pdf`;
+    }
+    // Additional document: {Client} - {Description}.pdf
+    const client = safePart(photo.client || 'Client 1', 'Client');
+    const desc = safePart(photo.description || 'Additional Document', 'Document');
+    return `${client} - ${desc}.pdf`;
+  }
   function updatePhotoUIGroups(){
     const group2 = $('photoGroupClient2');
     if(group2){
@@ -401,6 +441,7 @@
   function updateActionButtons(){
     const hasPdf = !!lastPdfBlob;
     ['downloadTop','downloadBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
+    ['downloadPackageTop','downloadPackageBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
     // Share button is enabled whenever sharing or fallback email is possible.
     // It can also auto-generate a PDF if one does not exist yet.
     const sharePossible = canShareFilesPossible();
@@ -988,6 +1029,9 @@
   function clearGenerated(){
     lastPdfBlob=null;
     lastPdfName='';
+    lastIndividualPdfs=null;
+    lastZipBlob=null;
+    lastZipName='';
     previewPageIndex=0;
     updateActionButtons();
     updateSectionProgress();
@@ -2486,7 +2530,31 @@
     const eoiPageCount = includeEOI ? builder.getPages() : 0;
     const selectedPhotos = photos.filter(p=>p.img);
     const totalPages = eoiPageCount + (selectedIA ? 1 : 0) + selectedPhotos.length;
-    return { selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages };
+    return { selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages,
+      groups: buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos)
+    };
+  }
+  function buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos){
+    const groups = [];
+    let offset = 0;
+    if (includeEOI && eoiPageCount > 0) {
+      groups.push({ id: 'eoi', pageOffset: offset, pageCount: eoiPageCount, getFilename: individualEoiFilename });
+      offset += eoiPageCount;
+    }
+    if (selectedIA) {
+      groups.push({ id: 'ia', pageOffset: offset, pageCount: 1, getFilename: individualIaFilename });
+      offset += 1;
+    }
+    // Iterate original photos array to preserve index for naming
+    for (let i = 0; i < photos.length; i++) {
+      const p = photos[i];
+      if (!p.img) continue;
+      const id = i < 4 ? ['client1_front','client1_back','client2_front','client2_back'][i] : `additional_${i - 4}`;
+      groups.push({ id, photoIdx: i, pageOffset: offset, pageCount: 1,
+        getFilename: () => individualPhotoFilename(p, i) });
+      offset += 1;
+    }
+    return groups;
   }
   async function drawOutputPage(index, totalPages, scale){
     // Ensure the small page logo is loaded before any page draws it.
@@ -2617,6 +2685,144 @@
       toast('PDF download started.');
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
+  async function buildIndividualPdfs(){
+    if (lastIndividualPdfs) return lastIndividualPdfs;
+    const plan = outputPlan();
+    if (!plan.totalPages || !plan.groups.length) return [];
+    const scale = $('compressPhotos').checked ? 2 : 3;
+    const quality = $('compressPhotos').checked ? 0.78 : 0.92;
+    const pdfs = [];
+    for (const group of plan.groups) {
+      const canvases = [];
+      for (let p = 0; p < group.pageCount; p++) {
+        canvases.push(await drawOutputPage(group.pageOffset + p, plan.totalPages, scale));
+      }
+      const blob = makePDF(canvases, quality);
+      const name = group.getFilename();
+      pdfs.push({ blob, name });
+    }
+    lastIndividualPdfs = pdfs;
+    return pdfs;
+  }
+  async function buildZip(individualPdfs, zipName){
+    // Build a minimal uncompressed (Store) ZIP file.
+    const enc = new TextEncoder();
+    const parts = [];
+    const cdEntries = [];
+
+    const crcTable = [];
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      crcTable[i] = c;
+    }
+    function crc32(data) {
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < data.length; i++) crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    const seenNames = new Map();
+    function uniqueName(name){
+      const base = name.replace(/\.pdf$/i, '');
+      const existing = seenNames.get(base);
+      if (existing === undefined) {
+        seenNames.set(base, 1);
+        return name;
+      }
+      seenNames.set(base, existing + 1);
+      return `${base} (${existing + 1}).pdf`;
+    }
+
+    // Pre-read all blobs to Uint8Arrays
+    const entries = [];
+    for (const pdf of individualPdfs) {
+      const buf = await pdf.blob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      const safeName = uniqueName(pdf.name);
+      const nameBytes = enc.encode(safeName);
+      const crcVal = crc32(bytes);
+      entries.push({ bytes, nameBytes, safeName, crcVal });
+    }
+
+    // Build local file entries
+    for (const entry of entries) {
+      const localHeaderOffset = parts.reduce((sum, p) => sum + p.length, 0);
+      // Local file header
+      const lh = new Uint8Array(30 + entry.nameBytes.length);
+      const lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034b50, true);  // signature
+      lv.setUint16(4, 20, true);           // version needed
+      lv.setUint16(6, 0x0800, true);       // general purpose (UTF-8)
+      lv.setUint16(8, 0, true);            // compression: Store
+      lv.setUint16(10, 0, true);           // mod time
+      lv.setUint16(12, 0, true);           // mod date
+      lv.setUint32(14, entry.crcVal, true); // crc-32
+      lv.setUint32(18, entry.bytes.length, true); // compressed size
+      lv.setUint32(22, entry.bytes.length, true); // uncompressed size
+      lv.setUint16(26, entry.nameBytes.length, true); // filename length
+      lv.setUint16(28, 0, true);           // extra field length
+      lh.set(entry.nameBytes, 30);
+      parts.push(lh);
+      parts.push(entry.bytes);
+      cdEntries.push({
+        offset: localHeaderOffset,
+        nameBytes: entry.nameBytes,
+        crcVal: entry.crcVal,
+        size: entry.bytes.length
+      });
+    }
+
+    // Central directory
+    const cdStart = parts.reduce((sum, p) => sum + p.length, 0);
+    for (const entry of cdEntries) {
+      const cd = new Uint8Array(46 + entry.nameBytes.length);
+      const cv = new DataView(cd.buffer);
+      cv.setUint32(0, 0x02014b50, true);   // signature
+      cv.setUint16(4, 20, true);            // version made by
+      cv.setUint16(6, 20, true);            // version needed
+      cv.setUint16(8, 0x0800, true);        // general purpose (UTF-8)
+      cv.setUint16(10, 0, true);            // compression: Store
+      cv.setUint16(12, 0, true);            // mod time
+      cv.setUint16(14, 0, true);            // mod date
+      cv.setUint32(16, entry.crcVal, true);  // crc-32
+      cv.setUint32(20, entry.size, true);    // compressed size
+      cv.setUint32(24, entry.size, true);    // uncompressed size
+      cv.setUint16(28, entry.nameBytes.length, true);
+      cv.setUint16(30, 0, true);            // extra field length
+      cv.setUint16(32, 0, true);            // file comment length
+      cv.setUint16(34, 0, true);            // disk number start
+      cv.setUint16(36, 0, true);            // internal attrs
+      cv.setUint32(38, 0, true);            // external attrs
+      cv.setUint32(42, entry.offset, true);  // relative offset
+      cd.set(entry.nameBytes, 46);
+      parts.push(cd);
+    }
+    const cdEnd = parts.reduce((sum, p) => sum + p.length, 0);
+    const cdSize = cdEnd - cdStart;
+
+    // End of central directory record
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);   // signature
+    ev.setUint16(4, 0, true);            // disk number
+    ev.setUint16(6, 0, true);            // disk with CD
+    ev.setUint16(8, cdEntries.length, true);  // entries on disk
+    ev.setUint16(10, cdEntries.length, true); // total entries
+    ev.setUint32(12, cdSize, true);       // CD size
+    ev.setUint32(16, cdStart, true);      // CD offset
+    ev.setUint16(20, 0, true);           // comment length
+    parts.push(eocd);
+
+    const totalLen = parts.reduce((sum, p) => sum + p.length, 0);
+    const result = new Uint8Array(totalLen);
+    let off = 0;
+    for (const p of parts) {
+      result.set(p, off);
+      off += p.length;
+    }
+    return new Blob([result], { type: 'application/zip' });
+  }
   // Build the email subject/body used by both Web Share and mailto fallback.
     // =========================================================================
   // SECTION O: SHARE & EMAIL
@@ -2641,7 +2847,7 @@
     else formsIncluded = 'PDF';
 
     const subject = `${staffName} - Sales Appointment - ${formsIncluded} Forms - ${clientNames} - ${property} - ${date}`;
-    const body = `Hey Natalie,\n\nPlease see the PDF attached for ${clientNames} - ${property} - ${date}. If you need anything else, please let me know!\n\nRegards,\n${staffName}`;
+    const body = `Hey Natalie,\n\nPlease see the attached appointment documents for:\n\n${clientNames}\n${property}\n${date}\n\nAttached is the complete appointment PDF together with a ZIP folder containing the separated documents for easier filing and processing.\n\nIf you need anything else, please let me know!\n\nRegards,\n\n${staffName}`;
     const fileName = lastPdfName || pdfFileName();
     return { subject, body, fileName, staffName };
   }
@@ -2651,66 +2857,67 @@
       if(!lastPdfBlob) await buildPdf();
       if(!lastPdfBlob){ toast('Could not generate PDF.'); status('PDF share failed.'); return; }
 
-      const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
+      const pdfFile = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
       const { subject, body } = buildShareEmailContent();
 
-      // Preferred path: native Web Share sheet with the PDF attached.
-      // Only attempt if the browser actually supports sharing files; if the
-      // native call fails or hangs (e.g. insecure context) fall back to mailto.
-      if(canSharePdfFiles()){
-        // Open the mailto link synchronously while we still have the user
-        // gesture context, so popup blockers don't block it. If native share
-        // succeeds we'll close this tab immediately.
-        const to = 'Natalie@sjssolutionscorp.com.au';
-        const cc = 'Garry@sjssolutionscorp.com.au';
-        const mailto = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        const mailtoWindow = window.open(mailto, '_blank');
-        try{
-          // Some browsers (Chrome on http) expose navigator.share but never
-          // resolve/reject the call. Add a short timeout so we fall back.
+      // Build individual PDFs and ZIP for the package
+      status('Building Office Package...');
+      let zipFile = null;
+      let zipName = zipFileName();
+      try {
+        const individualPdfs = await buildIndividualPdfs();
+        if (individualPdfs.length > 0) {
+          const zipBlob = await buildZip(individualPdfs, zipName);
+          zipFile = new File([zipBlob], zipName, {type:'application/zip'});
+          lastZipBlob = zipBlob;
+          lastZipName = zipName;
+        }
+      } catch (zipErr) {
+        console.error('ZIP build failed:', zipErr);
+        // Continue without ZIP — fall back to PDF-only share
+      }
+
+      // Try native Web Share with both files (no mailto pre-open)
+      const canMultiShare = zipFile && navigator.share && navigator.canShare &&
+        (() => { try { return navigator.canShare({ files: [pdfFile, zipFile] }); } catch { return false; } })();
+
+      if (canMultiShare) {
+        try {
           const sharePromise = navigator.share({
             title: subject,
             text: body,
-            files: [file]
+            files: [pdfFile, zipFile]
           });
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('share-timeout')), 2500);
+            setTimeout(() => reject(new Error('share-timeout')), CONFIG.share.nativeShareTimeoutMs || 2500);
           });
           await Promise.race([sharePromise, timeoutPromise]);
-          // Native share succeeded — close the mailto tab we opened.
-          try{ if(mailtoWindow) mailtoWindow.close(); }catch{}
           toast('Share sheet opened.');
-          status('Share sheet opened. If your email app does not attach the PDF, use the downloaded copy.');
+          status('Share sheet opened. If your email app does not attach the files, use the downloaded copies.');
           return;
-        }catch(shareErr){
+        } catch (shareErr) {
           const msg = (shareErr && shareErr.message) || '';
           const name = (shareErr && shareErr.name) || '';
-          // User-initiated cancel: AbortError with no message or a clear cancel phrase.
           const userCancelled = name === 'AbortError' &&
             (!msg || /cancel/i.test(msg)) &&
             !/fail|timeout/i.test(msg);
-          if(userCancelled){
-            // User cancelled native share — close the mailto tab too.
-            try{ if(mailtoWindow) mailtoWindow.close(); }catch{}
-            return;
-          }
-          // Any other failure (timeout, "Share failed", etc.) — keep mailto tab
-          // open and also download the PDF so staff have it handy.
-          downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
-          toast('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
-          status('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
-          return;
+          if (userCancelled) return;
+          // Any other failure — fall through to download + mailto
         }
       }
 
-      // Fallback path (no file share support): download PDF, then open mailto.
+      // Fallback: download both files, then open mailto
       downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
+      if (zipFile) downloadBlob(lastZipBlob, lastZipName || zipName);
       const to = 'Natalie@sjssolutionscorp.com.au';
       const cc = 'Garry@sjssolutionscorp.com.au';
       const mailto = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(mailto, '_blank');
-      toast('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
-      status('PDF downloaded. Email draft opened; attach the downloaded PDF before sending.');
+      const msg = zipFile
+        ? 'PDF and ZIP downloaded. Attach both files to the email before sending.'
+        : 'PDF downloaded. Email draft opened; attach the downloaded PDF before sending.';
+      toast(msg);
+      status(msg);
     }catch(err){
       if(err && err.name === 'AbortError') return;
       if(!err || !err.isValidation) console.error(err);
@@ -2718,6 +2925,37 @@
       if(err && err.isValidation) status('Please fix the highlighted fields.');
     }
   }
+
+  async function downloadPackage(){
+    try{
+      if(!lastPdfBlob) await buildPdf();
+      if(!lastPdfBlob){ toast('Could not generate PDF.'); status('Package download failed.'); return; }
+
+      status('Building Office Package...');
+      // Download the compiled PDF
+      downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
+
+      // Build individual PDFs and ZIP
+      const individualPdfs = await buildIndividualPdfs();
+      if (individualPdfs.length > 0) {
+        const zipName = zipFileName();
+        const zipBlob = await buildZip(individualPdfs, zipName);
+        lastZipBlob = zipBlob;
+        lastZipName = zipName;
+        downloadBlob(zipBlob, zipName);
+        toast('Package downloaded (PDF + ZIP).');
+        status('Package downloaded (PDF + ZIP).');
+      } else {
+        toast('Package downloaded (PDF only — no individual documents available).');
+        status('Package downloaded (PDF only).');
+      }
+    }catch(err){
+      if(!err || !err.isValidation) console.error(err);
+      toast(err && err.message ? err.message : 'Could not download package.');
+      if(err && err.isValidation) status('Please fix the highlighted fields.');
+    }
+  }
+
 
     // =========================================================================
   // SECTION P: DRAFT PERSISTENCE
@@ -2914,6 +3152,8 @@
   $('generateBottom').addEventListener('click',generatePdfOnly);
   $('downloadTop').addEventListener('click',downloadPdf);
   $('downloadBottom').addEventListener('click',downloadPdf);
+  if($('downloadPackageTop')) $('downloadPackageTop').addEventListener('click',downloadPackage);
+  if($('downloadPackageBottom')) $('downloadPackageBottom').addEventListener('click',downloadPackage);
   $('shareTop').addEventListener('click',sharePdf);
   $('shareBottom').addEventListener('click',sharePdf);
   $('previewTop').addEventListener('click',()=>refreshPreview());
