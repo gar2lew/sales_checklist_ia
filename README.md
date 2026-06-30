@@ -23,6 +23,10 @@ Each staff member should:
 
 After the first online load, the app should work offline for filling forms, attaching photos, capturing signatures, and generating PDFs locally.
 
+## User Guide
+
+See [USER_GUIDE.md](USER_GUIDE.md) for detailed instructions on using the app, including auto-fill features, photo capture, sharing via email, drafts, and settings.
+
 ## Updating the app
 
 When you change files, also update `CACHE_VERSION` in `service-worker.js`, for example from `v1.0.0` to `v1.0.1`. This helps staff devices pick up the new version.
