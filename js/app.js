@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.1.0-alpha.1';
+  const APP_VERSION = '2.2.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -274,6 +274,25 @@
   }
   function validateBeforePdf(plan){
     clearValidation();
+
+    if(appointmentMode === 'zoom'){
+      var zoomErrors = [];
+      if(!plan.totalPages){
+        var e = new Error('No output pages selected. Enable at least one output option in Appointment Outputs.');
+        e.isValidation = true; throw e;
+      }
+      requireField(zoomErrors,'date','Enter the appointment date.');
+      requireField(zoomErrors,'teamMember','Enter the staff member.');
+      requireField(zoomErrors,'clientName','Enter the client name.');
+      zoomErrors.filter(function(e){return e.id;}).forEach(function(e){setFieldError(e.id,e.message);});
+      if(zoomErrors.length){
+        var f=zoomErrors[0];
+        if(f.id && $(f.id)) $(f.id).scrollIntoView({behavior:'smooth',block:'center'});
+        var ve = new Error(zoomErrors.map(function(e){return e.message;}).join(' '));
+        ve.isValidation = true; throw ve;
+      }
+      return;
+    }
     const errors=[];
     if(!plan.totalPages){
       errors.push({id:null,message:'Select an IA form, include the EOI form, and/or attach at least one ID image.'});
@@ -323,6 +342,7 @@
     return s.replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').slice(0,80);
   }
   function pdfFileName(){
+    if(appointmentMode === 'zoom') return zoomPdfFileName();
     try {
       const dateVal = $('date') ? $('date').value : '';
       const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
@@ -347,6 +367,12 @@
     return c1 || 'Client';
   }
   function zipFileName(){
+    if(appointmentMode === 'zoom'){
+      const clientNames = clientNamesForFilename();
+      const dateVal = $('date') ? $('date').value : '';
+      const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+      return clientNames + ' - Zoom Appointment Documents - ' + date + '.zip';
+    }
     const clientNames = clientNamesForFilename();
     const dateVal = $('date') ? $('date').value : '';
     const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
@@ -367,6 +393,43 @@
     const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
     return `IA - ${clientNames} - ${staffName} - ${date}.pdf`;
   }
+  function zoomPdfFileName(){
+    try {
+      const dateVal = $('date') ? $('date').value : '';
+      const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
+      const team = safePart($('teamMember') ? $('teamMember').value : '', 'TeamMember');
+      const c1 = safePart($('clientName') ? $('clientName').value : '', '');
+      const c2 = safePart($('client2Name') ? $('client2Name').value : '', '');
+      let client = c1 || 'ClientName';
+      if (c2 && c1 && (c1.length + c2.length + 3) <= 80) client = c1 + ' & ' + c2;
+      return 'Sales Appointment - Zoom - ' + client + ' - ' + team + ' - ' + date + '.pdf';
+    } catch(e){ return 'Sales Appointment - Zoom - ' + new Date().toISOString().slice(0,10) + '.pdf'; }
+  }
+  function zoomFirstConsultFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'First Consultation - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+  }
+  function zoomClientReviewFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'Client Review Assessment - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+  }
+  function zoomEoiFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'EOI - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+  }
+  function zoomIaFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'IA - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+  }
+
   function individualPhotoFilename(photo, idx){
     const ID_FRONT_BACK = ['Client 1 - ID Front', 'Client 1 - ID Back', 'Client 2 - ID Front', 'Client 2 - ID Back'];
     if (idx < 4) {
@@ -1207,6 +1270,14 @@
       updateIndicator('indicator-zoomProperty', !!fieldText('clientReviewProperty'));
       updateIndicator('indicator-zoomEOI', isChecked('zoomIncludeStandardEOI') || isChecked('zoomIncludeLaVidaEOI'));
       updateIndicator('indicator-zoomIA', isChecked('zoomIncludeIA'));
+    /* Show PDF ready status */
+    const zoomStatusEl = $('appointmentStatus');
+    if(zoomStatusEl){
+      if(lastPdfBlob && appointmentMode === 'zoom'){
+        zoomStatusEl.textContent = '\u2705 Zoom booklet ready';
+        zoomStatusEl.style.color = 'var(--success)';
+      }
+    }
     }
 
     const hasC2 = hasClient2();
@@ -1326,7 +1397,7 @@
   // =========================================================================
   function makePhotoUI(){
     const wrap=$('photos'); wrap.innerHTML='';
-    
+
     // Group 1: Client 1
     const group1 = document.createElement('div');
     group1.className = 'photoGroup';
@@ -1359,13 +1430,13 @@
           </div>
         </div>
         <div class="photoPreview" id="photoPreview${idx}"><div><div style="font-size:32px;color:var(--gold);font-weight:900">＋</div><div>Tap to attach photo</div></div></div>`;
-      
+
       if(idx < 2){
         grid1.appendChild(box);
       } else {
         grid2.appendChild(box);
       }
-      
+
       $(`photoInput${idx}`).addEventListener('change', e=>handlePhoto(idx, e.target.files && e.target.files[0]));
       $(`rotate${idx}`).addEventListener('click', e=>{e.stopPropagation(); rotatePhoto(idx);});
       $(`remove${idx}`).addEventListener('click', e=>{e.stopPropagation(); removePhoto(idx);});
@@ -1520,7 +1591,7 @@
   function renderLiveSummary() {
     const liveSummary = $('liveSummary');
     const previewPaper = $('previewPaper');
-    
+
     if (lastPdfBlob) {
       if (liveSummary) liveSummary.style.display = 'none';
       if (previewPaper) previewPaper.style.display = 'block';
@@ -1670,11 +1741,11 @@
     if (!fieldText('date')) missing.push('Appointment Date');
     if (!fieldText('teamMember')) missing.push('Staff Member / Team Member');
     if (!c1Name) missing.push('Client 1 Name');
-    
+
     if (includeEOI) {
       if (!eoiSaleAddressValue()) missing.push('EOI Sale Address');
     }
-    
+
     if (includeIA) {
       const showIaOverrides = isChecked('showIaOverrides');
       const resolvedIaNames = showIaOverrides ? (fieldText('iaClientNames') || mergedClientNames()) : mergedClientNames();
@@ -2135,7 +2206,7 @@
     const lineH = opts.lineH || 24;
     const maxLines = opts.maxLines || 1;
     ctx.fillStyle='#172033'; ctx.font='700 10.5px Arial'; ctx.fillText(label,x,y);
-    
+
     // Draw underlines
     ctx.strokeStyle='#cfd3df'; ctx.lineWidth=1;
     ctx.beginPath();
@@ -2721,6 +2792,7 @@
   // SECTION N: PDF PIPELINE ORCHESTRATION
   // =========================================================================
   function outputPlan(){
+    if(appointmentMode === 'zoom') return zoomOutputPlan();
     const includeIA = isChecked('includeIA');
     const selectedIA = includeIA ? ($('iaForm') ? $('iaForm').value : CONFIG.defaults.iaForm) : '';
     const includeEOI = isChecked('includeEOI');
@@ -2732,6 +2804,59 @@
     return { selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages,
       groups: buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos)
     };
+  }
+  function zoomOutputPlan(){
+    var hasStdEOI = isChecked('zoomIncludeStandardEOI');
+    var hasLaVidaEOI = isChecked('zoomIncludeLaVidaEOI');
+    var hasIA = isChecked('zoomIncludeIA');
+    var pages = [];
+    var groups = [];
+    var offset = 0;
+
+    /* Cover page */
+    pages.push({id:'cover'});
+    groups.push({id:'cover', pageOffset:offset, pageCount:1, getFilename:zoomPdfFileName});
+    offset++;
+
+    /* First Consultation */
+    pages.push({id:'firstConsult'});
+    groups.push({id:'firstConsult', pageOffset:offset, pageCount:1, getFilename:zoomFirstConsultFilename});
+    offset++;
+
+    /* Client Review */
+    pages.push({id:'clientReview'});
+    groups.push({id:'clientReview', pageOffset:offset, pageCount:1, getFilename:zoomClientReviewFilename});
+    offset++;
+
+    /* Optional Standard EOI */
+    var eoiPageCount = 0;
+    if(hasStdEOI){
+      var builder = EOI_BUILDERS.standard;
+      var eoiPages = builder.getPages();
+      pages.push({id:'eoi', template:'standard', builder:builder, eoiSubOffset:0});
+      groups.push({id:'eoi', pageOffset:offset, pageCount:eoiPages, getFilename:zoomEoiFilename});
+      offset += eoiPages;
+      eoiPageCount += eoiPages;
+    }
+
+    /* Optional La Vida EOI */
+    if(hasLaVidaEOI){
+      var builder2 = EOI_BUILDERS.laVidaHomes;
+      var eoiPages2 = builder2.getPages();
+      pages.push({id:'eoi', template:'laVidaHomes', builder:builder2, eoiSubOffset:eoiPageCount});
+      groups.push({id:'eoi-laVida', pageOffset:offset, pageCount:eoiPages2, getFilename:zoomEoiFilename});
+      offset += eoiPages2;
+    }
+
+    /* Optional IA */
+    if(hasIA){
+      var iaForm = 'perth';
+      pages.push({id:'ia', form:iaForm});
+      groups.push({id:'ia', pageOffset:offset, pageCount:1, getFilename:zoomIaFilename});
+      offset++;
+    }
+
+    return { totalPages: offset, pages: pages, groups: groups };
   }
   function buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos){
     const groups = [];
@@ -2758,6 +2883,28 @@
   async function drawOutputPage(index, totalPages, scale){
     // Ensure the small page logo is loaded before any page draws it.
     await ensurePageLogo();
+
+    /* Zoom mode output page dispatch */
+    if(appointmentMode === 'zoom'){
+      var zoomPlan = zoomOutputPlan();
+      if(index >= zoomPlan.pages.length) return null;
+      var pageDef = zoomPlan.pages[index];
+      if(pageDef.id === 'cover') return drawZoomCover(index+1, totalPages, scale);
+      if(pageDef.id === 'firstConsult') return drawZoomFirstConsult(index+1, totalPages, scale);
+      if(pageDef.id === 'clientReview') return drawZoomClientReview(index+1, totalPages, scale);
+      if(pageDef.id === 'eoi'){
+        await ensurePageLogo();
+        var bl = pageDef.builder || EOI_BUILDERS.standard;
+        if(bl.ensureImages) await bl.ensureImages();
+        return bl.drawPage(pageDef.eoiSubOffset || 0, index+1, totalPages, scale);
+      }
+      if(pageDef.id === 'ia'){
+        await ensurePageLogo();
+        await ensureIAImage(pageDef.form || 'perth');
+        return drawIAPage(pageDef.form || 'perth', index+1, totalPages, scale);
+      }
+      return null;
+    }
     const plan = outputPlan();
     let offset = 0;
     if(plan.includeEOI){
@@ -2788,6 +2935,110 @@
     prev.disabled = totalPages < 2;
     next.disabled = totalPages < 2;
   }
+  function drawZoomCover(pageNumber, totalPages, scale){
+    ensurePageLogo();
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    const c1 = fieldText('clientName') || 'Client';
+    const c2 = fieldText('client2Name');
+    const clients = c2 ? c1 + ' & ' + c2 : c1;
+    const staff = fieldText('teamMember') || 'Staff';
+    const date = formatDisplayDate(fieldText('date')) || 'Date';
+    ctx.fillStyle='#00086d'; ctx.font='700 28px Arial'; ctx.textAlign='center'; ctx.fillText('Sales Appointment',W/2,200);
+    ctx.fillStyle='#d1ab6f'; ctx.font='700 18px Arial'; ctx.fillText('Zoom / Online Appointment',W/2,240);
+    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(197,260); ctx.lineTo(397,260); ctx.stroke();
+    ctx.fillStyle='#172033'; ctx.font='14px Arial'; ctx.fillText('Client: ' + clients,W/2,310);
+    ctx.fillText('Staff: ' + staff,W/2,340);
+    ctx.fillText('Date: ' + date,W/2,370);
+    drawGeneratedFooter(ctx, pageNumber, totalPages, '', 42, 814);
+    return c;
+  }
+  function drawZoomFirstConsult(pageNumber, totalPages, scale){
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    drawSmallPageLogo(ctx);
+    ctx.fillStyle='#00086d'; ctx.font='700 20px Arial'; ctx.fillText('2. First Consultation',42,50);
+    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(42,68); ctx.lineTo(553,68); ctx.stroke();
+
+    /* Appointment Details */
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Appointment Details',42,95);
+    drawLineValue(ctx,'Date',formatDisplayDate(fieldText('date')),42,112,511,{labelW:75});
+    drawLineValue(ctx,'Staff',fieldText('teamMember'),42,136,511,{labelW:75});
+
+    /* Client Details */
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Client Details',42,175);
+    drawLineValue(ctx,'Client 1',fieldText('clientName'),42,192,511,{labelW:75});
+    drawLineValue(ctx,'Phone',fieldText('clientPhone'),42,216,511,{labelW:75});
+    drawLineValue(ctx,'Email',fieldText('clientEmail'),42,240,511,{labelW:75});
+    drawLineValue(ctx,'Address',fieldText('clientAddress'),42,264,511,{labelW:75});
+    if(hasClient2()){
+      drawLineValue(ctx,'Client 2',fieldText('client2Name'),42,288,511,{labelW:75});
+      drawLineValue(ctx,'Phone 2',fieldText('client2Phone'),42,312,511,{labelW:75});
+      drawLineValue(ctx,'Email 2',fieldText('client2Email'),42,336,511,{labelW:75});
+    }
+
+    /* Goal Type */
+    var yOff = hasClient2() ? 370 : 340;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Client Goals',42,yOff);
+    var goalLabels = {investment:'Investment',home:'Home',smsf:'SMSF',wealth:'Wealth Creation',retirement:'Retirement',other:'Other'};
+    var goalVal = '';
+    document.querySelectorAll('input[name="firstConsultGoalType"]').forEach(function(r){ if(r.checked) goalVal=goalLabels[r.value]||r.value; });
+    drawLineValue(ctx,'Goal Type',goalVal,42,yOff+17,511,{labelW:75});
+
+    /* Financial Snapshot */
+    yOff = yOff + 50;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Financial Snapshot',42,yOff);
+    yOff += 20;
+    drawLineValue(ctx,'Annual Income',fieldText('firstConsultAnnualIncome'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Existing Mortgage',fieldText('firstConsultExistingMortgage'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Savings',fieldText('firstConsultSavings'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Super Balance',fieldText('firstConsultSuper'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Investment Properties',fieldText('firstConsultInvestmentProperties'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Borrowing Capacity',fieldText('firstConsultBorrowingCapacity'),42,yOff,511,{labelW:110}); yOff+=30;
+
+    /* Notes */
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('General Notes',42,yOff);
+    var notes = fieldText('firstConsultNotes') || '';
+    yOff += 22;
+    ctx.fillStyle='#172033'; ctx.font='11px Arial';
+    wrapText(ctx,notes || 'No notes recorded.',42,yOff,511,18,20);
+
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 814);
+    return c;
+  }
+  function drawZoomClientReview(pageNumber, totalPages, scale){
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    drawSmallPageLogo(ctx);
+    ctx.fillStyle='#00086d'; ctx.font='700 20px Arial'; ctx.fillText('3. Client Review / Assessment',42,50);
+    ctx.strokeStyle='#d1ab6f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(42,68); ctx.lineTo(553,68); ctx.stroke();
+
+    var yOff = 95;
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Recommended Strategy',42,yOff); yOff+=22;
+    var strat = fieldText('clientReviewStrategy') || '';
+    ctx.fillStyle='#172033'; ctx.font='11px Arial';
+    wrapText(ctx,strat || 'No strategy recorded.',42,yOff,511,18,15);
+    yOff += Math.max(strat ? Math.ceil(ctx.measureText(strat).width / 511) * 18 + 20 : 40, 40);
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Recommendations',42,yOff); yOff+=22;
+    drawLineValue(ctx,'Builder',fieldText('clientReviewBuilder'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Developer',fieldText('clientReviewDeveloper'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Finance Broker',fieldText('clientReviewBroker'),42,yOff,511,{labelW:110}); yOff+=24;
+    drawLineValue(ctx,'Conveyancer',fieldText('clientReviewConveyancer'),42,yOff,511,{labelW:110}); yOff+=30;
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Property & Timeline',42,yOff); yOff+=22;
+    drawLineValue(ctx,'Recommended Property',fieldText('clientReviewProperty'),42,yOff,511,{labelW:110,maxLines:2}); yOff+=30;
+    drawLineValue(ctx,'Estimated Timeline',fieldText('clientReviewTimeline'),42,yOff,511,{labelW:110}); yOff+=30;
+
+    ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Next Actions',42,yOff); yOff+=22;
+    var actions = fieldText('clientReviewNextActions') || '';
+    ctx.fillStyle='#172033'; ctx.font='11px Arial';
+    wrapText(ctx,actions || 'No next actions recorded.',42,yOff,511,18,15);
+
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'Client Review / Assessment', 42, 814);
+    return c;
+  }
+
   async function refreshPreview(delta=0){
     const paper=$('previewPaper');
     paper.innerHTML='';
@@ -2799,7 +3050,7 @@
       if(!plan.totalPages){
         previewPageIndex = 0;
         updatePreviewControls(0);
-        paper.textContent = 'Final PDF will include selected client forms and attached ID/photo pages only. The staff checklist is not included.';
+        paper.textContent = appointmentMode === 'zoom' ? 'Zoom appointment documents will appear here once generated.' : 'Final PDF will include selected client forms and attached ID/photo pages only. The staff checklist is not included.';
       } else {
         previewPageIndex = (previewPageIndex + delta + plan.totalPages) % plan.totalPages;
         updatePreviewControls(plan.totalPages);
@@ -2859,7 +3110,8 @@
     const quality = $('compressPhotos').checked ? 0.78 : 0.92;
     const blob=makePDF(canvases, quality);
     lastPdfBlob=blob; lastPdfName=pdfFileName();
-    status(`Generated ${lastPdfName} (${(blob.size/1024/1024).toFixed(2)} MB). Clean PDF includes selected forms/images only.`);
+        const zoomSuffix = appointmentMode === 'zoom' ? ' Zoom booklet ready.' : ' Clean PDF includes selected forms/images only.';
+    status('Generated ' + lastPdfName + ' (' + (blob.size/1024/1024).toFixed(2) + ' MB).' + zoomSuffix);
     updateActionButtons();
     return {blob, name:lastPdfName};
   }
@@ -3397,7 +3649,12 @@
     setPhotoImg: (idx, val) => { photos[idx].img = val; },
     setHasSignature: (val) => { hasSignature = val; },
     setHasSignature2: (val) => { hasSignature2 = val; },
-    clearGenerated: clearGenerated
+    clearGenerated: clearGenerated,
+    getZoomOutputPlan: () => appointmentMode === 'zoom' ? zoomOutputPlan() : null,
+    buildIndividualPdfs: () => buildIndividualPdfs(),
+    buildZip: (pdfs, name) => buildZip(pdfs, name),
+    getZoomPdfName: () => zoomPdfFileName(),
+    getOutputPlan: () => outputPlan()
   };
   refreshPreview();
 })();
