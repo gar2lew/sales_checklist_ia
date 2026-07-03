@@ -1,11 +1,80 @@
 # Version History
 
-Summary of major releases based on git commit history. Version numbers refer to `APP_VERSION` in `index.html` and `CACHE_VERSION` in `service-worker.js`.
+Summary of major releases based on git commit history. Version numbers refer to `APP_VERSION` in `js/app.js` and `CACHE_VERSION` in `service-worker.js`.
 
 ---
 
-## v1.5.1 (current)
-**Commit:** `6e7815c` — `refactor: improve maintainability and prepare for future templates`
+## v2.2.1-alpha.1 (current)
+**Commit:** `c483449` — `fix: zoom document engine QA hardening`
+
+- Fixed `ensurePageLogo()` called without `await` in `drawZoomCover` (unhandled promise rejection)
+- Fixed La Vida EOI filename clash with Standard EOI in ZIP — added `zoomLaVidaEoiFilename()`
+- Fixed multi-page EOI dispatch for La Vida (2-page EOI pushed one page entry per sub-page with `eoiSubIndex`)
+- 57 stress tests: single/dual client, all output combinations, long names, ZIP content audit, draft save/load, legacy compat
+
+## v2.2.0-alpha.1
+**Commit:** `bb8778e` — `feat: add zoom document generation engine`
+
+- Added `zoomOutputPlan()` — zoom-specific page plan with cover, first consultation, client review, optional EOI/IA pages
+- Added `drawZoomCover()` — clean cover page with title, client, staff, date
+- Added `drawZoomFirstConsult()` — professional A4 document for first consultation data
+- Added `drawZoomClientReview()` — professional A4 document for client review/assessment
+- Zoom dispatch in `drawOutputPage()` routes to zoom page renderers when `appointmentMode === 'zoom'`
+- Added zoom filename functions (`zoomPdfFileName`, `zoomFirstConsultFilename`, `zoomClientReviewFilename`, `zoomEoiFilename`, `zoomIaFilename`, `zoomLaVidaEoiFilename`)
+- Extended `buildIndividualPdfs()` and `buildZip()` for zoom document packaging
+- Updated `validateBeforePdf()` with zoom-specific validation (date, staff, client name required)
+- Updated preview system for zoom (zoom-specific empty state message)
+- Updated summary card for zoom booklet ready status
+- Exposed zoom API via `window._testState` for automated testing
+
+## v2.1.0-alpha.1
+**Commit:** `82242b7` — `feat: add zoom appointment workflow ui`
+
+- Added 19 new zoom field IDs to the fields data model
+- Added `zoomDefaults` internal placeholder object (builders, developers, timeline)
+- Added zoom HTML sections 2–5: First Consultation, Client Review / Assessment, Appointment Outputs, Attachments
+- Added zoom CSS: attachment placeholder styles
+- Added `renderZoomFields()` — populates builder/developer/broker/conveyancer/timeline dropdowns
+- Added `preserveZoomDraftValue()` — ensures zoom dropdown values survive draft load
+- Added zoom summary section to the summary card with indicators
+- Section 1's EOI/IA toggle row marked `in-person-only` (hidden in zoom mode)
+- Updated `updateSummaryCard()` for zoom mode (show/hide zoom vs in-person columns)
+- Updated `renderLiveSummary()` for zoom mode (skip in-person-specific checks)
+
+## v2.0.0-alpha.1
+**Commit:** `57347a8` — `feat: wire appointment mode landing screen`
+
+- Added landing screen overlay with staff member input and appointment type toggle
+- Added `appointmentMode` state variable (`'inPerson'` | `'zoom'`)
+- Added `renderLandingStaffControl()` — dynamic staff input (text or select based on admin settings)
+- Added `enterAppointment()`, `backToStart()`, `returnToLanding()` — landing flow handlers
+- Added `applyAppointmentMode()` — toggles `.show-in-person` / `.show-zoom` CSS classes
+- Extended `getDraft()` / `setDraft()` to persist `appointmentMode`
+- Updated `resetForm()` to return to landing screen
+- Mode toggle pill buttons in landing screen
+- Back to Start button in app header
+- Added `icons/landing.png` to service worker cache
+- Added `.zoom-only` base CSS rule for mode visibility
+
+---
+
+## v1.6.2
+**Commit:** `458c070` — `docs: add comprehensive user guide covering all app features`
+
+- Added comprehensive documentation for all app features and workflows
+
+## v1.6.1
+**Commit:** `931fd45` — `fix: align IA solicitor amount and dated fields`
+
+- Fixed IA alignment for solicitor, amount, and dated fields
+
+## v1.6.0
+**Commit:** `b8da689` — `feat: add separated documents zip to share workflow`
+
+- Added separated documents ZIP to Download Package and Share workflows
+
+## v1.5.1
+**Commit:** `f018a96` — `refactor: modularise standalone appointment capture app`
 
 - Extracted duplicated code into shared helpers (`isChecked`, `mergedClientNames`, `hasC1Photo`, `hasC2Photo`, `refreshAllUI`, etc.)
 - Added `CONFIG` object centralising hardcoded values
@@ -79,14 +148,22 @@ Summary of major releases based on git commit history. Version numbers refer to 
 
 ---
 
+## Future template mapping plan
+
+The Zoom document engine currently generates clean programmatic PDFs. These are placeholders for future branded templates. When branded templates are supplied:
+
+1. **Cover page** — Replace `drawZoomCover()` with a branded cover template image + overlay text
+2. **First Consultation** — Replace `drawZoomFirstConsult()` with a branded template + field overlays
+3. **Client Review** — Replace `drawZoomClientReview()` with a branded template + field overlays
+4. Builder/developer/broker/conveyancer dropdowns — should migrate from `zoomDefaults` in JS to Admin Settings
+
 ## Version bump checklist
 
 When bumping the version:
 
-1. Update `APP_VERSION` in `index.html` (line ~1091)
+1. Update `APP_VERSION` in `js/app.js` (line 9)
 2. Update `CACHE_VERSION` in `service-worker.js` (line 5)
-3. Update visible version labels: `<span data-app-version-label>` elements (lines ~497, ~886, ~1050)
-4. Commit with a descriptive message
-5. Push to `main` — Vercel auto-deploys
+3. Commit with a descriptive message
+4. Push to `main` — Vercel auto-deploys
 
-The `data-app-version-label` spans are automatically updated by `updateVersionLabels()` at runtime, but the default text in the HTML should also be updated for initial page load.
+The `data-app-version-label` spans are automatically updated by `updateVersionLabels()` at runtime.

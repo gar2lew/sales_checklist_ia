@@ -12,7 +12,7 @@ User clicks "Download PDF" → downloadPdf() → buildPdf() (if no blob exists)
 User clicks "Share PDF"   → sharePdf()    → buildPdf() (if no blob exists)
 ```
 
-**Full pipeline:**
+**Full pipeline (in-person mode):**
 
 ```
 generatePdfOnly() / downloadPdf() / sharePdf()
@@ -24,7 +24,28 @@ generatePdfOnly() / downloadPdf() / sharePdf()
        └─ updateActionButtons() — enable Download/Share buttons
 ```
 
+**Full pipeline (zoom mode):**
+
+```
+generatePdfOnly()
+  └─ buildPdf()
+       ├─ outputPlan()
+       │    └─ zoomOutputPlan()     — zoom-specific page plan
+       ├─ validateBeforePdf()       — zoom validation (date, staff, client name)
+       ├─ drawOutputPage() × N
+       │    └─ zoom dispatch:
+       │         ├─ drawZoomCover()
+       │         ├─ drawZoomFirstConsult()
+       │         ├─ drawZoomClientReview()
+       │         ├─ EOI builder (standard/laVida)
+       │         └─ drawIAPage()
+       ├─ makePDF(canvases)         — assemble into PDF Blob
+       └─ updateActionButtons()
+```
+
 ## Output plan flow (`outputPlan()`)
+
+### In-person mode
 
 `outputPlan()` determines the sequence and count of pages:
 
@@ -34,7 +55,31 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 4. Filter `photos` array for those with `.img` loaded → 1 page per photo
 5. Return `{ selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages }`
 
+### Zoom mode
+
+When `appointmentMode === 'zoom'`, `outputPlan()` delegates to `zoomOutputPlan()`:
+
+1. Cover page (always) — 1 page
+2. First Consultation (always) — 1 page
+3. Client Review / Assessment (always) — 1 page
+4. Optional Standard EOI (if `zoomIncludeStandardEOI` checked) — 1 page
+5. Optional La Vida EOI (if `zoomIncludeLaVidaEOI` checked) — 2 pages
+6. Optional IA (if `zoomIncludeIA` checked) — 1 page
+
+Return value: `{ totalPages, pages, groups }` where `pages` is an array of page definitions and `groups` maps to individual documents for ZIP packaging.
+
+| Output | Pages | Condition |
+|--------|-------|-----------|
+| Cover | 1 | Always |
+| First Consultation | 1 | Always |
+| Client Review | 1 | Always |
+| Standard EOI | 1 | `zoomIncludeStandardEOI` |
+| La Vida EOI | 2 | `zoomIncludeLaVidaEOI` |
+| IA | 1 | `zoomIncludeIA` |
+
 ## Page types
+
+### In-person mode
 
 | Page type | Renderer | Uses `drawPageFrame`? | Builder |
 |-----------|----------|----------------------|---------|
@@ -42,6 +87,49 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 | La Vida EOI (2 pages) | `drawLaVidaEoiPage()` | No — overlays template image | `EOI_BUILDERS.laVidaHomes` |
 | IA form | `drawIAPage()` | No — overlays template image | N/A |
 | ID/photo page | `drawPhotoPage()` | Yes | N/A |
+
+### Zoom mode
+
+| Page type | Renderer | Notes |
+|-----------|----------|-------|
+| Cover | `drawZoomCover()` | Title, client names, staff, date |
+| First Consultation | `drawZoomFirstConsult()` | Appointment details, client details, goals, financial snapshot, notes |
+| Client Review | `drawZoomClientReview()` | Strategy, builder, developer, broker, conveyancer, property, timeline, next actions |
+| Standard EOI | `builder.drawPage()` | Dispatched through EOI_BUILDERS.standard |
+| La Vida EOI (2 pages) | `builder.drawPage()` | Dispatched through EOI_BUILDERS.laVidaHomes with `eoiSubIndex` |
+| IA | `drawIAPage()` | Same as in-person IA |
+
+## Zoom drawing functions
+
+### `drawZoomCover(pageNumber, totalPages, scale)`
+
+Simple cover page with:
+- "Sales Appointment" title (28px, navy)
+- "Zoom / Online Appointment" subtitle (18px, gold)
+- Gold separator line
+- Client names, staff member, date
+- Footer with page number
+
+Logo is not drawn on the cover page.
+
+### `drawZoomFirstConsult(pageNumber, totalPages, scale)`
+
+Professional report page with:
+- **Appointment Details:** Date, Staff (line-value fields)
+- **Client Details:** Client 1/2 names, phone, email, address (line-value fields)
+- **Client Goals:** Goal type from radio selection
+- **Financial Snapshot:** Annual income, existing mortgage, savings, super, investment properties, borrowing capacity
+- **General Notes:** Multi-line wrapped text
+- Footer: "First Consultation"
+
+### `drawZoomClientReview(pageNumber, totalPages, scale)`
+
+Professional report page with:
+- **Recommended Strategy:** Multi-line wrapped text
+- **Recommendations:** Builder, Developer, Finance Broker, Conveyancer (line-value fields)
+- **Property & Timeline:** Recommended property (multi-line), estimated timeline
+- **Next Actions:** Multi-line wrapped text
+- Footer: "Client Review / Assessment"
 
 ## Standard EOI builder
 
@@ -77,8 +165,36 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 
 ## Preview vs final PDF
 
-- **Preview:** `refreshPreview()` calls `drawOutputPage(previewPageIndex, totalPages, 1.25)` at 1.25× scale for screen display. Renders a single page into the preview panel.
+- **Preview:** `refreshPreview()` calls `drawOutputPage(previewPageIndex, totalPages, 1.25)` at 1.25× scale for screen display. Renders a single page into the preview panel. In zoom mode, the preview message says "Zoom appointment documents will appear here once generated."
 - **Final PDF:** `buildPdf()` calls `drawOutputPage(i, totalPages, scale)` for all pages at 2× or 3× scale (configurable via `compressPhotos` checkbox), then assembles via `makePDF()`.
+
+## Zoom compiled booklet filename
+
+```
+Sales Appointment - Zoom - {clientNames} - {staffMember} - {date}.pdf
+```
+
+## Individual zoom document filenames
+
+| Document | Pattern |
+|----------|---------|
+| First Consultation | `First Consultation - {clients} - {staff} - {date}.pdf` |
+| Client Review | `Client Review Assessment - {clients} - {staff} - {date}.pdf` |
+| Standard EOI | `EOI - {clients} - {staff} - {date}.pdf` |
+| La Vida EOI | `La Vida EOI - {clients} - {staff} - {date}.pdf` |
+| IA | `IA - {clients} - {staff} - {date}.pdf` |
+
+## ZIP package (Download Package)
+
+In zoom mode, the ZIP contains individual PDFs for each selected document:
+
+1. Cover (compiled booklet)
+2. First Consultation
+3. Client Review
+4. Optional EOI
+5. Optional IA
+
+ZIP filename: `{clientNames} - Zoom Appointment Documents - {date}.zip`
 
 ## Blob / download / share path
 
@@ -86,6 +202,8 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 2. `buildPdf()` stores the blob in `lastPdfBlob` and filename in `lastPdfName`.
 3. `downloadPdf()` calls `downloadBlob(blob, name)` which creates a temporary `<a>` element and clicks it.
 4. `sharePdf()` creates a `File` from the blob and attempts `navigator.share()` with files. Falls back to download + `mailto:` link.
+5. `buildIndividualPdfs()` creates one PDF per group (document type) for the ZIP package.
+6. `downloadPackage()` downloads the compiled PDF plus a ZIP of individual documents.
 
 ## PDF footer / versioning
 
@@ -96,11 +214,49 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 ## Logo placement rules
 
 - **Function:** `drawSmallPageLogo(ctx)`
-- **Appears on:** All pages drawn via `drawPageFrame()` (Standard EOI, photo pages). Also called from `drawLaVidaEoiPage()`.
-- **Does NOT appear on:** IA template page (`drawIAPage()`).
+- **Appears on:** All pages drawn via `drawPageFrame()` (Standard EOI, photo pages). Also called from `drawLaVidaEoiPage()`, `drawZoomFirstConsult()`, `drawZoomClientReview()`.
+- **Does NOT appear on:** IA template page (`drawIAPage()`), zoom cover page (`drawZoomCover()`).
 - **Position:** Top-right corner, max 26px height, right-aligned with 5px margin.
 - **Asset:** `icons/asg_logo.png`, loaded via `ensurePageLogo()` → `pageLogoImage`.
 - **Service worker:** Logo path is in `APP_SHELL` for offline caching.
+
+## Validation
+
+### In-person mode
+
+`validateBeforePdf()` validates:
+- Appointment date (required, DD/MM/YYYY format)
+- Team member (required)
+- Client name (required)
+- At least one output: EOI form, IA form, or ID photo
+- EOI date and next appointment date (if EOI included)
+- IA client names, address, property (if IA included)
+
+### Zoom mode
+
+When `appointmentMode === 'zoom'`, a minimal validation is used:
+- Appointment date (required)
+- Team member (required)
+- Client name (required)
+- At least one output option enabled
+
+## Test state exposure
+
+Internal functions are exposed via `window._testState` for automated testing:
+
+```javascript
+window._testState = {
+  getPhotos: () => photos,
+  setPhotoImg: ...,
+  setHasSignature: ...,
+  setHasSignature2: ...,
+  clearGenerated: clearGenerated,
+  getZoomOutputPlan: () => zoomOutputPlan(),
+  buildIndividualPdfs: () => buildIndividualPdfs(),
+  buildZip: (pdfs, name) => buildZip(pdfs, name),
+  getOutputPlan: () => outputPlan()
+};
+```
 
 ## Known PDF alignment limitations
 
@@ -110,3 +266,4 @@ generatePdfOnly() / downloadPdf() / sharePdf()
 - **Line wrapping** in overlay fields has fixed max lines. Very long values (e.g. long property addresses) may be truncated with "...".
 - **Signature quality** depends on canvas resolution. The 900×150px canvas is adequate for most signatures but very fine detail may be lost.
 - **Colour accuracy** depends on `toDataURL('image/jpeg', quality)`. At compression quality 0.78, some colour fidelity loss occurs.
+- **Zoom document engine** generates clean programmatic PDFs. These are placeholders for future branded templates.
