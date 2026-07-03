@@ -15,6 +15,31 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 </head>
 <body>
+  <!-- LANDING SCREEN ========================================================= -->
+  <div id="landingScreen" class="landing-screen">
+    <div class="landing-bg">
+      <img src="icons/landing.png" alt="Sales Appointment Capture" class="landing-image" draggable="false">
+      <div class="landing-panel">
+        <div class="landing-panel-inner">
+          <div class="landing-field">
+            <label for="landingStaff">Staff Member</label>
+            <div id="landingStaffControl">
+              <input id="landingStaff" type="text" placeholder="Select or enter your name" autocomplete="off">
+            </div>
+          </div>
+          <div class="landing-field">
+            <label>Appointment Type</label>
+            <div class="mode-toggle">
+              <button type="button" class="mode-btn active" data-mode="inPerson">In-person Appointment</button>
+              <button type="button" class="mode-btn" data-mode="zoom">Zoom / Online Appointment</button>
+            </div>
+          </div>
+          <button id="landingContinue" class="btn primary landing-continue" disabled>Continue →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
     <header class="appHeader stickyHeader">
       <div class="headerInner">
@@ -24,6 +49,7 @@
             <span class="brandTitle">Sales Appointment Capture</span>
             <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
+          <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
           <div class="statusBadge">Status: <span id="status">Ready.</span></div>
         </div>
         
@@ -125,7 +151,17 @@
           </div>
         </section>
 
-        <section class="card" id="eoiDetailsCard">
+        <!-- Zoom / Online Appointment placeholder -->
+        <section class="card zoom-only" id="zoomPlaceholderCard">
+          <h2>Zoom / Online Appointment</h2>
+          <p class="hint">Zoom / Online appointment workflow coming next.</p>
+          <div class="toggleRow" style="margin-top:16px">
+            <label><input type="checkbox" id="zoomIncludeEOI"> Include EOI form</label>
+            <label><input type="checkbox" id="zoomIncludeIA"> Include IA form</label>
+          </div>
+        </section>
+
+        <section class="card in-person-only" id="eoiDetailsCard">
           <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 details are filled from the appointment details. Use this section as the source for sale/property details.</p>
 
@@ -296,7 +332,7 @@
           </div>
         </section>
 
-        <section class="card" id="iaDetailsCard">
+        <section class="card in-person-only" id="iaDetailsCard">
           <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div id="iaFormContent">
@@ -344,7 +380,7 @@
           </div>
         </section>
 
-        <section class="card" id="clientIdSection">
+        <section class="card in-person-only" id="clientIdSection">
           <h2>4. Client ID Documents</h2>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
@@ -376,7 +412,7 @@
           </div>
         </section>
 
-        <section class="card" id="signaturesSection">
+        <section class="card in-person-only" id="signaturesSection">
           <h2>5. Signatures & Notes</h2>
           <p class="hint">Capture final signatures and add any additional notes for this appointment.</p>
           
@@ -407,7 +443,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card in-person-only">
           <h2>6. Pre-departure Checklist / Final Reminder</h2>
           <p class="hint">Verify that all required steps have been completed before generating the final PDF.</p>
           <div class="checklist">

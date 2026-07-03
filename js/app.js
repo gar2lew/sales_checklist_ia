@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.2';
+  const APP_VERSION = '2.0.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -39,6 +39,7 @@
   let lastZipBlob = null;         // Blob — cached ZIP
   let lastZipName = '';           // string — cached ZIP filename
   let previewPageIndex = 0;
+  let appointmentMode = 'inPerson'; // 'inPerson' | 'zoom'
   const adminSettingsKey = 'salesAppointmentAdminSettings';
   const defaultAdminSettings = {
     staff: { mode: 'text', options: [''] },
@@ -192,6 +193,60 @@
       el.removeAttribute('aria-invalid');
     });
     document.querySelectorAll('.fieldError').forEach(el=>el.remove());
+  }
+
+  // =========================================================================
+  // LANDING SCREEN HELPERS
+  // =========================================================================
+  function renderLandingStaffControl(){
+    const config = adminSettings.staff;
+    const control = $('landingStaffControl');
+    if(!control) return;
+    const currentLandingVal = ($('landingStaff') && $('landingStaff').value) || '';
+    if(config.mode === 'select'){
+      const options = config.options.filter(Boolean).map(function(v){ return '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; }).join('');
+      control.innerHTML = '<select id="landingStaff"><option value="">Select staff member</option>'+options+'</select>';
+    } else {
+      control.innerHTML = '<input id="landingStaff" type="text" placeholder="Enter your name" autocomplete="off">';
+    }
+    if(currentLandingVal && $('landingStaff')) $('landingStaff').value = currentLandingVal;
+    $('landingStaff').addEventListener('input', updateLandingContinue);
+    $('landingStaff').addEventListener('change', updateLandingContinue);
+    updateLandingContinue();
+  }
+  function updateLandingContinue(){
+    var staff = ($('landingStaff').value || '').trim();
+    $('landingContinue').disabled = !staff;
+  }
+  function applyAppointmentMode(){
+    var app = document.querySelector('.app');
+    app.classList.remove('show-in-person', 'show-zoom');
+    app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
+  }
+  function enterAppointment(){
+    var staff = ($('landingStaff').value || '').trim();
+    if(!staff) return;
+    var activeBtn = document.querySelector('.mode-btn.active');
+    appointmentMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    setControlValue('teamMember', staff);
+    preserveDraftDropdownValue('staff', staff);
+    $('landingScreen').classList.add('hidden');
+    applyAppointmentMode();
+    $('backToStart').style.display = '';
+    status('Staff: '+staff+' | Mode: '+appointmentMode);
+  }
+  function backToStart(){
+    $('landingScreen').classList.remove('hidden');
+    $('backToStart').style.display = 'none';
+  }
+  function returnToLanding(){
+    appointmentMode = 'inPerson';
+    var ls = $('landingStaff');
+    if(ls) ls.value = '';
+    $('landingContinue').disabled = true;
+    $('landingScreen').classList.remove('hidden');
+    $('backToStart').style.display = 'none';
+    applyAppointmentMode();
   }
   function setFieldError(id, message){
     const el=$(id);
@@ -758,6 +813,7 @@
         saveAdminSettings();
         renderAdminSettings();
         renderConfigurableFields();
+        renderLandingStaffControl();
         clearGenerated();
       });
       list.appendChild(row);
@@ -917,6 +973,7 @@
     renderContactOptionList('laVidaFinanceBrokers','financeBrokerOptionsList');
     renderContactOptionList('laVidaConveyancers','conveyancerOptionsList');
     renderDefaultControls();
+    renderLandingStaffControl();
   }
   function renderConfigurableFields(){
     renderConfigurableControl('staff','teamMemberControl','teamMember','Team Member','Your name',true);
@@ -994,7 +1051,7 @@
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); }));
   $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode=$('staffMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
   $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
-  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push(''); saveAdminSettings(); renderAdminSettings(); });
+  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push(''); saveAdminSettings(); renderAdminSettings(); renderLandingStaffControl(); });
   $('addSolicitorOption').addEventListener('click',()=>{ adminSettings.solicitor.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addBranchOption').addEventListener('click',()=>{ adminSettings.branch.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addEoiTemplateOption').addEventListener('click',()=>{ adminSettings.eoiTemplates.options.push({value:'',label:''}); saveAdminSettings(); renderAdminSettings(); });
@@ -2969,6 +3026,7 @@
     data.photos=photos.map(p=>({label:p.label,dataURL:p.dataURL,rotation:p.rotation,name:p.name,client:p.client,description:p.description,isAdditional:p.isAdditional}));
     data.eoiNextAppointment=formatNextAppointment();
     data.eoiIdAttached='';
+    data.appointmentMode = appointmentMode;
     return data;
   }
   async function setDraft(data){
@@ -3094,6 +3152,12 @@
       }
     }
     syncLaVidaContactsFromChoices(false);
+    /* Restore appointment mode from draft */
+    appointmentMode = data.appointmentMode || 'inPerson';
+    $('landingScreen').classList.add('hidden');
+    $('backToStart').style.display = '';
+    if($('landingStaff')) $('landingStaff').value = fieldText('teamMember') || '';
+    applyAppointmentMode();
     refreshAllUI();
   }
   function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
@@ -3143,6 +3207,7 @@
     photos.length = 4;
     renderAdditionalDocsUI();
     photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); toast('Form reset.');
+    returnToLanding();
   }
 
   // =========================================================================
@@ -3169,6 +3234,15 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
+  /* Landing screen event wiring */
+  $('landingContinue').addEventListener('click', enterAppointment);
+  if($('backToStart')) $('backToStart').addEventListener('click', backToStart);
+  document.querySelectorAll('.mode-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
   window._testState = {
     getPhotos: () => photos,
     setPhotoImg: (idx, val) => { photos[idx].img = val; },

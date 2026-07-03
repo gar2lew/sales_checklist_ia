@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v1.6.2';
+const CACHE_VERSION = 'v2.0.0-alpha.1';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -15,7 +15,8 @@ const APP_SHELL = [
   '/lavida-template-page-2.jpg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  '/icons/asg_logo.png'
+  '/icons/asg_logo.png',
+  '/icons/landing.png'
 ];
 
 self.addEventListener('install', event => {
