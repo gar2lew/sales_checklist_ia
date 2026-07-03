@@ -114,6 +114,38 @@
               <span class="summary-card-item" data-target="signaturesSection"><span id="label-signatures">0 / 2 Captured</span></span>
             </div>
           </div>
+          <!-- Zoom summary (shown when appointmentMode === 'zoom') -->
+          <div class="summary-card-body zoom-only" id="zoomSummaryBody">
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">APPOINTMENT</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomApptType"></span>Zoom / Online</span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomStaff"></span><span id="zoomSumStaff">Staff</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">CLIENTS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomClient1"></span><span id="zoomSumClient1">Client 1</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomClient2"></span><span id="zoomSumClient2">Client 2</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">RECOMMENDATIONS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomBuilder"></span><span id="zoomSumBuilder">Builder</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomDeveloper"></span><span id="zoomSumDeveloper">Developer</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PROFESSIONALS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomBroker"></span><span id="zoomSumBroker">Broker</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomConveyancer"></span><span id="zoomSumConveyancer">Conveyancer</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PROPERTY</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomProperty"></span><span id="zoomSumProperty">Property</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">OUTPUTS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomEOI"></span><span id="zoomSumEOI">EOI</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomIA"></span><span id="zoomSumIA">IA</span></span>
+            </div>
+          </div>
         </section>
 
         <section class="card">
@@ -145,19 +177,125 @@
               <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com"></div>
             </div>
           </div>
-          <div class="toggleRow" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
+          <div class="toggleRow in-person-only" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeEOI"> Include EOI form</label>
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeIA"> Include IA form</label>
           </div>
         </section>
 
-        <!-- Zoom / Online Appointment placeholder -->
-        <section class="card zoom-only" id="zoomPlaceholderCard">
-          <h2>Zoom / Online Appointment</h2>
-          <p class="hint">Zoom / Online appointment workflow coming next.</p>
-          <div class="toggleRow" style="margin-top:16px">
-            <label><input type="checkbox" id="zoomIncludeEOI"> Include EOI form</label>
-            <label><input type="checkbox" id="zoomIncludeIA"> Include IA form</label>
+        <!-- ZOOM SECTION 2: First Consultation ================================== -->
+        <section class="card zoom-only" id="firstConsultSection">
+          <h2>2. First Consultation</h2>
+          <p class="hint">Capture the information normally completed during the initial discovery meeting.</p>
+
+          <div class="subsection">
+            <h3>Client Goals</h3>
+            <p class="hint">Why are they looking at property?</p>
+            <div class="optionGrid">
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="investment" id="fcGoalInvestment"> Investment</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="home" id="fcGoalHome"> Home</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="smsf" id="fcGoalSmsf"> SMSF</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="wealth" id="fcGoalWealth"> Wealth Creation</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="retirement" id="fcGoalRetirement"> Retirement</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Financial Snapshot</h3>
+            <div class="fields two">
+              <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
+              <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
+              <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div><label for="firstConsultInvestmentProperties">Existing Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
+              <div><label for="firstConsultBorrowingCapacity">Approximate Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>General Notes</h3>
+            <label for="firstConsultNotes">Notes</label>
+            <textarea id="firstConsultNotes" placeholder="Any notes from the first consultation..."></textarea>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 3: Client Review / Assessment ========================== -->
+        <section class="card zoom-only" id="clientReviewSection">
+          <h2>3. Client Review / Assessment</h2>
+
+          <div class="subsection">
+            <h3>Recommended Strategy</h3>
+            <label for="clientReviewStrategy">Strategy notes</label>
+            <textarea id="clientReviewStrategy" placeholder="Outline the recommended strategy..."></textarea>
+          </div>
+
+          <div class="subsection">
+            <h3>Recommendations</h3>
+            <div class="fields two">
+              <div id="clientReviewBuilderControl">
+                <label for="clientReviewBuilder">Recommended Builder</label>
+                <select id="clientReviewBuilder"><option value="">Select builder</option></select>
+              </div>
+              <div id="clientReviewDeveloperControl">
+                <label for="clientReviewDeveloper">Recommended Developer</label>
+                <select id="clientReviewDeveloper"><option value="">Select developer</option></select>
+              </div>
+            </div>
+            <div class="fields two" style="margin-top:12px">
+              <div id="clientReviewBrokerControl">
+                <label for="clientReviewBroker">Recommended Finance Broker</label>
+                <select id="clientReviewBroker"><option value="">Select broker</option></select>
+              </div>
+              <div id="clientReviewConveyancerControl">
+                <label for="clientReviewConveyancer">Recommended Conveyancer</label>
+                <select id="clientReviewConveyancer"><option value="">Select conveyancer</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Property & Timeline</h3>
+            <div class="fields two">
+              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Recommended property address or details"></div>
+              <div id="clientReviewTimelineControl">
+                <label for="clientReviewTimeline">Estimated Timeline</label>
+                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <h3>Next Actions</h3>
+            <label for="clientReviewNextActions">Next steps</label>
+            <textarea id="clientReviewNextActions" placeholder="Outline the next actions..."></textarea>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 4: Appointment Outputs ================================= -->
+        <section class="card zoom-only" id="zoomOutputsSection">
+          <h2>4. Appointment Outputs</h2>
+          <p class="hint">Select which documents to include for this appointment. These are placeholders — PDF generation is not yet available for Zoom appointments.</p>
+          <div class="toggleRow" style="display:flex; gap:24px; flex-wrap:wrap; padding-top:8px">
+            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
+            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeLaVidaEOI"> Include La Vida EOI</label>
+            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeIA"> Include IA</label>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 5: Attachments ========================================= -->
+        <section class="card zoom-only" id="zoomAttachmentsSection">
+          <h2>5. Attachments</h2>
+          <p class="hint">Generated documents will appear here once available.</p>
+          <div class="fields two" style="margin-top:12px">
+            <div class="attachment-placeholder"><div class="attachment-label">First Consult PDF</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">Client Review PDF</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">EOI</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">IA</div><div class="attachment-status">Not generated yet</div></div>
           </div>
         </section>
 

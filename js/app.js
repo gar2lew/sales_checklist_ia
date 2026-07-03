@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.0.0-alpha.1';
+  const APP_VERSION = '2.1.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -16,7 +16,7 @@
     'includeEOI','eoiTemplate','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
     'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
     'laVidaFinanceBrokerChoice','laVidaFinanceBrokerName','laVidaFinanceBrokerEmail','laVidaFinanceBrokerPhone','laVidaConveyancerChoice','laVidaConveyancerName','laVidaConveyancerEmail','laVidaConveyancerPhone',
-    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4'
+    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA'
   ];
   const dateFieldIds = ['date','eoiDate','iaDate'];
   const photoLabels = ['Client 1 ID Front', 'Client 1 ID Back', 'Client 2 ID Front', 'Client 2 ID Back'];
@@ -70,6 +70,11 @@
     additionalDocTypes: {
       options: ['Medicare Card', 'Passport', 'Driver Licence', 'Utility Bill', 'Bank Statement', 'Rates Notice', 'Other']
     }
+  };
+  const zoomDefaults = {
+    builders: ['Metricon','Carlisle Homes','Burbank','Celebration Homes','Jandson','Eichmann','Backyard','Blueprint','Smart Home','Designer Homes'],
+    developers: ['ASG','Oliver Hume','RPV Projects','SJD Homes','LandCorp'],
+    timeline: ['1-3 months','3-6 months','6-12 months','12+ months','TBC']
   };
   let adminSettings = loadAdminSettings();
 
@@ -222,6 +227,7 @@
     var app = document.querySelector('.app');
     app.classList.remove('show-in-person', 'show-zoom');
     app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
+    updateSummaryCard();
   }
   function enterAppointment(){
     var staff = ($('landingStaff').value || '').trim();
@@ -999,6 +1005,72 @@
       saveAdminSettings();
     }
   }
+  function preserveZoomDraftValue(selectId, value){
+    value = (value || '').trim();
+    if(!value) return;
+    const el = $(selectId);
+    if(!el || el.tagName !== 'SELECT') return;
+    if(!Array.from(el.options).some(opt => opt.value === value)){
+      el.appendChild(new Option(value, value));
+    }
+  }
+  function renderZoomFields(){
+    /* Builders */
+    var builderEl = $('clientReviewBuilder');
+    if(builderEl){
+      var currBuilder = builderEl.value;
+      builderEl.innerHTML = '<option value="">Select builder</option>';
+      zoomDefaults.builders.forEach(function(v){ builderEl.innerHTML += '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; });
+      builderEl.value = currBuilder || '';
+      bindFieldEvents('clientReviewBuilder');
+    }
+    /* Developers */
+    var devEl = $('clientReviewDeveloper');
+    if(devEl){
+      var currDev = devEl.value;
+      devEl.innerHTML = '<option value="">Select developer</option>';
+      zoomDefaults.developers.forEach(function(v){ devEl.innerHTML += '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; });
+      devEl.value = currDev || '';
+      bindFieldEvents('clientReviewDeveloper');
+    }
+    /* Finance Brokers (from admin settings La Vida finance brokers) */
+    var brokerEl = $('clientReviewBroker');
+    if(brokerEl){
+      var currBroker = brokerEl.value;
+      brokerEl.innerHTML = '<option value="">Select broker</option>';
+      var brokerOpts = (adminSettings.laVidaFinanceBrokers && adminSettings.laVidaFinanceBrokers.options) || [];
+      brokerOpts.forEach(function(o){
+        var label = (o && o.name) || '';
+        var id = (o && o.id) || '';
+        if(label && id) brokerEl.innerHTML += '<option value="'+htmlEscape(id)+'">'+htmlEscape(label)+'</option>';
+      });
+      brokerEl.value = currBroker || '';
+      bindFieldEvents('clientReviewBroker');
+    }
+    /* Conveyancers (from admin settings La Vida conveyancers) */
+    var convEl = $('clientReviewConveyancer');
+    if(convEl){
+      var currConv = convEl.value;
+      convEl.innerHTML = '<option value="">Select conveyancer</option>';
+      var convOpts = (adminSettings.laVidaConveyancers && adminSettings.laVidaConveyancers.options) || [];
+      convOpts.forEach(function(o){
+        var label = (o && o.name) || '';
+        var id = (o && o.id) || '';
+        if(label && id) convEl.innerHTML += '<option value="'+htmlEscape(id)+'">'+htmlEscape(label)+'</option>';
+      });
+      convEl.value = currConv || '';
+      bindFieldEvents('clientReviewConveyancer');
+    }
+    /* Timeline */
+    var tlEl = $('clientReviewTimeline');
+    if(tlEl){
+      var currTl = tlEl.value;
+      tlEl.innerHTML = '<option value="">Select timeline</option>';
+      zoomDefaults.timeline.forEach(function(v){ tlEl.innerHTML += '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; });
+      tlEl.value = currTl || '';
+      bindFieldEvents('clientReviewTimeline');
+    }
+  }
   function setControlValue(id, value){
     const el=$(id);
     if(!el) return;
@@ -1047,6 +1119,7 @@
   renderConfigurableFields();
   renderAdminSettings();
   applyPdfDefaults(true);
+  renderZoomFields();
   fields.forEach(bindFieldEvents);
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); }));
   $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode=$('staffMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
@@ -1105,6 +1178,37 @@
   }
 
   function updateSummaryCard(){
+    /* Show/hide in-person vs zoom summary */
+    var isZoom = appointmentMode === 'zoom';
+    var inPersonBody = document.querySelector('.summary-card-body:not(#zoomSummaryBody)');
+    var zoomBody = $('zoomSummaryBody');
+    if(inPersonBody) inPersonBody.style.display = isZoom ? 'none' : '';
+    if(zoomBody) zoomBody.style.display = isZoom ? 'flex' : 'none';
+
+    /* Zoom summary indicators */
+    if(isZoom && zoomBody){
+      $('zoomSumStaff').textContent = fieldText('teamMember') || 'Staff';
+      $('zoomSumClient1').textContent = fieldText('clientName') || 'Client 1';
+      $('zoomSumClient2').textContent = fieldText('client2Name') || 'Client 2';
+      $('zoomSumBuilder').textContent = fieldText('clientReviewBuilder') || 'Builder';
+      $('zoomSumDeveloper').textContent = fieldText('clientReviewDeveloper') || 'Developer';
+      $('zoomSumBroker').textContent = fieldText('clientReviewBroker') || 'Broker';
+      $('zoomSumConveyancer').textContent = fieldText('clientReviewConveyancer') || 'Conveyancer';
+      $('zoomSumProperty').textContent = fieldText('clientReviewProperty') || 'Property';
+      $('zoomSumEOI').textContent = (isChecked('zoomIncludeStandardEOI') || isChecked('zoomIncludeLaVidaEOI')) ? 'EOI Selected' : 'Not Selected';
+      $('zoomSumIA').textContent = isChecked('zoomIncludeIA') ? 'IA Selected' : 'Not Selected';
+      updateIndicator('indicator-zoomStaff', !!fieldText('teamMember'));
+      updateIndicator('indicator-zoomClient1', !!fieldText('clientName'));
+      updateIndicator('indicator-zoomClient2', !!fieldText('client2Name'));
+      updateIndicator('indicator-zoomBuilder', !!fieldText('clientReviewBuilder'));
+      updateIndicator('indicator-zoomDeveloper', !!fieldText('clientReviewDeveloper'));
+      updateIndicator('indicator-zoomBroker', !!fieldText('clientReviewBroker'));
+      updateIndicator('indicator-zoomConveyancer', !!fieldText('clientReviewConveyancer'));
+      updateIndicator('indicator-zoomProperty', !!fieldText('clientReviewProperty'));
+      updateIndicator('indicator-zoomEOI', isChecked('zoomIncludeStandardEOI') || isChecked('zoomIncludeLaVidaEOI'));
+      updateIndicator('indicator-zoomIA', isChecked('zoomIncludeIA'));
+    }
+
     const hasC2 = hasClient2();
     const _hasC1Photo = hasC1Photo();
     const _hasC2Photo = hasC2Photo();
@@ -1425,6 +1529,44 @@
 
     if (liveSummary) liveSummary.style.display = 'block';
     if (previewPaper) previewPaper.style.display = 'none';
+
+    /* In zoom mode, skip in-person-specific live summary checks */
+    if (appointmentMode === 'zoom') {
+      // Only show basic client info
+      const c1Name = fieldText('clientName');
+      const sumC1 = $('sumClient1');
+      if (sumC1) {
+        sumC1.textContent = c1Name || 'Missing client name';
+        sumC1.style.color = c1Name ? 'var(--navy)' : 'var(--danger)';
+      }
+      const c2Name = fieldText('client2Name');
+      const sumC2 = $('sumClient2');
+      const sumC2Row = $('sumClient2Row');
+      if (sumC2Row) {
+        if (c2Name) {
+          sumC2Row.style.display = 'flex';
+          if (sumC2) { sumC2.textContent = c2Name; sumC2.style.color = 'var(--navy)'; }
+        } else {
+          sumC2Row.style.display = 'none';
+        }
+      }
+      const sumMissingSection = $('sumMissingSection');
+      const sumMissingList = $('sumMissingList');
+      if (sumMissingSection && sumMissingList) {
+        const missing = [];
+        if (!fieldText('date')) missing.push('Appointment Date');
+        if (!fieldText('teamMember')) missing.push('Staff Member / Team Member');
+        if (!c1Name) missing.push('Client 1 Name');
+        if (missing.length > 0) {
+          sumMissingSection.style.display = 'block';
+          sumMissingList.innerHTML = missing.map(m => '<li>' + m + '</li>').join('');
+        } else {
+          sumMissingSection.style.display = 'none';
+          sumMissingList.innerHTML = '';
+        }
+      }
+      return;
+    }
 
     // Client 1 Name
     const c1Name = fieldText('clientName');
@@ -3053,6 +3195,13 @@
     preserveDraftDropdownValue('branch', data.eoiBranch);
     preserveDraftDropdownValue('solicitor', data.iaSolicitor);
     preserveDraftDropdownValue('eoiTemplates', data.eoiTemplate);
+    /* Preserve zoom dropdown values from draft */
+    renderZoomFields();
+    preserveZoomDraftValue('clientReviewBuilder', data.clientReviewBuilder);
+    preserveZoomDraftValue('clientReviewDeveloper', data.clientReviewDeveloper);
+    preserveZoomDraftValue('clientReviewBroker', data.clientReviewBroker);
+    preserveZoomDraftValue('clientReviewConveyancer', data.clientReviewConveyancer);
+    preserveZoomDraftValue('clientReviewTimeline', data.clientReviewTimeline);
     renderAdminSettings();
     renderConfigurableFields();
     fields.forEach(id=>{
