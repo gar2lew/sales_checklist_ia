@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.2.0-alpha.1';
+  const APP_VERSION = '2.2.1-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -422,6 +422,12 @@
     var s = safePart(fieldText('teamMember'), 'Rep');
     var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
     return 'EOI - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+  }
+  function zoomLaVidaEoiFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'La Vida EOI - ' + c + ' - ' + s + ' - ' + d + '.pdf';
   }
   function zoomIaFilename(){
     var c = clientNamesForFilename();
@@ -2833,7 +2839,7 @@
     if(hasStdEOI){
       var builder = EOI_BUILDERS.standard;
       var eoiPages = builder.getPages();
-      pages.push({id:'eoi', template:'standard', builder:builder, eoiSubOffset:0});
+      for(var ei=0;ei<eoiPages;ei++) pages.push({id:'eoi', builder:builder, eoiSubIndex:ei});
       groups.push({id:'eoi', pageOffset:offset, pageCount:eoiPages, getFilename:zoomEoiFilename});
       offset += eoiPages;
       eoiPageCount += eoiPages;
@@ -2843,8 +2849,8 @@
     if(hasLaVidaEOI){
       var builder2 = EOI_BUILDERS.laVidaHomes;
       var eoiPages2 = builder2.getPages();
-      pages.push({id:'eoi', template:'laVidaHomes', builder:builder2, eoiSubOffset:eoiPageCount});
-      groups.push({id:'eoi-laVida', pageOffset:offset, pageCount:eoiPages2, getFilename:zoomEoiFilename});
+      for(var li=0;li<eoiPages2;li++) pages.push({id:'eoi', builder:builder2, eoiSubIndex:li});
+      groups.push({id:'eoi-laVida', pageOffset:offset, pageCount:eoiPages2, getFilename:zoomLaVidaEoiFilename});
       offset += eoiPages2;
     }
 
@@ -2896,7 +2902,7 @@
         await ensurePageLogo();
         var bl = pageDef.builder || EOI_BUILDERS.standard;
         if(bl.ensureImages) await bl.ensureImages();
-        return bl.drawPage(pageDef.eoiSubOffset || 0, index+1, totalPages, scale);
+        return bl.drawPage(pageDef.eoiSubIndex !== undefined ? pageDef.eoiSubIndex : 0, index+1, totalPages, scale);
       }
       if(pageDef.id === 'ia'){
         await ensurePageLogo();
@@ -2936,7 +2942,7 @@
     next.disabled = totalPages < 2;
   }
   function drawZoomCover(pageNumber, totalPages, scale){
-    ensurePageLogo();
+    /* Logo not needed on cover page */
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
     const c1 = fieldText('clientName') || 'Client';
