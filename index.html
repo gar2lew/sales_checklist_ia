@@ -203,39 +203,38 @@
 
           <div class="subsection">
             <h3>Financial Snapshot</h3>
-            <div class="fields two">
+            <p class="hint">Current financial position — enter approximate figures.</p>
+            <div class="fields two zoom-fin-grid">
               <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
               <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
               <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
               <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div><label for="firstConsultInvestmentProperties">Existing Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
-              <div><label for="firstConsultBorrowingCapacity">Approximate Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+              <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
+              <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
             </div>
           </div>
 
           <div class="subsection">
             <h3>General Notes</h3>
-            <label for="firstConsultNotes">Notes</label>
-            <textarea id="firstConsultNotes" placeholder="Any notes from the first consultation..."></textarea>
+            <label for="firstConsultNotes">Consultation notes</label>
+            <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Any notes from the first consultation..."></textarea>
           </div>
         </section>
 
         <!-- ZOOM SECTION 3: Client Review / Assessment ========================== -->
         <section class="card zoom-only" id="clientReviewSection">
           <h2>3. Client Review / Assessment</h2>
+          <p class="hint">Document the recommended strategy, preferred builders and professionals, and next steps for this client.</p>
 
           <div class="subsection">
             <h3>Recommended Strategy</h3>
-            <label for="clientReviewStrategy">Strategy notes</label>
-            <textarea id="clientReviewStrategy" placeholder="Outline the recommended strategy..."></textarea>
+            <label for="clientReviewStrategy">Strategy details</label>
+            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
           </div>
 
           <div class="subsection">
             <h3>Recommendations</h3>
+            <p class="hint">Select preferred partners for this appointment.</p>
             <div class="fields two">
               <div id="clientReviewBuilderControl">
                 <label for="clientReviewBuilder">Recommended Builder</label>
@@ -261,7 +260,7 @@
           <div class="subsection">
             <h3>Property & Timeline</h3>
             <div class="fields two">
-              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Recommended property address or details"></div>
+              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
               <div id="clientReviewTimelineControl">
                 <label for="clientReviewTimeline">Estimated Timeline</label>
                 <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
@@ -272,18 +271,18 @@
           <div class="subsection">
             <h3>Next Actions</h3>
             <label for="clientReviewNextActions">Next steps</label>
-            <textarea id="clientReviewNextActions" placeholder="Outline the next actions..."></textarea>
+            <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
           </div>
         </section>
 
         <!-- ZOOM SECTION 4: Appointment Outputs ================================= -->
         <section class="card zoom-only" id="zoomOutputsSection">
           <h2>4. Appointment Outputs</h2>
-          <p class="hint">Select which documents to include for this appointment. These are placeholders — PDF generation is not yet available for Zoom appointments.</p>
-          <div class="toggleRow" style="display:flex; gap:24px; flex-wrap:wrap; padding-top:8px">
-            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
-            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeLaVidaEOI"> Include La Vida EOI</label>
-            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="zoomIncludeIA"> Include IA</label>
+          <p class="hint">Select which documents to include when generating the appointment PDF and package.</p>
+          <div class="toggleRow zoom-checkboxes">
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeLaVidaEOI"> Include La Vida EOI</label>
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeIA"> Include IA</label>
           </div>
         </section>
 

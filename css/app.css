@@ -666,3 +666,66 @@
       color: var(--muted);
     }
 
+    /* Zoom workflow polish */
+    .zoom-fin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .zoom-fin-grid > div label {
+      font-size: 13px;
+    }
+    .zoom-notes {
+      min-height: 110px;
+    }
+    .zoom-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-top: 10px;
+    }
+    .zoom-check-label {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    @media (max-width: 500px) {
+      .zoom-fin-grid {
+        grid-template-columns: 1fr;
+      }
+      .zoom-checkboxes {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .zoom-check-label {
+        white-space: normal;
+      }
+      .attachment-placeholder {
+        padding: 16px 12px;
+      }
+    }
+
+    /* Zoom summary card responsive */
+    .show-zoom #zoomSummaryBody {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    #zoomSummaryBody .summary-card-col {
+      min-width: 120px;
+      flex: 1 1 auto;
+    }
+    @media (max-width: 768px) {
+      #zoomSummaryBody .summary-card-col {
+        min-width: 100px;
+        flex: 1 1 45%;
+      }
+    }
+    @media (max-width: 480px) {
+      #zoomSummaryBody .summary-card-col {
+        min-width: 100%;
+        flex: 1 1 100%;
+      }
+    }
