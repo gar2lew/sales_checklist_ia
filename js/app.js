@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.2.1-alpha.1';
+  const APP_VERSION = '1.5.0';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -2442,20 +2442,20 @@
     const iaProperty = showOverrides ? (fieldText('iaProperty') || defaultIaProperty) : defaultIaProperty;
     const iaAmount = fieldText('iaAmount') || '$10,000';
 
-    whiteOut(315, 312, 850, 42);
-    whiteOut(245, 362, 900, 42);
-    // Property field — reduce height so the white box does not intrude into the
-    // black IRREVOCABLE AUTHORITY banner below. End at y=445 instead of 453.
-    whiteOut(300, 411, 850, 34);
+    whiteOut(315, 312, 850, 32);
+    whiteOut(245, 360, 900, 32);
+    // Property field — whiteout ends well above the black IRREVOCABLE AUTHORITY banner.
+    // Keep height tight so no white fill intrudes on the banner below.
+    whiteOut(300, 405, 850, 26);
     // TO: line — white-out only the dynamic value area after the printed
     // "TO: Solicitor/Conveyancer:" label so the label itself stays visible.
     whiteOut(630, 535, 885, 45);
     whiteOut(758, 752, 152, 44);
     whiteOut(225, 1206, 401, 36);
-    drawTemplateLineValue(iaClientNames, 315, 332, 850, {maxLines: 2, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
-    drawTemplateLineValue(iaAddress, 245, 382, 900, {maxLines: 2, maxSize: 10, minSize: 8.5, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(iaClientNames, 315, 330, 850, {maxLines: 2, maxSize: 10, minSize: 8, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(iaAddress, 245, 378, 900, {maxLines: 2, maxSize: 9.5, minSize: 8, padLeft: 8, padRight: 16});
     // Single line with aggressive shrinkage to keep text above the black banner.
-    drawTemplateLineValue(iaProperty, 300, 428, 850, {maxLines: 1, maxSize: 10, minSize: 7.2, padLeft: 8, padRight: 16, lineGap: 1});
+    drawTemplateLineValue(iaProperty, 300, 420, 850, {maxLines: 1, maxSize: 9.5, minSize: 7, padLeft: 8, padRight: 16, lineGap: 1});
     overlayFitText(fieldText('iaSolicitor'), 640, 564, 875, '400', 12, 6);
     overlayText(iaAmount, 763, 783, 140, '800 13px Arial', 15, 1);
     overlayText(formattedDateForIA(), 235, 1225, 391, '700 12px Arial', 14, 1);
