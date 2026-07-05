@@ -3229,7 +3229,7 @@
       wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
     }
 
-    /* === Header area: Date and Staff (centered, y=229-271) === */
+    /* === Header area: Date and Staff (centered, y=229-271) — shared fields === */
     var dateVal = formatDisplayDate(fieldText('date')) || '';
     whiteOut(775, 234, 170, 28);
     overlayText(dateVal, 790, 256, 150, '700 11px Arial', 14, 1);
@@ -3238,54 +3238,14 @@
     whiteOut(745, 270, 190, 28);
     overlayText(staffVal, 765, 292, 170, '400 10px Arial', 13, 1);
 
-    /* === Strategy / Notes (y=612-816) === */
-    var strategy = fieldText('clientReviewStrategy') || '';
-    whiteOut(200, 680, 1250, 145);
-    if(strategy){
+    /* === Consultation Notes continuation (y=612-816) === */
+    var notes = fieldText('firstConsultNotes') || '';
+    whiteOut(195, 680, 1260, 155);
+    if(notes){
       ctx.fillStyle = '#111';
       ctx.font = '400 9.5px Arial';
       ctx.textBaseline = 'alphabetic';
-      wrapText(ctx, strategy, mx(215), my(700), mx(1220), 14, 10);
-    }
-
-    /* === Section A: Property / Sale (y=840-1029) === */
-    var propertyVal = fieldText('clientReviewProperty') || fieldText('propertySaleAddress') || '';
-    whiteOut(190, 932, 1300, 32);
-    overlayText(propertyVal, 205, 954, 1270, '400 10px Arial', 14, 1);
-
-    var timelineVal = fieldText('clientReviewTimeline') || '';
-    whiteOut(520, 980, 610, 32);
-    overlayText(timelineVal, 535, 1002, 580, '400 10px Arial', 14, 1);
-
-    /* === Section B: Recommendations (y=1029-1481) — 4 rows === */
-    /* Row 1: Builder */
-    var builderVal = fieldText('clientReviewBuilder') || '';
-    whiteOut(290, 1176, 980, 24);
-    overlayText(builderVal, 305, 1198, 950, '400 10px Arial', 14, 1);
-
-    /* Row 2: Developer */
-    var devVal = fieldText('clientReviewDeveloper') || '';
-    whiteOut(290, 1238, 950, 24);
-    overlayText(devVal, 305, 1260, 930, '400 10px Arial', 14, 1);
-
-    /* Row 3: Finance Broker */
-    var brokerVal = fieldText('clientReviewBroker') || '';
-    whiteOut(290, 1300, 1080, 24);
-    overlayText(brokerVal, 305, 1322, 1050, '400 10px Arial', 14, 1);
-
-    /* Row 4: Conveyancer */
-    var convVal = fieldText('clientReviewConveyancer') || '';
-    whiteOut(290, 1400, 1110, 24);
-    overlayText(convVal, 305, 1422, 1080, '400 9.5px Arial', 14, 1);
-
-    /* === Section C: Next Actions / Signature (y=1481-1895) === */
-    var nextActions = fieldText('clientReviewNextActions') || '';
-    whiteOut(170, 1580, 875, 95);
-    if(nextActions){
-      ctx.fillStyle = '#111';
-      ctx.font = '400 9px Arial';
-      ctx.textBaseline = 'alphabetic';
-      wrapText(ctx, nextActions, mx(185), my(1600), mx(835), 13, 7);
+      wrapText(ctx, notes, mx(210), my(700), mx(1220), 14, 10);
     }
 
     /* No small logo — template has its own branding */
