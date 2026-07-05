@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v2.2.2-alpha.1';
+const CACHE_VERSION = 'v2.3.0-alpha.1';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -16,7 +16,23 @@ const APP_SHELL = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/asg_logo.png',
-  '/icons/landing.png'
+  '/icons/landing.png',
+  '/templates/rendered/first-consult-brisbane-page-1.jpg',
+  '/templates/rendered/first-consult-brisbane-page-2.jpg',
+  '/templates/rendered/first-consult-brisbane-page-3.jpg',
+  '/templates/rendered/first-consult-brisbane-page-4.jpg',
+  '/templates/rendered/first-consult-brisbane-page-5.jpg',
+  '/templates/rendered/first-consult-brisbane-page-6.jpg',
+  '/templates/rendered/first-consult-perth-page-1.jpg',
+  '/templates/rendered/first-consult-perth-page-2.jpg',
+  '/templates/rendered/first-consult-perth-page-3.jpg',
+  '/templates/rendered/first-consult-perth-page-4.jpg',
+  '/templates/rendered/first-consult-perth-page-5.jpg',
+  '/templates/rendered/first-consult-perth-page-6.jpg',
+  '/templates/rendered/client-review-page-1.jpg',
+  '/templates/rendered/client-review-page-2.jpg',
+  '/templates/rendered/client-review-page-3.jpg',
+  '/templates/rendered/client-review-page-4.jpg'
 ];
 
 self.addEventListener('install', event => {

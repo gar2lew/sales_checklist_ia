@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.2.2-alpha.1';
+  const APP_VERSION = '2.3.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -31,6 +31,33 @@
   const iaImageCache = {};
   const laVidaImageSources = ['lavida-template-page-1.jpg', 'lavida-template-page-2.jpg'];
   const laVidaImageCache = [];
+  /* Zoom template image sources (rendered JPG assets from PDFs) */
+  const zoomFirstConsultSources = {
+    brisbane: [
+      'templates/rendered/first-consult-brisbane-page-1.jpg',
+      'templates/rendered/first-consult-brisbane-page-2.jpg',
+      'templates/rendered/first-consult-brisbane-page-3.jpg',
+      'templates/rendered/first-consult-brisbane-page-4.jpg',
+      'templates/rendered/first-consult-brisbane-page-5.jpg',
+      'templates/rendered/first-consult-brisbane-page-6.jpg'
+    ],
+    perth: [
+      'templates/rendered/first-consult-perth-page-1.jpg',
+      'templates/rendered/first-consult-perth-page-2.jpg',
+      'templates/rendered/first-consult-perth-page-3.jpg',
+      'templates/rendered/first-consult-perth-page-4.jpg',
+      'templates/rendered/first-consult-perth-page-5.jpg',
+      'templates/rendered/first-consult-perth-page-6.jpg'
+    ]
+  };
+  const zoomFirstConsultCache = {};
+  const zoomClientReviewSources = [
+    'templates/rendered/client-review-page-1.jpg',
+    'templates/rendered/client-review-page-2.jpg',
+    'templates/rendered/client-review-page-3.jpg',
+    'templates/rendered/client-review-page-4.jpg'
+  ];
+  const zoomClientReviewCache = [];
   const LOGO_PATH = 'icons/asg_logo.png';
   let pageLogoImage = null;
   let lastPdfBlob = null;
@@ -1937,6 +1964,26 @@
       }
     }
     return laVidaImageCache;
+  }
+  async function ensureZoomFirstConsultImages(city){
+    city = city || 'perth';
+    var sources = zoomFirstConsultSources[city];
+    if(!sources) throw new Error('Unknown First Consult city: ' + city);
+    if(!zoomFirstConsultCache[city]) zoomFirstConsultCache[city] = [];
+    for(var i=0;i<sources.length;i++){
+      if(!zoomFirstConsultCache[city][i]){
+        zoomFirstConsultCache[city][i] = await loadImage(sources[i]);
+      }
+    }
+    return zoomFirstConsultCache[city];
+  }
+  async function ensureZoomClientReviewImages(){
+    for(var i=0;i<zoomClientReviewSources.length;i++){
+      if(!zoomClientReviewCache[i]){
+        zoomClientReviewCache[i] = await loadImage(zoomClientReviewSources[i]);
+      }
+    }
+    return zoomClientReviewCache;
   }
   async function handlePhoto(idx,file){
     if(!file) return;

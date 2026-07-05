@@ -1,7 +1,7 @@
 # Zoom Template Mapping Plan
 
 ## Current Version
-**v2.3.0-alpha.1** (planned) — Current: v2.2.2-alpha.1
+**v2.3.0-alpha.1** (current) — App version: 2.3.0-alpha.1
 
 ## Overview
 
@@ -11,15 +11,44 @@ This document plans the real PDF template mapping for the Zoom appointment workf
 
 ## 1. Template Files
 
-### Search Results
+### Files Found
 
-**No template files exist** for the Zoom workflow. All existing template-like files are for in-person forms only:
+| Source PDF | Pages | Dimensions |
+|-----------|-------|------------|
+| `templates/first-consult-booklet-brisbane.pdf` | 6 | A4 portrait (595×842 pts) |
+| `templates/first-consult-booklet-perth.pdf` | 6 | A4 portrait (595×842 pts) |
+| `templates/client-review-assessment.pdf` | 4 | A4 portrait (595×842 pts) |
 
-| Asset | Type | Purpose |
-|-------|------|---------|
-| `lavida-template-page-1.jpg` | JPG | La Vida Homes EOI page 1 |
-| `lavida-template-page-2.jpg` | JPG | La Vida Homes EOI page 2 |
-| `iaImageSources` (Perth/Brisbane) | Base64 JPG (embedded) | IA template backgrounds |
+### First Consult has Brisbane and Perth variants
+The First Consult booklet exists as two city-specific versions (Brisbane and Perth). These are separate PDFs with different content (likely different office details, branding or state-specific wording).
+
+### Rendered Assets
+
+All pages exported as high-resolution JPGs (200 DPI, 1654×2339 px) to `templates/rendered/`:
+
+**First Consult — Brisbane (6 pages):**
+- `templates/rendered/first-consult-brisbane-page-1.jpg`
+- `templates/rendered/first-consult-brisbane-page-2.jpg`
+- `templates/rendered/first-consult-brisbane-page-3.jpg`
+- `templates/rendered/first-consult-brisbane-page-4.jpg`
+- `templates/rendered/first-consult-brisbane-page-5.jpg`
+- `templates/rendered/first-consult-brisbane-page-6.jpg`
+
+**First Consult — Perth (6 pages):**
+- `templates/rendered/first-consult-perth-page-1.jpg`
+- `templates/rendered/first-consult-perth-page-2.jpg`
+- `templates/rendered/first-consult-perth-page-3.jpg`
+- `templates/rendered/first-consult-perth-page-4.jpg`
+- `templates/rendered/first-consult-perth-page-5.jpg`
+- `templates/rendered/first-consult-perth-page-6.jpg`
+
+**Client Review (4 pages):**
+- `templates/rendered/client-review-page-1.jpg`
+- `templates/rendered/client-review-page-2.jpg`
+- `templates/rendered/client-review-page-3.jpg`
+- `templates/rendered/client-review-page-4.jpg`
+
+All 16 assets registered in service worker `APP_SHELL` for offline caching.
 
 ### Files Required
 
@@ -247,32 +276,31 @@ async function drawZoomFirstConsult(...) {
 
 ## 7. Implementation Phases
 
-### Phase A: Template Acquisition & Inspection (current phase)
-- [ ] Obtain branded First Consult booklet PDF from designer
-- [ ] Obtain branded Client Review/Assessment PDF from designer
-- [ ] Export pages as high-resolution JPGs (≥150 DPI at A4)
-- [ ] Crop/align for A4 (595.28 × 841.89 pts)
+### Phase A: Template Acquisition & Inspection ✅ (complete)
+- [x] Obtain branded First Consult booklet PDF from designer — **Brisbane (6pp) and Perth (6pp)**
+- [x] Obtain branded Client Review/Assessment PDF from designer — **4 pages**
+- [x] Export pages as high-resolution JPGs (≥150 DPI at A4) — **200 DPI, 1654×2339 px**
+- [x] Crop/align for A4 (595.28 × 841.89 pts) — **native A4, no cropping needed**
+- [x] Rename PDFs to clean filenames
+- [x] Add rendered JPGs to service worker `APP_SHELL`
+- [x] Create image source arrays and caches in `js/app.js`
+- [x] Create `ensureZoomFirstConsultImages(city)` and `ensureZoomClientReviewImages()` loading functions
+- [ ] **Next: Branch/location selection** — First Consult has Brisbane/Perth variants. A selection mechanism (e.g. from the existing branch dropdown or a new toggle) is needed to choose which template set to render.
 
-### Phase B: Template Image Loading
-- [ ] Add template JPGs to project root
-- [ ] Add to service worker `APP_SHELL`
-- [ ] Create image source arrays and caches
-- [ ] Create `ensureZoomFirstConsultImages()` and `ensureZoomClientReviewImages()`
-- [ ] Add `zoomDefaults.builders` → Admin Settings migration (optional, can be parallel)
-
-### Phase C: Field Coordinate Mapping
+### Phase B: Field Coordinate Mapping (next)
 - [ ] For each template page, measure source-image coordinates for every field
 - [ ] Create field rectangle definitions (like `laVidaFieldRects`)
 - [ ] For each field, determine: whiteout rect, text baseline, max width, font size
+- [ ] Account for Brisbane vs Perth coordinate differences (if any)
 - [ ] Test with short and long values
 
-### Phase D: Overlay Rendering
-- [ ] Implement `drawZoomFirstConsultTemplate()` following `drawIAPage()` pattern
-- [ ] Implement `drawZoomClientReviewTemplate()` following `drawIAPage()` pattern
+### Phase C: Overlay Rendering
+- [ ] Implement `drawZoomFirstConsultTemplate(city, pageIndex, ...)` following `drawIAPage()` pattern
+- [ ] Implement `drawZoomClientReviewTemplate(pageIndex, ...)` following `drawIAPage()` pattern
 - [ ] Add fallback to current programmatic renderers
 - [ ] Hook into `drawOutputPage()` zoom dispatch
 
-### Phase E: Verification
+### Phase D: Verification
 - [ ] All short values render correctly
 - [ ] Long client names wrap without overflow
 - [ ] Long addresses fit in designated areas
