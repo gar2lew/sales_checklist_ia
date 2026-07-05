@@ -2884,9 +2884,11 @@
     offset += 6;
 
     /* Client Review */
+    /* Client Review (2 pages for template-backed rendering) */
     pages.push({id:'clientReview', subIdx:0});
-    groups.push({id:'clientReview', pageOffset:offset, pageCount:1, getFilename:zoomClientReviewFilename});
-    offset++;
+    pages.push({id:'clientReview', subIdx:1});
+    groups.push({id:'clientReview', pageOffset:offset, pageCount:2, getFilename:zoomClientReviewFilename});
+    offset += 2;
 
     /* Optional Standard EOI */
     var eoiPageCount = 0;
@@ -3289,6 +3291,45 @@
       var developer = fieldText('clientReviewDeveloper') || '';
       whiteOut(85, 455, 175, 36);
       overlayText(developer, 100, 483, 155, '400 10px Arial', 13, 1);
+    } else if(pageIndex === 1){
+      /* === PAGE 2: Broker, Conveyancer, Property, Timeline, Next Actions === */
+      /* Header: Date and Staff */
+      var dateVal = formatDisplayDate(fieldText('date')) || '';
+      whiteOut(215, 117, 200, 32);
+      overlayText(dateVal, 230, 142, 170, '400 10px Arial', 13, 1);
+      var staffVal = fieldText('teamMember') || '';
+      whiteOut(62, 138, 160, 24);
+      overlayText(staffVal, 75, 156, 140, '400 10px Arial', 13, 1);
+
+      /* Row 1: Finance Broker — left field y=621, x=207-324 */
+      var broker = fieldText('clientReviewBroker') || '';
+      whiteOut(195, 614, 155, 34);
+      overlayText(broker, 210, 640, 135, '400 9.5px Arial', 13, 1);
+
+      /* Row 2: Conveyancer — left field y=796, x=207-324 */
+      var conveyancer = fieldText('clientReviewConveyancer') || '';
+      whiteOut(195, 790, 155, 34);
+      overlayText(conveyancer, 210, 816, 135, '400 9.5px Arial', 13, 1);
+
+      /* Row 3: Timeline — left field y=970, x=207-324 */
+      var timeline = fieldText('clientReviewTimeline') || '';
+      whiteOut(195, 965, 155, 34);
+      overlayText(timeline, 210, 991, 135, '400 10px Arial', 13, 1);
+
+      /* Recommended Property — area y=1144-1156, x=118-230 */
+      var property = fieldText('clientReviewProperty') || '';
+      whiteOut(110, 1140, 250, 28);
+      overlayText(property, 125, 1160, 230, '400 9.5px Arial', 13, 1);
+
+      /* Next Actions — multi-line area y=1668-1680, x=117-351 */
+      var actions = fieldText('clientReviewNextActions') || '';
+      whiteOut(110, 1660, 260, 40);
+      if(actions){
+        ctx.fillStyle = '#111';
+        ctx.font = '400 9px Arial';
+        ctx.textBaseline = 'alphabetic';
+        wrapText(ctx, actions, mx(125), my(1675), mx(230), 13, 3);
+      }
     }
 
     drawSmallPageLogo(ctx);
