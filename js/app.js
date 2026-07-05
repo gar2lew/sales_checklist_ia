@@ -2884,11 +2884,12 @@
     offset += 6;
 
     /* Client Review */
-    /* Client Review (2 pages for template-backed rendering) */
+    /* Client Review (3 pages for template-backed rendering) */
     pages.push({id:'clientReview', subIdx:0});
     pages.push({id:'clientReview', subIdx:1});
-    groups.push({id:'clientReview', pageOffset:offset, pageCount:2, getFilename:zoomClientReviewFilename});
-    offset += 2;
+    pages.push({id:'clientReview', subIdx:2});
+    groups.push({id:'clientReview', pageOffset:offset, pageCount:3, getFilename:zoomClientReviewFilename});
+    offset += 3;
 
     /* Optional Standard EOI */
     var eoiPageCount = 0;
@@ -3291,6 +3292,8 @@
       var developer = fieldText('clientReviewDeveloper') || '';
       whiteOut(85, 455, 175, 36);
       overlayText(developer, 100, 483, 155, '400 10px Arial', 13, 1);
+    } else if(pageIndex === 2){
+      /* === PAGE 3: Static schedule page — no field overlays === */
     } else if(pageIndex === 1){
       /* === PAGE 2: Broker, Conveyancer, Property, Timeline, Next Actions === */
       /* Header: Date and Staff */
