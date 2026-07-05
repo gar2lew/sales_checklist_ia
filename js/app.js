@@ -2871,11 +2871,12 @@
     groups.push({id:'cover', pageOffset:offset, pageCount:1, getFilename:zoomPdfFileName});
     offset++;
 
-    /* First Consultation (2 pages for template-backed rendering) */
+    /* First Consultation (3 pages for template-backed rendering) */
     pages.push({id:'firstConsult', subIdx:0});
     pages.push({id:'firstConsult', subIdx:1});
-    groups.push({id:'firstConsult', pageOffset:offset, pageCount:2, getFilename:zoomFirstConsultFilename});
-    offset += 2;
+    pages.push({id:'firstConsult', subIdx:2});
+    groups.push({id:'firstConsult', pageOffset:offset, pageCount:3, getFilename:zoomFirstConsultFilename});
+    offset += 3;
 
     /* Client Review */
     pages.push({id:'clientReview'});
@@ -2949,9 +2950,12 @@
         if(pageDef.subIdx === 0){
           var fc1Result = drawZoomFirstConsultBrisbanePage1(index+1, totalPages, scale);
           if(fc1Result) return fc1Result;
-        } else {
+        } else if(pageDef.subIdx === 1){
           var fc2Result = drawZoomFirstConsultBrisbanePage2(index+1, totalPages, scale);
           if(fc2Result) return fc2Result;
+        } else {
+          var fc3Result = drawZoomFirstConsultBrisbanePage3(index+1, totalPages, scale);
+          if(fc3Result) return fc3Result;
         }
         return drawZoomFirstConsult(index+1, totalPages, scale);
       }
@@ -3249,6 +3253,26 @@
     }
 
     /* No small logo — template has its own branding */
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
+    return c;
+  }
+  function drawZoomFirstConsultBrisbanePage3(pageNumber, totalPages, scale){
+    var cache = zoomFirstConsultCache['brisbane'];
+    if(!cache || !cache[2]) return null;
+    var img = cache[2];
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+
+    /* Page 3 is a static document page (declaration, terms, or schedule).
+       No dynamic field overlays are currently mapped.
+       The template image renders as-is with its pre-printed content.
+       Fields can be mapped here when specific data fields are identified. */
+
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
     return c;
   }
