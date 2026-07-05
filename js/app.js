@@ -2871,10 +2871,11 @@
     groups.push({id:'cover', pageOffset:offset, pageCount:1, getFilename:zoomPdfFileName});
     offset++;
 
-    /* First Consultation */
-    pages.push({id:'firstConsult'});
-    groups.push({id:'firstConsult', pageOffset:offset, pageCount:1, getFilename:zoomFirstConsultFilename});
-    offset++;
+    /* First Consultation (2 pages for template-backed rendering) */
+    pages.push({id:'firstConsult', subIdx:0});
+    pages.push({id:'firstConsult', subIdx:1});
+    groups.push({id:'firstConsult', pageOffset:offset, pageCount:2, getFilename:zoomFirstConsultFilename});
+    offset += 2;
 
     /* Client Review */
     pages.push({id:'clientReview'});
@@ -2944,10 +2945,14 @@
       var pageDef = zoomPlan.pages[index];
       if(pageDef.id === 'cover') return drawZoomCover(index+1, totalPages, scale);
       if(pageDef.id === 'firstConsult'){
-        /* Preload template images, then try template-backed page 1 with fallback */
         await ensureZoomFirstConsultImages('brisbane');
-        var fcResult = drawZoomFirstConsultBrisbanePage1(index+1, totalPages, scale);
-        if(fcResult) return fcResult;
+        if(pageDef.subIdx === 0){
+          var fc1Result = drawZoomFirstConsultBrisbanePage1(index+1, totalPages, scale);
+          if(fc1Result) return fc1Result;
+        } else {
+          var fc2Result = drawZoomFirstConsultBrisbanePage2(index+1, totalPages, scale);
+          if(fc2Result) return fc2Result;
+        }
         return drawZoomFirstConsult(index+1, totalPages, scale);
       }
       if(pageDef.id === 'clientReview') return drawZoomClientReview(index+1, totalPages, scale);
@@ -3190,6 +3195,97 @@
       ctx.font = '400 9px Arial';
       ctx.textBaseline = 'alphabetic';
       wrapText(ctx, notes, mx(210), my(1395), mx(1180), 14, 12);
+    }
+
+    /* No small logo — template has its own branding */
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
+    return c;
+  }
+  function drawZoomFirstConsultBrisbanePage2(pageNumber, totalPages, scale){
+    var cache = zoomFirstConsultCache['brisbane'];
+    if(!cache || !cache[1]) return null; /* fall back to programmatic */
+    var img = cache[1];
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+
+    var iw = img.width, ih = img.height;
+    function mx(sx){ return (sx / iw) * W; }
+    function my(sy){ return (sy / ih) * H; }
+    function whiteOut(sx, sy, sw, sh){
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(mx(sx), my(sy), mx(sw), my(sh));
+    }
+    function overlayText(text, sx, sy, sw, font, lineHeight, maxLines){
+      text = (text || '').trim();
+      if(!text) return;
+      ctx.fillStyle = '#111';
+      if(font) ctx.font = font;
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
+    }
+
+    /* === Header area: Date and Staff (centered, y=229-271) === */
+    var dateVal = formatDisplayDate(fieldText('date')) || '';
+    whiteOut(775, 234, 170, 28);
+    overlayText(dateVal, 790, 256, 150, '700 11px Arial', 14, 1);
+
+    var staffVal = fieldText('teamMember') || '';
+    whiteOut(745, 270, 190, 28);
+    overlayText(staffVal, 765, 292, 170, '400 10px Arial', 13, 1);
+
+    /* === Strategy / Notes (y=612-816) === */
+    var strategy = fieldText('clientReviewStrategy') || '';
+    whiteOut(200, 680, 1250, 145);
+    if(strategy){
+      ctx.fillStyle = '#111';
+      ctx.font = '400 9.5px Arial';
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, strategy, mx(215), my(700), mx(1220), 14, 10);
+    }
+
+    /* === Section A: Property / Sale (y=840-1029) === */
+    var propertyVal = fieldText('clientReviewProperty') || fieldText('propertySaleAddress') || '';
+    whiteOut(190, 932, 1300, 32);
+    overlayText(propertyVal, 205, 954, 1270, '400 10px Arial', 14, 1);
+
+    var timelineVal = fieldText('clientReviewTimeline') || '';
+    whiteOut(520, 980, 610, 32);
+    overlayText(timelineVal, 535, 1002, 580, '400 10px Arial', 14, 1);
+
+    /* === Section B: Recommendations (y=1029-1481) — 4 rows === */
+    /* Row 1: Builder */
+    var builderVal = fieldText('clientReviewBuilder') || '';
+    whiteOut(290, 1176, 980, 24);
+    overlayText(builderVal, 305, 1198, 950, '400 10px Arial', 14, 1);
+
+    /* Row 2: Developer */
+    var devVal = fieldText('clientReviewDeveloper') || '';
+    whiteOut(290, 1238, 950, 24);
+    overlayText(devVal, 305, 1260, 930, '400 10px Arial', 14, 1);
+
+    /* Row 3: Finance Broker */
+    var brokerVal = fieldText('clientReviewBroker') || '';
+    whiteOut(290, 1300, 1080, 24);
+    overlayText(brokerVal, 305, 1322, 1050, '400 10px Arial', 14, 1);
+
+    /* Row 4: Conveyancer */
+    var convVal = fieldText('clientReviewConveyancer') || '';
+    whiteOut(290, 1400, 1110, 24);
+    overlayText(convVal, 305, 1422, 1080, '400 9.5px Arial', 14, 1);
+
+    /* === Section C: Next Actions / Signature (y=1481-1895) === */
+    var nextActions = fieldText('clientReviewNextActions') || '';
+    whiteOut(170, 1580, 875, 95);
+    if(nextActions){
+      ctx.fillStyle = '#111';
+      ctx.font = '400 9px Arial';
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, nextActions, mx(185), my(1600), mx(835), 13, 7);
     }
 
     /* No small logo — template has its own branding */
