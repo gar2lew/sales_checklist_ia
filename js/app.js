@@ -2884,7 +2884,7 @@
     offset += 6;
 
     /* Client Review */
-    pages.push({id:'clientReview'});
+    pages.push({id:'clientReview', subIdx:0});
     groups.push({id:'clientReview', pageOffset:offset, pageCount:1, getFilename:zoomClientReviewFilename});
     offset++;
 
@@ -2957,7 +2957,12 @@
         if(fcResult) return fcResult;
         return drawZoomFirstConsult(index+1, totalPages, scale);
       }
-      if(pageDef.id === 'clientReview') return drawZoomClientReview(index+1, totalPages, scale);
+      if(pageDef.id === 'clientReview'){
+        await ensureZoomClientReviewImages();
+        var crResult = drawZoomClientReviewTemplatePage(pageDef.subIdx || 0, index+1, totalPages, scale);
+        if(crResult) return crResult;
+        return drawZoomClientReview(index+1, totalPages, scale);
+      }
       if(pageDef.id === 'eoi'){
         await ensurePageLogo();
         var bl = pageDef.builder || EOI_BUILDERS.standard;
@@ -3219,6 +3224,75 @@
     wrapText(ctx,actions || 'No next actions recorded.',42,yOff,511,18,15);
 
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'Client Review / Assessment', 42, 814);
+    return c;
+  }
+  function drawZoomClientReviewTemplatePage(pageIndex, pageNumber, totalPages, scale){
+    if(!zoomClientReviewCache || !zoomClientReviewCache[pageIndex]) return null;
+    var img = zoomClientReviewCache[pageIndex];
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+
+    var iw = img.width, ih = img.height;
+    function mx(sx){ return (sx / iw) * W; }
+    function my(sy){ return (sy / ih) * H; }
+    function whiteOut(sx, sy, sw, sh){
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(mx(sx), my(sy), mx(sw), my(sh));
+    }
+    function overlayText(text, sx, sy, sw, font, lineHeight, maxLines){
+      text = (text || '').trim();
+      if(!text) return;
+      ctx.fillStyle = '#111';
+      if(font) ctx.font = font;
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
+    }
+
+    if(pageIndex === 0){
+      /* === PAGE 1: Strategy, Builder, Developer === */
+      /* Client Name — header area y=260-290, x=90-200 */
+      var cName = fieldText('clientName') || '';
+      whiteOut(85, 258, 160, 36);
+      overlayText(cName, 100, 286, 140, '400 10px Arial', 13, 1);
+
+      /* Date — header area y=118-145, x=220-400 */
+      var dateVal = formatDisplayDate(fieldText('date')) || '';
+      whiteOut(215, 117, 200, 32);
+      overlayText(dateVal, 230, 142, 170, '400 10px Arial', 13, 1);
+
+      /* Staff — header area y=138-155, x=70-200 */
+      var staffVal = fieldText('teamMember') || '';
+      whiteOut(62, 138, 160, 24);
+      overlayText(staffVal, 75, 156, 140, '400 10px Arial', 13, 1);
+
+      /* Recommended Strategy — large text area y=860-1000, x=90-730 */
+      var strat = fieldText('clientReviewStrategy') || '';
+      whiteOut(85, 860, 660, 140);
+      if(strat){
+        ctx.fillStyle = '#111';
+        ctx.font = '400 9.5px Arial';
+        ctx.textBaseline = 'alphabetic';
+        wrapText(ctx, strat, mx(100), my(880), mx(630), 14, 9);
+      }
+
+      /* Builder — y=380-400, x=90-240 */
+      var builder = fieldText('clientReviewBuilder') || '';
+      whiteOut(85, 372, 175, 34);
+      overlayText(builder, 100, 398, 155, '400 10px Arial', 13, 1);
+
+      /* Developer — y=460-485, x=90-240 */
+      var developer = fieldText('clientReviewDeveloper') || '';
+      whiteOut(85, 455, 175, 36);
+      overlayText(developer, 100, 483, 155, '400 10px Arial', 13, 1);
+    }
+
+    drawSmallPageLogo(ctx);
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'Client Review / Assessment', 42, 817);
     return c;
   }
 
