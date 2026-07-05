@@ -2884,12 +2884,13 @@
     offset += 6;
 
     /* Client Review */
-    /* Client Review (3 pages for template-backed rendering) */
+    /* Client Review (4 pages for template-backed rendering) */
     pages.push({id:'clientReview', subIdx:0});
     pages.push({id:'clientReview', subIdx:1});
     pages.push({id:'clientReview', subIdx:2});
-    groups.push({id:'clientReview', pageOffset:offset, pageCount:3, getFilename:zoomClientReviewFilename});
-    offset += 3;
+    pages.push({id:'clientReview', subIdx:3});
+    groups.push({id:'clientReview', pageOffset:offset, pageCount:4, getFilename:zoomClientReviewFilename});
+    offset += 4;
 
     /* Optional Standard EOI */
     var eoiPageCount = 0;
@@ -3292,8 +3293,6 @@
       var developer = fieldText('clientReviewDeveloper') || '';
       whiteOut(85, 455, 175, 36);
       overlayText(developer, 100, 483, 155, '400 10px Arial', 13, 1);
-    } else if(pageIndex === 2){
-      /* === PAGE 3: Static schedule page — no field overlays === */
     } else if(pageIndex === 1){
       /* === PAGE 2: Broker, Conveyancer, Property, Timeline, Next Actions === */
       /* Header: Date and Staff */
@@ -3333,6 +3332,10 @@
         ctx.textBaseline = 'alphabetic';
         wrapText(ctx, actions, mx(125), my(1675), mx(230), 13, 3);
       }
+    } else if(pageIndex === 2){
+      /* === PAGE 3: Static schedule page — no field overlays === */
+    } else if(pageIndex === 3){
+      /* === PAGE 4: Static disclosure page — no field overlays === */
     }
 
     drawSmallPageLogo(ctx);
