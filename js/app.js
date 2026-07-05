@@ -2871,12 +2871,13 @@
     groups.push({id:'cover', pageOffset:offset, pageCount:1, getFilename:zoomPdfFileName});
     offset++;
 
-    /* First Consultation (3 pages for template-backed rendering) */
+    /* First Consultation (4 pages for template-backed rendering) */
     pages.push({id:'firstConsult', subIdx:0});
     pages.push({id:'firstConsult', subIdx:1});
     pages.push({id:'firstConsult', subIdx:2});
-    groups.push({id:'firstConsult', pageOffset:offset, pageCount:3, getFilename:zoomFirstConsultFilename});
-    offset += 3;
+    pages.push({id:'firstConsult', subIdx:3});
+    groups.push({id:'firstConsult', pageOffset:offset, pageCount:4, getFilename:zoomFirstConsultFilename});
+    offset += 4;
 
     /* Client Review */
     pages.push({id:'clientReview'});
@@ -2953,9 +2954,12 @@
         } else if(pageDef.subIdx === 1){
           var fc2Result = drawZoomFirstConsultBrisbanePage2(index+1, totalPages, scale);
           if(fc2Result) return fc2Result;
-        } else {
+        } else if(pageDef.subIdx === 2){
           var fc3Result = drawZoomFirstConsultBrisbanePage3(index+1, totalPages, scale);
           if(fc3Result) return fc3Result;
+        } else {
+          var fc4Result = drawZoomFirstConsultBrisbanePage4(index+1, totalPages, scale);
+          if(fc4Result) return fc4Result;
         }
         return drawZoomFirstConsult(index+1, totalPages, scale);
       }
@@ -3272,6 +3276,24 @@
        No dynamic field overlays are currently mapped.
        The template image renders as-is with its pre-printed content.
        Fields can be mapped here when specific data fields are identified. */
+
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
+    return c;
+  }
+  function drawZoomFirstConsultBrisbanePage4(pageNumber, totalPages, scale){
+    var cache = zoomFirstConsultCache['brisbane'];
+    if(!cache || !cache[3]) return null;
+    var img = cache[3];
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+
+    /* Page 4 is a static disclosure/schedule page.
+       No dynamic field overlays currently mapped. */
 
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
     return c;
