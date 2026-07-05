@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.3.0-alpha.1';
+  const APP_VERSION = '2.3.1-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -16,7 +16,7 @@
     'includeEOI','eoiTemplate','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
     'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
     'laVidaFinanceBrokerChoice','laVidaFinanceBrokerName','laVidaFinanceBrokerEmail','laVidaFinanceBrokerPhone','laVidaConveyancerChoice','laVidaConveyancerName','laVidaConveyancerEmail','laVidaConveyancerPhone',
-    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA'
+    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA','zoomFirstConsultTemplate'
   ];
   const dateFieldIds = ['date','eoiDate','iaDate'];
   const photoLabels = ['Client 1 ID Front', 'Client 1 ID Back', 'Client 2 ID Front', 'Client 2 ID Back'];
@@ -436,7 +436,9 @@
     var c = clientNamesForFilename();
     var s = safePart(fieldText('teamMember'), 'Rep');
     var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
-    return 'First Consultation - ' + c + ' - ' + s + ' - ' + d + '.pdf';
+    var city = fieldText('zoomFirstConsultTemplate') || 'Brisbane';
+    city = city.charAt(0).toUpperCase() + city.slice(1);
+    return 'First Consultation - ' + city + ' - ' + c + ' - ' + s + ' - ' + d + '.pdf';
   }
   function zoomClientReviewFilename(){
     var c = clientNamesForFilename();
@@ -2949,23 +2951,10 @@
       var pageDef = zoomPlan.pages[index];
       if(pageDef.id === 'cover') return drawZoomCover(index+1, totalPages, scale);
       if(pageDef.id === 'firstConsult'){
-        await ensureZoomFirstConsultImages('brisbane');
-        if(pageDef.subIdx === 0){
-          var fc1Result = drawZoomFirstConsultBrisbanePage1(index+1, totalPages, scale);
-          if(fc1Result) return fc1Result;
-        } else if(pageDef.subIdx === 1){
-          var fc2Result = drawZoomFirstConsultBrisbanePage2(index+1, totalPages, scale);
-          if(fc2Result) return fc2Result;
-        } else if(pageDef.subIdx === 2){
-          var fc3Result = drawZoomFirstConsultBrisbanePage3(index+1, totalPages, scale);
-          if(fc3Result) return fc3Result;
-        } else if(pageDef.subIdx === 3){
-          var fc4Result = drawZoomFirstConsultBrisbanePage4(index+1, totalPages, scale);
-          if(fc4Result) return fc4Result;
-        } else {
-          var fc5Result = drawZoomFirstConsultBrisbanePage5(index+1, totalPages, scale);
-          if(fc5Result) return fc5Result;
-        }
+        var fcCity = fieldText('zoomFirstConsultTemplate') || 'brisbane';
+        await ensureZoomFirstConsultImages(fcCity);
+        var fcResult = drawZoomFirstConsultTemplatePage(fcCity, pageDef.subIdx, index+1, totalPages, scale);
+        if(fcResult) return fcResult;
         return drawZoomFirstConsult(index+1, totalPages, scale);
       }
       if(pageDef.id === 'clientReview') return drawZoomClientReview(index+1, totalPages, scale);
@@ -3083,10 +3072,10 @@
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 814);
     return c;
   }
-  function drawZoomFirstConsultBrisbanePage1(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[0]) return null; /* fall back to programmatic */
-    var img = cache[0];
+  function drawZoomFirstConsultTemplatePage(city, pageIndex, pageNumber, totalPages, scale){
+    var cache = zoomFirstConsultCache[city];
+    if(!cache || !cache[pageIndex]) return null;
+    var img = cache[pageIndex];
     var W = 595, H = 842;
     var c = document.createElement('canvas');
     c.width = Math.round(W * scale);
@@ -3095,7 +3084,6 @@
     ctx.scale(scale, scale);
     ctx.drawImage(img, 0, 0, W, H);
 
-    /* Coordinate mapping: source image (1654x2339 px) → A4 canvas (595x842 pts) */
     var iw = img.width, ih = img.height;
     function mx(sx){ return (sx / iw) * W; }
     function my(sy){ return (sy / ih) * H; }
@@ -3112,229 +3100,91 @@
       wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
     }
 
-    /* === SECTION 1: Client 1 Details === */
-    /* Client 1 Name — label at ~x=215, y=370; underline at y=391, x=212-328 */
-    var c1Name = fieldText('clientName') || '';
-    whiteOut(195, 374, 185, 32);
-    overlayText(c1Name, 210, 396, 160, '400 10px Arial', 13, 1);
-
-    /* Client 1 Phone — label ~x=370, y=370; underline ~x=360-490 */
-    var c1Phone = fieldText('clientPhone') || '';
-    whiteOut(345, 374, 185, 32);
-    overlayText(c1Phone, 360, 396, 160, '400 10px Arial', 13, 1);
-
-    /* Client 1 Email — label ~x=530, y=370; underline ~x=520-650 */
-    var c1Email = fieldText('clientEmail') || '';
-    whiteOut(500, 374, 185, 32);
-    overlayText(c1Email, 515, 396, 160, '400 10px Arial', 13, 1);
-
-    /* Client Address — label ~x=215, y=410; underline ~x=210-330 */
-    var cAddr = fieldText('clientAddress') || '';
-    whiteOut(195, 396, 185, 32);
-    overlayText(cAddr, 210, 418, 160, '400 9.5px Arial', 13, 2);
-
-    /* === SECTION 2: Client 2 + Appointment Details === */
-    /* Client 2 Name */
-    var c2Name = fieldText('client2Name') || '';
-    whiteOut(195, 508, 185, 32);
-    overlayText(c2Name, 210, 530, 160, '400 10px Arial', 13, 1);
-
-    /* Client 2 Phone */
-    var c2Phone = fieldText('client2Phone') || '';
-    whiteOut(345, 508, 185, 32);
-    overlayText(c2Phone, 360, 530, 160, '400 10px Arial', 13, 1);
-
-    /* Client 2 Email */
-    var c2Email = fieldText('client2Email') || '';
-    whiteOut(500, 508, 185, 32);
-    overlayText(c2Email, 515, 530, 160, '400 10px Arial', 13, 1);
-
-    /* Date — centered area ~x=790-920, y=242-254 */
-    var dateVal = formatDisplayDate(fieldText('date')) || '';
-    whiteOut(770, 237, 170, 28);
-    overlayText(dateVal, 790, 258, 150, '700 11px Arial', 14, 1);
-
-    /* Staff Member — centered area ~x=762-918, y=257-271 */
-    var staffVal = fieldText('teamMember') || '';
-    whiteOut(745, 262, 190, 28);
-    overlayText(staffVal, 765, 283, 170, '400 10px Arial', 13, 1);
-
-    /* === SECTION 3: Address / Property === */
-    var propAddr = fieldText('propertySaleAddress') || '';
-    whiteOut(195, 770, 200, 32);
-    overlayText(propAddr, 210, 792, 180, '400 9.5px Arial', 13, 2);
-
-    /* === SECTION 4: Client Goals (radio selection area) === */
-    var goalVal = '';
-    document.querySelectorAll('input[name=\"firstConsultGoalType\"]').forEach(function(r){
-      if(r.checked){
-        var labels = {investment:'Investment',home:'Home',smsf:'SMSF',wealth:'Wealth Creation',retirement:'Retirement',other:'Other'};
-        goalVal = labels[r.value] || r.value;
+    if(pageIndex === 0){
+      /* === PAGE 1: Client Details, Goals, Financial Snapshot === */
+      var c1Name = fieldText('clientName') || '';
+      whiteOut(195, 374, 185, 32);
+      overlayText(c1Name, 210, 396, 160, '400 10px Arial', 13, 1);
+      var c1Phone = fieldText('clientPhone') || '';
+      whiteOut(345, 374, 185, 32);
+      overlayText(c1Phone, 360, 396, 160, '400 10px Arial', 13, 1);
+      var c1Email = fieldText('clientEmail') || '';
+      whiteOut(500, 374, 185, 32);
+      overlayText(c1Email, 515, 396, 160, '400 10px Arial', 13, 1);
+      var cAddr = fieldText('clientAddress') || '';
+      whiteOut(195, 396, 185, 32);
+      overlayText(cAddr, 210, 418, 160, '400 9.5px Arial', 13, 2);
+      var c2Name = fieldText('client2Name') || '';
+      whiteOut(195, 508, 185, 32);
+      overlayText(c2Name, 210, 530, 160, '400 10px Arial', 13, 1);
+      var c2Phone = fieldText('client2Phone') || '';
+      whiteOut(345, 508, 185, 32);
+      overlayText(c2Phone, 360, 530, 160, '400 10px Arial', 13, 1);
+      var c2Email = fieldText('client2Email') || '';
+      whiteOut(500, 508, 185, 32);
+      overlayText(c2Email, 515, 530, 160, '400 10px Arial', 13, 1);
+      var dateVal = formatDisplayDate(fieldText('date')) || '';
+      whiteOut(770, 237, 170, 28);
+      overlayText(dateVal, 790, 258, 150, '700 11px Arial', 14, 1);
+      var staffVal = fieldText('teamMember') || '';
+      whiteOut(745, 262, 190, 28);
+      overlayText(staffVal, 765, 283, 170, '400 10px Arial', 13, 1);
+      var propAddr = fieldText('propertySaleAddress') || '';
+      whiteOut(195, 770, 200, 32);
+      overlayText(propAddr, 210, 792, 180, '400 9.5px Arial', 13, 2);
+      var goalVal = '';
+      document.querySelectorAll('input[name=\"firstConsultGoalType\"]').forEach(function(r){
+        if(r.checked){
+          var labels = {investment:'Investment',home:'Home',smsf:'SMSF',wealth:'Wealth Creation',retirement:'Retirement',other:'Other'};
+          goalVal = labels[r.value] || r.value;
+        }
+      });
+      whiteOut(186, 944, 180, 28);
+      overlayText(goalVal, 200, 966, 160, '400 10px Arial', 13, 1);
+      var finIncome = fieldText('firstConsultAnnualIncome') || '';
+      whiteOut(195, 1106, 185, 32);
+      overlayText(finIncome, 210, 1128, 160, '400 10px Arial', 13, 1);
+      var finMortgage = fieldText('firstConsultExistingMortgage') || '';
+      whiteOut(370, 1106, 185, 32);
+      overlayText(finMortgage, 385, 1128, 160, '400 10px Arial', 13, 1);
+      var finSavings = fieldText('firstConsultSavings') || '';
+      whiteOut(195, 1148, 185, 32);
+      overlayText(finSavings, 210, 1170, 160, '400 10px Arial', 13, 1);
+      var finSuper = fieldText('firstConsultSuper') || '';
+      whiteOut(370, 1148, 185, 32);
+      overlayText(finSuper, 385, 1170, 160, '400 10px Arial', 13, 1);
+      var finInvProps = fieldText('firstConsultInvestmentProperties') || '';
+      whiteOut(195, 1230, 240, 32);
+      overlayText(finInvProps, 210, 1252, 220, '400 10px Arial', 13, 1);
+      var finBorrow = fieldText('firstConsultBorrowingCapacity') || '';
+      whiteOut(370, 1230, 185, 32);
+      overlayText(finBorrow, 385, 1252, 160, '400 10px Arial', 13, 1);
+      var notes = fieldText('firstConsultNotes') || '';
+      whiteOut(195, 1375, 1200, 155);
+      if(notes){
+        ctx.fillStyle = '#111';
+        ctx.font = '400 9px Arial';
+        ctx.textBaseline = 'alphabetic';
+        wrapText(ctx, notes, mx(210), my(1395), mx(1180), 14, 12);
       }
-    });
-    whiteOut(186, 944, 180, 28);
-    overlayText(goalVal, 200, 966, 160, '400 10px Arial', 13, 1);
-
-    /* === SECTION 5: Financial Snapshot === */
-    var finIncome = fieldText('firstConsultAnnualIncome') || '';
-    whiteOut(195, 1106, 185, 32);
-    overlayText(finIncome, 210, 1128, 160, '400 10px Arial', 13, 1);
-
-    var finMortgage = fieldText('firstConsultExistingMortgage') || '';
-    whiteOut(370, 1106, 185, 32);
-    overlayText(finMortgage, 385, 1128, 160, '400 10px Arial', 13, 1);
-
-    var finSavings = fieldText('firstConsultSavings') || '';
-    whiteOut(195, 1148, 185, 32);
-    overlayText(finSavings, 210, 1170, 160, '400 10px Arial', 13, 1);
-
-    var finSuper = fieldText('firstConsultSuper') || '';
-    whiteOut(370, 1148, 185, 32);
-    overlayText(finSuper, 385, 1170, 160, '400 10px Arial', 13, 1);
-
-    var finInvProps = fieldText('firstConsultInvestmentProperties') || '';
-    whiteOut(195, 1230, 240, 32);
-    overlayText(finInvProps, 210, 1252, 220, '400 10px Arial', 13, 1);
-
-    var finBorrow = fieldText('firstConsultBorrowingCapacity') || '';
-    whiteOut(370, 1230, 185, 32);
-    overlayText(finBorrow, 385, 1252, 160, '400 10px Arial', 13, 1);
-
-    /* === NOTES area === */
-    var notes = fieldText('firstConsultNotes') || '';
-    whiteOut(195, 1375, 1200, 155);
-    if(notes){
-      ctx.fillStyle = '#111';
-      ctx.font = '400 9px Arial';
-      ctx.textBaseline = 'alphabetic';
-      wrapText(ctx, notes, mx(210), my(1395), mx(1180), 14, 12);
+    } else if(pageIndex === 1){
+      /* === PAGE 2: Consultation Notes continuation === */
+      var dateVal = formatDisplayDate(fieldText('date')) || '';
+      whiteOut(775, 234, 170, 28);
+      overlayText(dateVal, 790, 256, 150, '700 11px Arial', 14, 1);
+      var staffVal = fieldText('teamMember') || '';
+      whiteOut(745, 270, 190, 28);
+      overlayText(staffVal, 765, 292, 170, '400 10px Arial', 13, 1);
+      var notes = fieldText('firstConsultNotes') || '';
+      whiteOut(195, 680, 1260, 155);
+      if(notes){
+        ctx.fillStyle = '#111';
+        ctx.font = '400 9.5px Arial';
+        ctx.textBaseline = 'alphabetic';
+        wrapText(ctx, notes, mx(210), my(700), mx(1220), 14, 10);
+      }
     }
-
-    /* No small logo — template has its own branding */
-    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
-    return c;
-  }
-  function drawZoomFirstConsultBrisbanePage2(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[1]) return null; /* fall back to programmatic */
-    var img = cache[1];
-    var W = 595, H = 842;
-    var c = document.createElement('canvas');
-    c.width = Math.round(W * scale);
-    c.height = Math.round(H * scale);
-    var ctx = c.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
-
-    var iw = img.width, ih = img.height;
-    function mx(sx){ return (sx / iw) * W; }
-    function my(sy){ return (sy / ih) * H; }
-    function whiteOut(sx, sy, sw, sh){
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(mx(sx), my(sy), mx(sw), my(sh));
-    }
-    function overlayText(text, sx, sy, sw, font, lineHeight, maxLines){
-      text = (text || '').trim();
-      if(!text) return;
-      ctx.fillStyle = '#111';
-      if(font) ctx.font = font;
-      ctx.textBaseline = 'alphabetic';
-      wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
-    }
-
-    /* === Header area: Date and Staff (centered, y=229-271) — shared fields === */
-    var dateVal = formatDisplayDate(fieldText('date')) || '';
-    whiteOut(775, 234, 170, 28);
-    overlayText(dateVal, 790, 256, 150, '700 11px Arial', 14, 1);
-
-    var staffVal = fieldText('teamMember') || '';
-    whiteOut(745, 270, 190, 28);
-    overlayText(staffVal, 765, 292, 170, '400 10px Arial', 13, 1);
-
-    /* === Consultation Notes continuation (y=612-816) === */
-    var notes = fieldText('firstConsultNotes') || '';
-    whiteOut(195, 680, 1260, 155);
-    if(notes){
-      ctx.fillStyle = '#111';
-      ctx.font = '400 9.5px Arial';
-      ctx.textBaseline = 'alphabetic';
-      wrapText(ctx, notes, mx(210), my(700), mx(1220), 14, 10);
-    }
-
-    /* No small logo — template has its own branding */
-    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
-    return c;
-  }
-  function drawZoomFirstConsultBrisbanePage3(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[2]) return null;
-    var img = cache[2];
-    var W = 595, H = 842;
-    var c = document.createElement('canvas');
-    c.width = Math.round(W * scale);
-    c.height = Math.round(H * scale);
-    var ctx = c.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
-
-    /* Page 3 is a static document page (declaration, terms, or schedule).
-       No dynamic field overlays are currently mapped.
-       The template image renders as-is with its pre-printed content.
-       Fields can be mapped here when specific data fields are identified. */
-
-    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
-    return c;
-  }
-  function drawZoomFirstConsultBrisbanePage4(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[3]) return null;
-    var img = cache[3];
-    var W = 595, H = 842;
-    var c = document.createElement('canvas');
-    c.width = Math.round(W * scale);
-    c.height = Math.round(H * scale);
-    var ctx = c.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
-
-    /* Page 4 is a static disclosure/schedule page.
-       No dynamic field overlays currently mapped. */
-
-    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
-    return c;
-  }
-  function drawZoomFirstConsultBrisbanePage5(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[4]) return null;
-    var img = cache[4];
-    var W = 595, H = 842;
-    var c = document.createElement('canvas');
-    c.width = Math.round(W * scale);
-    c.height = Math.round(H * scale);
-    var ctx = c.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
-
-    /* Page 5 is a static fee/disclosure schedule page.
-       No dynamic field overlays currently mapped. */
-
-    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
-    return c;
-  }
-  function drawZoomFirstConsultBrisbanePage6(pageNumber, totalPages, scale){
-    var cache = zoomFirstConsultCache['brisbane'];
-    if(!cache || !cache[5]) return null;
-    var img = cache[5];
-    var W = 595, H = 842;
-    var c = document.createElement('canvas');
-    c.width = Math.round(W * scale);
-    c.height = Math.round(H * scale);
-    var ctx = c.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, W, H);
-
-    /* Page 6 is a static checklist/declaration page.
-       No dynamic field overlays currently mapped. */
+    /* Pages 3-6: static template pages — no field overlays */
 
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
     return c;
@@ -3987,7 +3837,9 @@
     buildIndividualPdfs: () => buildIndividualPdfs(),
     buildZip: (pdfs, name) => buildZip(pdfs, name),
     getZoomPdfName: () => zoomPdfFileName(),
-    getOutputPlan: () => outputPlan()
+    getOutputPlan: () => outputPlan(),
+    loadDraft: () => loadDraft(),
+    setDraft: (data) => setDraft(data)
   };
   refreshPreview();
 })();
