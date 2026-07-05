@@ -2943,7 +2943,13 @@
       if(index >= zoomPlan.pages.length) return null;
       var pageDef = zoomPlan.pages[index];
       if(pageDef.id === 'cover') return drawZoomCover(index+1, totalPages, scale);
-      if(pageDef.id === 'firstConsult') return drawZoomFirstConsult(index+1, totalPages, scale);
+      if(pageDef.id === 'firstConsult'){
+        /* Preload template images, then try template-backed page 1 with fallback */
+        await ensureZoomFirstConsultImages('brisbane');
+        var fcResult = drawZoomFirstConsultBrisbanePage1(index+1, totalPages, scale);
+        if(fcResult) return fcResult;
+        return drawZoomFirstConsult(index+1, totalPages, scale);
+      }
       if(pageDef.id === 'clientReview') return drawZoomClientReview(index+1, totalPages, scale);
       if(pageDef.id === 'eoi'){
         await ensurePageLogo();
@@ -3057,6 +3063,137 @@
     wrapText(ctx,notes || 'No notes recorded.',42,yOff,511,18,20);
 
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 814);
+    return c;
+  }
+  function drawZoomFirstConsultBrisbanePage1(pageNumber, totalPages, scale){
+    var cache = zoomFirstConsultCache['brisbane'];
+    if(!cache || !cache[0]) return null; /* fall back to programmatic */
+    var img = cache[0];
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0, W, H);
+
+    /* Coordinate mapping: source image (1654x2339 px) → A4 canvas (595x842 pts) */
+    var iw = img.width, ih = img.height;
+    function mx(sx){ return (sx / iw) * W; }
+    function my(sy){ return (sy / ih) * H; }
+    function whiteOut(sx, sy, sw, sh){
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(mx(sx), my(sy), mx(sw), my(sh));
+    }
+    function overlayText(text, sx, sy, sw, font, lineHeight, maxLines){
+      text = (text || '').trim();
+      if(!text) return;
+      ctx.fillStyle = '#111';
+      if(font) ctx.font = font;
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, text, mx(sx), my(sy), mx(sw), lineHeight || 14, maxLines || 1);
+    }
+
+    /* === SECTION 1: Client 1 Details === */
+    /* Client 1 Name — label at ~x=215, y=370; underline at y=391, x=212-328 */
+    var c1Name = fieldText('clientName') || '';
+    whiteOut(195, 374, 185, 32);
+    overlayText(c1Name, 210, 396, 160, '400 10px Arial', 13, 1);
+
+    /* Client 1 Phone — label ~x=370, y=370; underline ~x=360-490 */
+    var c1Phone = fieldText('clientPhone') || '';
+    whiteOut(345, 374, 185, 32);
+    overlayText(c1Phone, 360, 396, 160, '400 10px Arial', 13, 1);
+
+    /* Client 1 Email — label ~x=530, y=370; underline ~x=520-650 */
+    var c1Email = fieldText('clientEmail') || '';
+    whiteOut(500, 374, 185, 32);
+    overlayText(c1Email, 515, 396, 160, '400 10px Arial', 13, 1);
+
+    /* Client Address — label ~x=215, y=410; underline ~x=210-330 */
+    var cAddr = fieldText('clientAddress') || '';
+    whiteOut(195, 396, 185, 32);
+    overlayText(cAddr, 210, 418, 160, '400 9.5px Arial', 13, 2);
+
+    /* === SECTION 2: Client 2 + Appointment Details === */
+    /* Client 2 Name */
+    var c2Name = fieldText('client2Name') || '';
+    whiteOut(195, 508, 185, 32);
+    overlayText(c2Name, 210, 530, 160, '400 10px Arial', 13, 1);
+
+    /* Client 2 Phone */
+    var c2Phone = fieldText('client2Phone') || '';
+    whiteOut(345, 508, 185, 32);
+    overlayText(c2Phone, 360, 530, 160, '400 10px Arial', 13, 1);
+
+    /* Client 2 Email */
+    var c2Email = fieldText('client2Email') || '';
+    whiteOut(500, 508, 185, 32);
+    overlayText(c2Email, 515, 530, 160, '400 10px Arial', 13, 1);
+
+    /* Date — centered area ~x=790-920, y=242-254 */
+    var dateVal = formatDisplayDate(fieldText('date')) || '';
+    whiteOut(770, 237, 170, 28);
+    overlayText(dateVal, 790, 258, 150, '700 11px Arial', 14, 1);
+
+    /* Staff Member — centered area ~x=762-918, y=257-271 */
+    var staffVal = fieldText('teamMember') || '';
+    whiteOut(745, 262, 190, 28);
+    overlayText(staffVal, 765, 283, 170, '400 10px Arial', 13, 1);
+
+    /* === SECTION 3: Address / Property === */
+    var propAddr = fieldText('propertySaleAddress') || '';
+    whiteOut(195, 770, 200, 32);
+    overlayText(propAddr, 210, 792, 180, '400 9.5px Arial', 13, 2);
+
+    /* === SECTION 4: Client Goals (radio selection area) === */
+    var goalVal = '';
+    document.querySelectorAll('input[name=\"firstConsultGoalType\"]').forEach(function(r){
+      if(r.checked){
+        var labels = {investment:'Investment',home:'Home',smsf:'SMSF',wealth:'Wealth Creation',retirement:'Retirement',other:'Other'};
+        goalVal = labels[r.value] || r.value;
+      }
+    });
+    whiteOut(186, 944, 180, 28);
+    overlayText(goalVal, 200, 966, 160, '400 10px Arial', 13, 1);
+
+    /* === SECTION 5: Financial Snapshot === */
+    var finIncome = fieldText('firstConsultAnnualIncome') || '';
+    whiteOut(195, 1106, 185, 32);
+    overlayText(finIncome, 210, 1128, 160, '400 10px Arial', 13, 1);
+
+    var finMortgage = fieldText('firstConsultExistingMortgage') || '';
+    whiteOut(370, 1106, 185, 32);
+    overlayText(finMortgage, 385, 1128, 160, '400 10px Arial', 13, 1);
+
+    var finSavings = fieldText('firstConsultSavings') || '';
+    whiteOut(195, 1148, 185, 32);
+    overlayText(finSavings, 210, 1170, 160, '400 10px Arial', 13, 1);
+
+    var finSuper = fieldText('firstConsultSuper') || '';
+    whiteOut(370, 1148, 185, 32);
+    overlayText(finSuper, 385, 1170, 160, '400 10px Arial', 13, 1);
+
+    var finInvProps = fieldText('firstConsultInvestmentProperties') || '';
+    whiteOut(195, 1230, 240, 32);
+    overlayText(finInvProps, 210, 1252, 220, '400 10px Arial', 13, 1);
+
+    var finBorrow = fieldText('firstConsultBorrowingCapacity') || '';
+    whiteOut(370, 1230, 185, 32);
+    overlayText(finBorrow, 385, 1252, 160, '400 10px Arial', 13, 1);
+
+    /* === NOTES area === */
+    var notes = fieldText('firstConsultNotes') || '';
+    whiteOut(195, 1375, 1200, 155);
+    if(notes){
+      ctx.fillStyle = '#111';
+      ctx.font = '400 9px Arial';
+      ctx.textBaseline = 'alphabetic';
+      wrapText(ctx, notes, mx(210), my(1395), mx(1180), 14, 12);
+    }
+
+    /* No small logo — template has its own branding */
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'First Consultation', 42, 817);
     return c;
   }
   function drawZoomClientReview(pageNumber, totalPages, scale){
