@@ -1,0 +1,28 @@
+{
+  "name": "irrevoccable-authority-checklist",
+  "version": "1.0.0",
+  "description": "Offline-capable sales appointment capture app for Vercel.",
+  "main": "service-worker.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gar2lew/sales_checklist_ia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/gar2lew/sales_checklist_ia/issues"
+  },
+  "homepage": "https://github.com/gar2lew/sales_checklist_ia#readme",
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "playwright": "^1.61.1"
+  }
+}
