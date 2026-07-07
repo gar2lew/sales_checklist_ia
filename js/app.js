@@ -252,6 +252,50 @@
     var staff = ($('landingStaff').value || '').trim();
     $('landingContinue').disabled = !staff;
   }
+
+  function updateContinueButtonText(){
+    var activeBtn = document.querySelector('.mode-btn.active');
+    var mode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    var text = mode === 'zoom' ? 'Start Zoom Appointment' : 'Start In-person Appointment';
+    $('continueButtonText').textContent = text;
+  }
+
+  function updateLandingStaffFromStorage(){
+    var lastStaff = localStorage.getItem('salesAppointmentLastStaff');
+    if(lastStaff && $('landingStaff')){
+      $('landingStaff').value = lastStaff;
+      var evt = new Event('input', {bubbles:true});
+      $('landingStaff').dispatchEvent(evt);
+    }
+  }
+
+  function checkForRecentDraft(){
+    try{
+      const draft = localStorage.getItem('salesAppointmentDraft');
+      const card = $('recentDraftCard');
+      if(card && draft){
+        const data = JSON.parse(draft);
+        $('draftType').textContent = data.appointmentMode === 'zoom' ? 'Zoom / Online Appointment' : 'In-person Appointment';
+        $('draftClient').textContent = data.clientName || '(No client name)';
+        $('draftDate').textContent = data.date || '(No date)';
+        $('draftStaff').textContent = data.teamMember || '(No staff)';
+        card.classList.remove('hidden');
+      } else if(card){
+        card.classList.add('hidden');
+      }
+    }catch(e){
+      console.error('Could not read draft:', e);
+      var card2 = $('recentDraftCard');
+      if(card2) card2.classList.add('hidden');
+    }
+  }
+
+  function resumeDraft(){
+    loadDraft();
+    var card = $('recentDraftCard');
+    if(card) card.classList.add('hidden');
+    updateContinueButtonText();
+  }
   function applyAppointmentMode(){
     var app = document.querySelector('.app');
     app.classList.remove('show-in-person', 'show-zoom');

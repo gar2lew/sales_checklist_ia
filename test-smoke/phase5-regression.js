@@ -18,9 +18,31 @@ s.listen(0, async () => {
   function chk(n, o) { if (o) { ok++; console.log('  \u2705 ' + n); } else { fail++; console.log('  \u274C ' + n); } }
 
   async function enZ(p) {
-    await p.fill('#landingStaff','T');
-    await p.evaluate(() => { document.querySelectorAll('.mode-btn')[1].classList.add('active'); document.querySelectorAll('.mode-btn')[0].classList.remove('active'); });
-    await p.click('#landingContinue'); await p.waitForTimeout(300);
+    await p.evaluate(() => {
+      const si = document.querySelector('#landingStaff');
+      if (si) { si.value = 'T'; si.dispatchEvent(new Event('input', {bubbles:true})); si.dispatchEvent(new Event('change', {bubbles:true})); }
+      document.querySelectorAll('.mode-btn')[1].classList.add('active');
+      document.querySelectorAll('.mode-btn')[0].classList.remove('active');
+    });
+    await p.waitForTimeout(1000);
+    const btnState = await p.evaluate(() => {
+      const btn = document.querySelector('#landingContinue');
+      return { disabled: btn ? btn.disabled : 'not found', text: btn ? btn.textContent : '' };
+    });
+    console.log('Button state before click:', btnState);
+    await p.click('#landingContinue');
+    await p.waitForTimeout(2000);
+    const appState = await p.evaluate(() => {
+      const ls = document.querySelector('#landingScreen');
+      const app = document.querySelector('.app');
+      return {
+        landingScreenClass: ls ? ls.className : 'not found',
+        appClass: app ? app.className : 'not found'
+      };
+    });
+    console.log('After click state:', appState);
+    await p.waitForFunction(() => { const app = document.querySelector('.app'); return app && app.classList.contains('show-zoom'); }, { timeout: 5000 });
+    await p.waitForSelector('#firstConsultSection', { state: 'visible', timeout: 5000 });
   }
   async function gen(p) {
     await p.evaluate(() => document.getElementById('generateTop').click());
@@ -31,6 +53,8 @@ s.listen(0, async () => {
   // 1. Brisbane FC + CR + all outputs
   console.log('\n--- Brisbane First Consult + Client Review ---');
   const p1 = await b.newPage();
+  p1.on("console", msg => console.log("CONSOLE:", msg.type(), msg.text()));
+  p1.on("pageerror", err => console.log("PAGE ERROR:", err.message));
   await p1.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p1.waitForTimeout(1000); await enZ(p1);
   await p1.fill('#clientName','Alice'); await p1.fill('#client2Name','Bob');
