@@ -189,8 +189,12 @@ s.listen(0, async () => {
   const p4 = await b.newPage();
   await p4.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p4.waitForTimeout(1000); await enZ(p4);
+  // In Playwright, each newPage() creates an isolated browser context,
+  // so localStorage from p1 is not inherited. Inject the draft manually.
+  await p4.evaluate((draftStr) => { try { localStorage.setItem('salesAppointmentDraft', draftStr); } catch(e) { console.error('setItem failed', e); } }, JSON.stringify(dr));
   await p4.evaluate(() => document.getElementById('loadDraft').click());
-  await p4.waitForTimeout(2000);
+  // Wait for the async setDraft to complete (image loads, etc.)
+  await p4.waitForTimeout(3000);
   const ld = await p4.evaluate(() => {
     return {
       city: document.getElementById('zoomFirstConsultTemplate').value,
