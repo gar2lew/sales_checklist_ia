@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.3.1-alpha.1';
+  const APP_VERSION = '2.4.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -245,6 +245,8 @@
     $('landingStaff').addEventListener('input', updateLandingContinue);
     $('landingStaff').addEventListener('change', updateLandingContinue);
     updateLandingContinue();
+    updateLandingStaffFromStorage();
+    checkForRecentDraft();
   }
   function updateLandingContinue(){
     var staff = ($('landingStaff').value || '').trim();
@@ -263,6 +265,7 @@
     appointmentMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
     setControlValue('teamMember', staff);
     preserveDraftDropdownValue('staff', staff);
+    localStorage.setItem("salesAppointmentLastStaff", staff);
     $('landingScreen').classList.add('hidden');
     applyAppointmentMode();
     $('backToStart').style.display = '';
@@ -271,6 +274,8 @@
   function backToStart(){
     $('landingScreen').classList.remove('hidden');
     $('backToStart').style.display = 'none';
+    updateLandingStaffFromStorage();
+    updateContinueButtonText();
   }
   function returnToLanding(){
     appointmentMode = 'inPerson';
@@ -279,6 +284,8 @@
     $('landingContinue').disabled = true;
     $('landingScreen').classList.remove('hidden');
     $('backToStart').style.display = 'none';
+    updateLandingStaffFromStorage();
+    updateContinueButtonText();
     applyAppointmentMode();
   }
   function setFieldError(id, message){
@@ -3942,6 +3949,7 @@
   /* Landing screen event wiring */
   $('landingContinue').addEventListener('click', enterAppointment);
   if($('backToStart')) $('backToStart').addEventListener('click', backToStart);
+if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraft);
   document.querySelectorAll('.mode-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });

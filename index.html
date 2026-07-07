@@ -20,6 +20,11 @@
     <div class="landing-bg">
       <img src="icons/landing.png" alt="Sales Appointment Capture" class="landing-image" draggable="false">
       <div class="landing-panel">
+        <div class="landing-header">
+          <h1>Sales Appointment Capture</h1>
+          <p class="landing-subtitle">Choose your appointment type and staff member to begin.</p>
+          <div class="landing-version" data-app-version-label>v2.4.0-alpha.1</div>
+        </div>
         <div class="landing-panel-inner">
           <div class="landing-field">
             <label for="landingStaff">Staff Member</label>
@@ -34,7 +39,19 @@
               <button type="button" class="mode-btn" data-mode="zoom">Zoom / Online Appointment</button>
             </div>
           </div>
-          <button id="landingContinue" class="btn primary landing-continue" disabled>Continue →</button>
+          <div id="recentDraftCard" class="recent-draft-card hidden">
+            <div class="card-header">Recent draft available</div>
+            <div class="card-body">
+              <div class="draft-info">
+                <div class="draft-item"><span class="label">Appointment type:</span> <span class="value" id="draftType"></span></div>
+                <div class="draft-item"><span class="label">Client:</span> <span class="value" id="draftClient"></span></div>
+                <div class="draft-item"><span class="label">Date:</span> <span class="value" id="draftDate"></span></div>
+                <div class="draft-item"><span class="label">Staff:</span> <span class="value" id="draftStaff"></span></div>
+              </div>
+              <button id="resumeDraftBtn" class="btn secondary">Resume Draft</button>
+            </div>
+          </div>
+          <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>
         </div>
       </div>
     </div>
