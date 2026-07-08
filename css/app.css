@@ -465,6 +465,45 @@
       outline-offset: 2px;
       transition: outline 0.15s ease;
     }
+
+    /* Progress badges container */
+    .progress-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 16px 4px;
+      margin-top: 2px;
+    }
+    .progress-badges .badge {
+      margin-left: 0;
+    }
+
+    /* Keyboard focus styles */
+    .btn:focus-visible,
+    .toolbar-btn:focus-visible,
+    .mode-btn:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+    }
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 4px rgba(209,171,111,.18);
+    }
+
+    /* Mobile touch target improvements */
+    @media (max-width: 480px) {
+      .mode-btn {
+        min-height: 44px;
+      }
+      .btn.danger {
+        min-height: 44px;
+      }
+      .draft-footer .btn {
+        min-height: 44px;
+      }
+    }
     @media (max-width: 900px) {
       .summary-card-body {
         grid-template-columns: repeat(3, 1fr);
