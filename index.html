@@ -236,11 +236,20 @@
               <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="retirement" id="fcGoalRetirement"> Retirement</label>
               <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
             </div>
+            <div class="field" style="margin-top:12px">
+              <label for="fcPreferredSuburbs">Preferred Suburbs</label>
+              <input id="fcPreferredSuburbs" type="text" placeholder="Preferred suburbs or areas">
+            </div>
           </div>
           <div class="subsection">
             <h3>Consultation Notes</h3>
             <label for="firstConsultNotes">Notes</label>
             <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Capture key discussion points and client objectives from the initial discovery meeting."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Additional Notes</h3>
+            <label for="fcAdditionalNotes">Additional notes</label>
+            <textarea id="fcAdditionalNotes" class="zoom-notes" placeholder="Any additional observations or follow-up items."></textarea>
           </div>
         </section>
 
@@ -255,6 +264,8 @@
             <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
             <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
             <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+            <div><label for="fcMinBudget">Min Budget</label><input id="fcMinBudget" type="text" placeholder="$"></div>
+            <div><label for="fcMaxBudget">Max Budget</label><input id="fcMaxBudget" type="text" placeholder="$"></div>
           </div>
         </section>
 
@@ -275,6 +286,10 @@
                 <label for="clientReviewTimeline">Estimated Timeline</label>
                 <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
               </div>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label for="crInspections">Property Inspections</label>
+              <input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates">
             </div>
           </div>
         </section>
@@ -308,9 +323,13 @@
         <!-- ZOOM SECTION 6: Next Actions =========================================== -->
         <section class="card zoom-only" id="crNextActions">
           <h2>Next Actions</h2>
-          <p class="hint">Define the next steps for this client.</p>
+          <p class="hint">Define the next steps and schedule follow-up appointments.</p>
           <label for="clientReviewNextActions">Next steps</label>
           <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
+          <div class="fields two" style="margin-top:16px">
+            <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date"></div>
+            <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes"></div>
+          </div>
         </section>
 
         <!-- ZOOM SECTION 7: Whiteboard ============================================= -->
