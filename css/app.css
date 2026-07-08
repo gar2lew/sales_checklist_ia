@@ -60,7 +60,7 @@
     .toggleRow label{display:flex;align-items:center;gap:8px;margin:0;font-weight:700;color:var(--muted)}
     .optionGrid{display:grid;grid-template-columns:1fr;gap:10px}
     @media (min-width:720px){.optionGrid{grid-template-columns:repeat(3,1fr)}}
-    .radioCard{display:flex;gap:10px;align-items:flex-start;border:1px solid #ececf4;background:var(--soft);border-radius:14px;padding:11px;font-weight:800;color:#30364a}
+    .radioCard{display:flex;gap:10px;align-items:flex-start;border:1px solid #ececf4;background:var(--soft);border-radius:14px;padding:14px 13px;font-weight:800;color:#30364a}
     .radioCard input{width:20px;height:20px;margin:0;accent-color:var(--navy);flex:none}
     .subsection{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
     .subsection h3{font-size:14px;margin:0 0 10px;color:var(--navy);letter-spacing:0}
@@ -676,7 +676,7 @@
       font-size: 13px;
     }
     .zoom-notes {
-      min-height: 110px;
+      min-height: 130px;
     }
     .zoom-checkboxes {
       display: flex;
@@ -690,6 +690,39 @@
       align-items: center;
       gap: 8px;
       white-space: nowrap;
+    }
+
+    /* Guided zoom card spacing */
+    .grid .card.zoom-only + .card.zoom-only {
+      margin-top: 20px;
+    }
+    .grid .card.zoom-only h2 {
+      font-size: 19px;
+      margin-bottom: 14px;
+    }
+    .grid .card.zoom-only .hint {
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    /* Responsive: collapse professional team fields below 768px */
+    @media (max-width: 768px) {
+      .grid .card.zoom-only + .card.zoom-only {
+        margin-top: 16px;
+      }
+      .grid .card.zoom-only h2 {
+        font-size: 17px;
+        margin-bottom: 12px;
+      }
+    }
+    @media (max-width: 480px) {
+      .grid .card.zoom-only {
+        padding: 14px;
+      }
+      .grid .card.zoom-only .hint {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
     }
     @media (max-width: 500px) {
       .zoom-fin-grid {

@@ -200,9 +200,38 @@
           </div>
         </section>
 
-        <!-- ZOOM SECTION 2: First Consultation ================================== -->
+        <!-- ZOOM SECTION 2: Client Goals ======================================== -->
+        <section class="card zoom-only" id="fcClientGoals">
+          <h2>Client Goals</h2>
+          <p class="hint">Why are they looking at property? Select their primary objective.</p>
+          <div class="optionGrid">
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="investment" id="fcGoalInvestment"> Investment</label>
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="home" id="fcGoalHome"> Home</label>
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="smsf" id="fcGoalSmsf"> SMSF</label>
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="wealth" id="fcGoalWealth"> Wealth Creation</label>
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="retirement" id="fcGoalRetirement"> Retirement</label>
+            <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 3: Financial Snapshot =================================== -->
+        <section class="card zoom-only" id="fcFinancial">
+          <h2>Financial Snapshot</h2>
+          <p class="hint">Current financial position — enter approximate figures.</p>
+          <div class="fields two zoom-fin-grid">
+            <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
+            <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
+            <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
+            <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
+            <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
+            <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 4: Consultation Notes =================================== -->
         <section class="card zoom-only" id="firstConsultSection">
-          <h2>2. First Consultation</h2>
+          <h2>Consultation Notes</h2>
+          <p class="hint">Capture key discussion points and client objectives from the initial discovery meeting.</p>
           <div class="fields two" style="margin-bottom:8px">
             <div id="zoomFirstConsultTemplateControl">
               <label for="zoomFirstConsultTemplate">First Consult Template</label>
@@ -212,93 +241,63 @@
               </select>
             </div>
           </div>
-          <p class="hint">Capture the information normally completed during the initial discovery meeting.</p>
+          <label for="firstConsultNotes">Consultation notes</label>
+          <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Any notes from the first consultation..."></textarea>
+        </section>
 
-          <div class="subsection">
-            <h3>Client Goals</h3>
-            <p class="hint">Why are they looking at property?</p>
-            <div class="optionGrid">
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="investment" id="fcGoalInvestment"> Investment</label>
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="home" id="fcGoalHome"> Home</label>
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="smsf" id="fcGoalSmsf"> SMSF</label>
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="wealth" id="fcGoalWealth"> Wealth Creation</label>
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="retirement" id="fcGoalRetirement"> Retirement</label>
-              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
+        <!-- ZOOM SECTION 5: Recommended Strategy ================================= -->
+        <section class="card zoom-only" id="clientReviewSection">
+          <h2>Recommended Strategy</h2>
+          <p class="hint">Document the recommended investment or property strategy for this client.</p>
+          <label for="clientReviewStrategy">Strategy details</label>
+          <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
+        </section>
+
+        <!-- ZOOM SECTION 6: Professional Team ==================================== -->
+        <section class="card zoom-only" id="crProfessionalTeam">
+          <h2>Professional Team</h2>
+          <p class="hint">Select preferred partners for this appointment.</p>
+          <div class="fields two">
+            <div id="clientReviewBuilderControl">
+              <label for="clientReviewBuilder">Recommended Builder</label>
+              <select id="clientReviewBuilder"><option value="">Select builder</option></select>
+            </div>
+            <div id="clientReviewDeveloperControl">
+              <label for="clientReviewDeveloper">Recommended Developer</label>
+              <select id="clientReviewDeveloper"><option value="">Select developer</option></select>
             </div>
           </div>
-
-          <div class="subsection">
-            <h3>Financial Snapshot</h3>
-            <p class="hint">Current financial position — enter approximate figures.</p>
-            <div class="fields two zoom-fin-grid">
-              <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
-              <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
-              <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
-              <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
-              <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
-              <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+          <div class="fields two" style="margin-top:16px">
+            <div id="clientReviewBrokerControl">
+              <label for="clientReviewBroker">Recommended Finance Broker</label>
+              <select id="clientReviewBroker"><option value="">Select broker</option></select>
             </div>
-          </div>
-
-          <div class="subsection">
-            <h3>General Notes</h3>
-            <label for="firstConsultNotes">Consultation notes</label>
-            <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Any notes from the first consultation..."></textarea>
+            <div id="clientReviewConveyancerControl">
+              <label for="clientReviewConveyancer">Recommended Conveyancer</label>
+              <select id="clientReviewConveyancer"><option value="">Select conveyancer</option></select>
+            </div>
           </div>
         </section>
 
-        <!-- ZOOM SECTION 3: Client Review / Assessment ========================== -->
-        <section class="card zoom-only" id="clientReviewSection">
-          <h2>3. Client Review / Assessment</h2>
-          <p class="hint">Document the recommended strategy, preferred builders and professionals, and next steps for this client.</p>
-
-          <div class="subsection">
-            <h3>Recommended Strategy</h3>
-            <label for="clientReviewStrategy">Strategy details</label>
-            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
-          </div>
-
-          <div class="subsection">
-            <h3>Recommendations</h3>
-            <p class="hint">Select preferred partners for this appointment.</p>
-            <div class="fields two">
-              <div id="clientReviewBuilderControl">
-                <label for="clientReviewBuilder">Recommended Builder</label>
-                <select id="clientReviewBuilder"><option value="">Select builder</option></select>
-              </div>
-              <div id="clientReviewDeveloperControl">
-                <label for="clientReviewDeveloper">Recommended Developer</label>
-                <select id="clientReviewDeveloper"><option value="">Select developer</option></select>
-              </div>
-            </div>
-            <div class="fields two" style="margin-top:12px">
-              <div id="clientReviewBrokerControl">
-                <label for="clientReviewBroker">Recommended Finance Broker</label>
-                <select id="clientReviewBroker"><option value="">Select broker</option></select>
-              </div>
-              <div id="clientReviewConveyancerControl">
-                <label for="clientReviewConveyancer">Recommended Conveyancer</label>
-                <select id="clientReviewConveyancer"><option value="">Select conveyancer</option></select>
-              </div>
+        <!-- ZOOM SECTION 7: Property Pathway ===================================== -->
+        <section class="card zoom-only" id="crPropertyPathway">
+          <h2>Property Pathway</h2>
+          <p class="hint">Outline the recommended property and expected timeline.</p>
+          <div class="fields two">
+            <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
+            <div id="clientReviewTimelineControl">
+              <label for="clientReviewTimeline">Estimated Timeline</label>
+              <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
             </div>
           </div>
+        </section>
 
-          <div class="subsection">
-            <h3>Property & Timeline</h3>
-            <div class="fields two">
-              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
-              <div id="clientReviewTimelineControl">
-                <label for="clientReviewTimeline">Estimated Timeline</label>
-                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
-              </div>
-            </div>
-          </div>
-
-          <div class="subsection">
-            <h3>Next Actions</h3>
-            <label for="clientReviewNextActions">Next steps</label>
-            <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
-          </div>
+        <!-- ZOOM SECTION 8: Next Actions ========================================= -->
+        <section class="card zoom-only" id="crNextActions">
+          <h2>Next Actions</h2>
+          <p class="hint">Define the next steps for this client.</p>
+          <label for="clientReviewNextActions">Next steps</label>
+          <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
         </section>
 
         <!-- ZOOM SECTION 4: Appointment Outputs ================================= -->
