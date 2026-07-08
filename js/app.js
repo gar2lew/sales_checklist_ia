@@ -279,7 +279,14 @@
         $('draftClient').textContent = data.clientName || '(No client name)';
         $('draftDate').textContent = data.date || '(No date)';
         $('draftStaff').textContent = data.teamMember || '(No staff)';
+        $('draftSavedAt').textContent = formatDraftSavedAt(data.draftSavedAt);
         card.classList.remove('hidden');
+        /* Wire delete button */
+        var delBtn = $('deleteDraftBtn');
+        if(delBtn && !delBtn._wired){
+          delBtn._wired = true;
+          delBtn.addEventListener('click', deleteDraft);
+        }
       } else if(card){
         card.classList.add('hidden');
       }
@@ -288,6 +295,24 @@
       var card2 = $('recentDraftCard');
       if(card2) card2.classList.add('hidden');
     }
+  }
+
+  function formatDraftSavedAt(iso){
+    if(!iso) return 'Unknown';
+    try{
+      var d = new Date(iso);
+      if(isNaN(d.getTime())) return 'Unknown';
+      var pad = function(n){ return n < 10 ? '0' + n : n; };
+      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }catch(e){ return 'Unknown'; }
+  }
+
+  function deleteDraft(){
+    if(!confirm('Delete saved draft? This cannot be undone.')) return;
+    localStorage.removeItem('salesAppointmentDraft');
+    var card = $('recentDraftCard');
+    if(card) card.classList.add('hidden');
+    toast('Draft deleted.');
   }
 
   function resumeDraft(){
@@ -3944,7 +3969,16 @@
     applyAppointmentMode();
     refreshAllUI();
   }
-  function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
+  function saveDraft(){
+    try{
+      var data = getDraft();
+      data.draftSavedAt = new Date().toISOString();
+      localStorage.setItem('salesAppointmentDraft', JSON.stringify(data));
+      toast('Draft saved on this device.');
+    }catch(e){
+      toast('Draft could not be saved. Photos may be too large for browser storage.');
+    }
+  }
   async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
   function loadTestData(){
     if(!confirm('Load test data? This will replace the current form values (but not save over your draft).')) return;

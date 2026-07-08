@@ -47,8 +47,13 @@
                 <div class="draft-item"><span class="label">Client:</span> <span class="value" id="draftClient"></span></div>
                 <div class="draft-item"><span class="label">Date:</span> <span class="value" id="draftDate"></span></div>
                 <div class="draft-item"><span class="label">Staff:</span> <span class="value" id="draftStaff"></span></div>
+                <div class="draft-item draft-saved-at"><span class="label">Last saved:</span> <span class="value" id="draftSavedAt"></span></div>
               </div>
-              <button id="resumeDraftBtn" class="btn secondary">Resume Draft</button>
+              <div class="draft-status-badge">Ready to resume</div>
+              <div class="draft-footer">
+                <button id="resumeDraftBtn" class="btn secondary">Resume Draft</button>
+                <button id="deleteDraftBtn" class="btn danger">Delete Draft</button>
+              </div>
             </div>
           </div>
           <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>

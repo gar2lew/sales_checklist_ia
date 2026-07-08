@@ -595,11 +595,83 @@
       border-radius: 14px;
       letter-spacing: .01em;
     }
-    .landing-continue:disabled {
-      opacity: .4;
-      cursor: not-allowed;
-      transform: none;
-    }
+	    .landing-continue:disabled {
+	      opacity: .4;
+	      cursor: not-allowed;
+	      transform: none;
+	    }
+
+	    /* Recent draft card */
+	    .recent-draft-card {
+	      margin-top: 12px;
+	      border: 1px solid #e0e7f0;
+	      border-radius: 14px;
+	      background: #f5f8fe;
+	      padding: 0;
+	    }
+	    .recent-draft-card .card-header {
+	      font-size: 12px;
+	      font-weight: 700;
+	      color: var(--navy);
+	      text-transform: uppercase;
+	      letter-spacing: .04em;
+	      padding: 10px 14px 4px;
+	    }
+	    .recent-draft-card .card-body {
+	      padding: 0 14px 12px;
+	    }
+	    .draft-item {
+	      display: flex;
+	      gap: 6px;
+	      font-size: 12px;
+	      line-height: 1.5;
+	    }
+	    .draft-item .label {
+	      font-weight: 600;
+	      color: var(--muted);
+	      flex: none;
+	    }
+	    .draft-item .value {
+	      font-weight: 700;
+	      color: var(--ink);
+	    }
+	    .draft-saved-at {
+	      margin-top: 2px;
+	    }
+	    .draft-saved-at .value {
+	      font-weight: 500;
+	      font-size: 11px;
+	      color: var(--muted);
+	    }
+	    .draft-status-badge {
+	      display: inline-block;
+	      font-size: 11px;
+	      font-weight: 700;
+	      color: #1b8a5a;
+	      background: #e4f5ec;
+	      border-radius: 10px;
+	      padding: 2px 10px;
+	      margin: 6px 0 10px;
+	    }
+	    .draft-footer {
+	      display: flex;
+	      gap: 8px;
+	    }
+	    .draft-footer .btn {
+	      flex: 1;
+	      justify-content: center;
+	      font-size: 12px;
+	      padding: 10px 12px;
+	    }
+	    .btn.danger {
+	      background: transparent;
+	      color: var(--danger);
+	      border: 1px solid var(--danger);
+	    }
+	    .btn.danger:hover {
+	      background: var(--danger);
+	      color: #fff;
+	    }
 
     /* Responsive landing */
     @media (min-width: 600px) {

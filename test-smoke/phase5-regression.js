@@ -185,6 +185,70 @@ s.listen(0, async () => {
   chk('appointmentMode=zoom', dr && dr.appointmentMode === 'zoom');
   chk('city=perth', dr && dr.zoomFirstConsultTemplate === 'perth');
   chk('has FC notes', dr && dr.firstConsultNotes.indexOf('investment') >= 0);
+  chk('draftSavedAt exists', dr && !!dr.draftSavedAt);
+
+  // 7b. Recent draft card on landing
+  console.log('\n--- Draft card UI ---');
+  const pd = await b.newPage();
+  await pd.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
+  await pd.waitForTimeout(500);
+  // Inject draft into this page's localStorage
+  await pd.evaluate((s) => { localStorage.setItem('salesAppointmentDraft', s); }, JSON.stringify(dr));
+  // Reload so checkForRecentDraft runs on page init
+  await pd.reload({waitUntil:'networkidle', timeout:15000});
+  await pd.waitForTimeout(500);
+  chk('Recent draft card visible', await pd.evaluate(() => { var c = document.getElementById('recentDraftCard'); return !c.classList.contains('hidden'); }));
+  chk('Draft type shown', await pd.evaluate(() => document.getElementById('draftType').textContent.length > 0));
+  chk('Draft client shown', await pd.evaluate(() => document.getElementById('draftClient').textContent.length > 0));
+  chk('Draft date shown', await pd.evaluate(() => document.getElementById('draftDate').textContent.length > 0));
+  chk('Draft staff shown', await pd.evaluate(() => document.getElementById('draftStaff').textContent.length > 0));
+  chk('Draft savedAt shown', await pd.evaluate(() => document.getElementById('draftSavedAt').textContent.length > 0));
+
+  // 7c. Resume Draft from card
+  console.log('\n--- Draft card resume ---');
+  await pd.evaluate(() => document.getElementById('resumeDraftBtn').click());
+  await pd.waitForTimeout(3000);
+  const resumed = await pd.evaluate(() => ({
+    city: document.getElementById('zoomFirstConsultTemplate').value,
+    strategy: document.getElementById('clientReviewStrategy').value.indexOf('Buy and hold') >= 0,
+    ia: document.getElementById('zoomIncludeIA') ? document.getElementById('zoomIncludeIA').checked : false
+  }));
+  chk('Resumed: city=perth', resumed.city === 'perth');
+  chk('Resumed: strategy restored', resumed.strategy);
+  chk('Resumed: IA restored', resumed.ia);
+
+  // 7d. Delete Draft
+  console.log('\n--- Draft card delete ---');
+  const px = await b.newPage();
+  await px.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
+  await px.waitForTimeout(500);
+  await px.evaluate((s) => { localStorage.setItem('salesAppointmentDraft', s); }, JSON.stringify(dr));
+  await px.reload({waitUntil:'networkidle', timeout:15000});
+  await px.waitForTimeout(500);
+  // Confirm dialog is auto-accepted in headless mode by default; ensure acceptance
+  await px.evaluate(() => { window.confirm = function(){ return true; }; });
+  await px.evaluate(() => { document.getElementById('deleteDraftBtn').click(); });
+  await px.waitForTimeout(500);
+  const deletedHidden = await px.evaluate(() => {
+    var c = document.getElementById('recentDraftCard');
+    return c.classList.contains('hidden');
+  });
+  const deletedStorage = await px.evaluate(() => { try { return localStorage.getItem('salesAppointmentDraft'); } catch(e) { return 'ERROR'; } });
+  chk('Delete: card hidden', deletedHidden);
+  chk('Delete: draft removed', deletedStorage === null);
+
+  // 7e. Old draft without draftSavedAt still loads
+  console.log('\n--- Draft without savedAt ---');
+  const py = await b.newPage();
+  await py.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
+  await py.waitForTimeout(500);
+  var oldDraft = JSON.parse(JSON.stringify(dr));
+  delete oldDraft.draftSavedAt;
+  await py.evaluate((s) => { localStorage.setItem('salesAppointmentDraft', s); }, JSON.stringify(oldDraft));
+  await py.reload({waitUntil:'networkidle', timeout:15000});
+  await py.waitForTimeout(500);
+  chk('Old draft: card visible', await py.evaluate(() => { var c = document.getElementById('recentDraftCard'); return !c.classList.contains('hidden'); }));
+  chk('Old draft: savedAt shows Unknown', await py.evaluate(() => document.getElementById('draftSavedAt').textContent === 'Unknown'));
 
   const p4 = await b.newPage();
   await p4.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
