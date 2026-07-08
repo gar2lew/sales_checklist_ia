@@ -267,34 +267,9 @@
             <div><label for="fcMinBudget">Min Budget</label><input id="fcMinBudget" type="text" placeholder="$"></div>
             <div><label for="fcMaxBudget">Max Budget</label><input id="fcMaxBudget" type="text" placeholder="$"></div>
           </div>
-        </section>
+	        </section>
 
-        <!-- ZOOM SECTION 4: Property Strategy ====================================== -->
-        <section class="card zoom-only" id="clientReviewSection">
-          <h2>Property Strategy</h2>
-          <p class="hint">Document the recommended strategy, property pathway, and expected timeline.</p>
-          <div class="subsection">
-            <h3>Recommended Strategy</h3>
-            <label for="clientReviewStrategy">Strategy details</label>
-            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
-          </div>
-          <div class="subsection">
-            <h3>Property & Timeline</h3>
-            <div class="fields two">
-              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
-              <div id="clientReviewTimelineControl">
-                <label for="clientReviewTimeline">Estimated Timeline</label>
-                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
-              </div>
-            </div>
-            <div class="field" style="margin-top:12px">
-              <label for="crInspections">Property Inspections</label>
-              <input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates">
-            </div>
-          </div>
-        </section>
-
-        <!-- ZOOM SECTION 5: Professional Team ====================================== -->
+	        <!-- ZOOM SECTION 5: Professional Team ====================================== -->
         <section class="card zoom-only" id="crProfessionalTeam">
           <h2>Professional Team</h2>
           <p class="hint">Select preferred partners for this appointment.</p>
@@ -318,17 +293,39 @@
               <select id="clientReviewConveyancer"><option value="">Select conveyancer</option></select>
             </div>
           </div>
+          <div class="subsection" style="margin-top:16px">
+            <h3>Recommended Property</h3>
+            <div class="fields two">
+              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
+            </div>
+          </div>
         </section>
 
         <!-- ZOOM SECTION 6: Next Actions =========================================== -->
         <section class="card zoom-only" id="crNextActions">
-          <h2>Next Actions</h2>
-          <p class="hint">Define the next steps and schedule follow-up appointments.</p>
-          <label for="clientReviewNextActions">Next steps</label>
-          <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
-          <div class="fields two" style="margin-top:16px">
-            <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date"></div>
-            <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes"></div>
+          <h2>Strategy & Next Actions</h2>
+          <p class="hint">Document the recommended strategy, timeline, and next steps for this client.</p>
+          <div class="subsection">
+            <h3>Recommended Strategy</h3>
+            <label for="clientReviewStrategy">Strategy details</label>
+            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Next Steps</h3>
+            <label for="clientReviewNextActions">Next steps</label>
+            <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Timeline & Schedule</h3>
+            <div class="fields two">
+              <div id="clientReviewTimelineControl">
+                <label for="clientReviewTimeline">Estimated Timeline</label>
+                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
+              </div>
+              <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date"></div>
+              <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes"></div>
+              <div><label for="crInspections">Property Inspections</label><input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates"></div>
+            </div>
           </div>
         </section>
 
