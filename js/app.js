@@ -301,6 +301,7 @@
     app.classList.remove('show-in-person', 'show-zoom');
     app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
     updateSummaryCard();
+    updatePackagePreview();
   }
   function enterAppointment(){
     var staff = ($('landingStaff').value || '').trim();
@@ -1317,6 +1318,7 @@
     updateSignatureStatuses();
     renderLiveSummary();
     updateSummaryCard();
+    updatePackagePreview();
   }
 
   function updateIndicator(indicatorId, isCompleted) {
@@ -1459,6 +1461,32 @@
         statusEl.style.color = 'var(--gold)';
       }
     }
+  }
+
+  function updatePackagePreview(){
+    var container = $('packagePreviewContent');
+    if(!container) return;
+    var plan = appointmentMode === 'zoom' ? zoomOutputPlan() : outputPlan();
+    if(!plan || !plan.groups || plan.groups.length === 0){
+      container.innerHTML = '<p class="preview-placeholder">Fill in the form to see a live preview of your package.</p>';
+      return;
+    }
+    var labels = {
+      cover:'Cover Page', firstConsult:'First Consultation', clientReview:'Client Review / Assessment',
+      eoi:'Standard EOI', 'eoi-laVida':'La Vida EOI', ia:'IA',
+      client1_front:'Client 1 – Front ID', client1_back:'Client 1 – Back ID',
+      client2_front:'Client 2 – Front ID', client2_back:'Client 2 – Back ID'
+    };
+    var html = '<div class="preview-table">';
+    plan.groups.forEach(function(g){
+      var label = labels[g.id] || g.id.replace(/_/g,' ');
+      var pages = g.pageCount + ' page' + (g.pageCount !== 1 ? 's' : '');
+      html += '<div class="preview-row"><span class="preview-label">' + label + '</span><span class="preview-pages">' + pages + '</span></div>';
+    });
+    html += '<div class="preview-row preview-total"><span class="preview-label">Total</span><span class="preview-pages">' + plan.totalPages + ' page' + (plan.totalPages !== 1 ? 's' : '') + '</span></div>';
+    html += '<div class="preview-row preview-zip"><span class="preview-label">Estimated ZIP contents</span><span class="preview-pages">' + plan.groups.length + ' separated file' + (plan.groups.length !== 1 ? 's' : '') + '</span></div>';
+    html += '</div>';
+    container.innerHTML = html;
   }
 
   document.querySelectorAll('.summary-card-item').forEach(item => {
