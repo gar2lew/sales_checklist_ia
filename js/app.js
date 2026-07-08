@@ -3242,10 +3242,13 @@
       var staffVal = fieldText('teamMember') || '';
       whiteOut(745, 262, 190, 28);
       overlayText(staffVal, 765, 283, 170, '400 10px Arial', 13, 1);
-      var propAddr = fieldText('propertySaleAddress') || '';
-      whiteOut(195, 770, 200, 32);
-      overlayText(propAddr, 210, 792, 180, '400 9.5px Arial', 13, 2);
-      var goalVal = '';
+	      var propAddr = fieldText('propertySaleAddress') || '';
+	      whiteOut(195, 770, 200, 32);
+	      overlayText(propAddr, 210, 792, 180, '400 9.5px Arial', 13, 2);
+	      var prefSubs = fieldText('fcPreferredSuburbs') || '';
+	      whiteOut(195, 850, 200, 32);
+	      overlayText(prefSubs, 210, 872, 180, '400 9.5px Arial', 13, 2);
+	      var goalVal = '';
       document.querySelectorAll('input[name=\"firstConsultGoalType\"]').forEach(function(r){
         if(r.checked){
           var labels = {investment:'Investment',home:'Home',smsf:'SMSF',wealth:'Wealth Creation',retirement:'Retirement',other:'Other'};
@@ -3269,9 +3272,15 @@
       var finInvProps = fieldText('firstConsultInvestmentProperties') || '';
       whiteOut(195, 1230, 240, 32);
       overlayText(finInvProps, 210, 1252, 220, '400 10px Arial', 13, 1);
-      var finBorrow = fieldText('firstConsultBorrowingCapacity') || '';
-      whiteOut(370, 1230, 185, 32);
-      overlayText(finBorrow, 385, 1252, 160, '400 10px Arial', 13, 1);
+	      var finBorrow = fieldText('firstConsultBorrowingCapacity') || '';
+	      whiteOut(370, 1230, 185, 32);
+	      overlayText(finBorrow, 385, 1252, 160, '400 10px Arial', 13, 1);
+	      var minBudget = fieldText('fcMinBudget') || '';
+	      var maxBudget = fieldText('fcMaxBudget') || '';
+	      whiteOut(195, 1290, 185, 32);
+	      overlayText(minBudget, 210, 1312, 160, '400 10px Arial', 13, 1);
+	      whiteOut(370, 1290, 185, 32);
+	      overlayText(maxBudget, 385, 1312, 160, '400 10px Arial', 13, 1);
       var notes = fieldText('firstConsultNotes') || '';
       whiteOut(195, 1375, 1200, 155);
       if(notes){
