@@ -913,9 +913,144 @@
 	  font-weight: 500;
 	  color: var(--muted);
 	}
-	.preview-placeholder {
-	  color: var(--muted);
-	  font-size: 13px;
-	  line-height: 1.4;
-	  margin: 0;
-	}
+.preview-placeholder {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Consultation Workspace */
+.workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: var(--soft);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.wb-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: not-allowed;
+  opacity: .55;
+  transition: background .15s, opacity .15s;
+  min-height: 44px;
+}
+.wb-tool-btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+.wb-tool-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.wb-tool-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.wb-separator {
+  display: inline-block;
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+.workspace-canvas-area {
+  min-height: 340px;
+  border: 2px dashed var(--line);
+  border-radius: 16px;
+  background: #fafbfd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.workspace-placeholder {
+  text-align: center;
+  max-width: 400px;
+}
+.workspace-icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 16px;
+  opacity: .5;
+}
+.workspace-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0 0 8px;
+}
+.workspace-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.workspace-saved-pages {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.workspace-saved-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0 0 10px;
+  letter-spacing: 0;
+}
+.workspace-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .workspace-canvas-area {
+    min-height: 260px;
+  }
+  .workspace-toolbar {
+    gap: 3px;
+    padding: 6px;
+  }
+  .wb-tool-btn {
+    padding: 6px 10px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 480px) {
+  .workspace-canvas-area {
+    min-height: 220px;
+    padding: 16px;
+  }
+  .workspace-icon {
+    font-size: 36px;
+  }
+  .workspace-title {
+    font-size: 16px;
+  }
+  .wb-tool-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .wb-tool-label {
+    display: none;
+  }
+}
