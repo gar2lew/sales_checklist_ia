@@ -4086,4 +4086,213 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     setDraft: (data) => setDraft(data)
   };
   refreshPreview();
+
+  /* =========================================================================
+     SECTION R: WHITEBOARD DRAWING ENGINE
+     ========================================================================= */
+  var wbCanvas = $('whiteboardCanvas');
+  if(wbCanvas){
+    var wbCtx = wbCanvas.getContext('2d');
+    var wbPages = [{strokes:[], dataURL:null}];
+    var wbCurrentPage = 0;
+    var wbTool = 'pen';
+    var wbDrawing = false;
+    var wbCurrentStroke = null;
+    var wbUndoStack = [];
+    var wbRedoStack = [];
+    var wbSavedPages = [];
+
+    function wbResize(){
+      var wrap = wbCanvas.parentElement;
+      if(!wrap) return;
+      var w = wrap.clientWidth;
+      var h = parseInt(wrap.style.minHeight) || 340;
+      wbCanvas.width = Math.round(w * 2);
+      wbCanvas.height = Math.round(h * 2);
+      wbCanvas.style.width = w + 'px';
+      wbCanvas.style.height = h + 'px';
+      wbCtx.scale(2, 2);
+      wbRenderPage();
+    }
+
+    function wbRenderPage(){
+      var idx = wbCurrentPage;
+      if(!wbPages[idx]) return;
+      wbCtx.save();
+      wbCtx.setTransform(1, 0, 0, 1, 0, 0);
+      wbCtx.scale(2, 2);
+      wbCtx.clearRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
+      wbCtx.fillStyle = '#fff';
+      wbCtx.fillRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
+      wbCtx.restore();
+      for(var s = 0; s < wbPages[idx].strokes.length; s++){
+        var stroke = wbPages[idx].strokes[s];
+        if(stroke.points.length < 2) continue;
+        wbCtx.beginPath();
+        wbCtx.strokeStyle = stroke.color;
+        wbCtx.lineWidth = stroke.width;
+        wbCtx.lineCap = 'round';
+        wbCtx.lineJoin = 'round';
+        wbCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for(var p = 1; p < stroke.points.length; p++){
+          wbCtx.lineTo(stroke.points[p].x, stroke.points[p].y);
+        }
+        wbCtx.stroke();
+      }
+      $('wbPageCounter').textContent = 'Page ' + (idx + 1) + ' / ' + wbPages.length;
+    }
+
+    function wbPointerDown(e){
+      if(wbTool === 'eraser'){ wbEraserStart(e); return; }
+      if(wbTool !== 'pen') return;
+      e.preventDefault();
+      wbDrawing = true;
+      var rect = wbCanvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left);
+      var y = (e.clientY - rect.top);
+      wbCurrentStroke = {color: '#111', width: 3, points: [{x:x, y:y}]};
+      wbCtx.beginPath();
+      wbCtx.strokeStyle = '#111';
+      wbCtx.lineWidth = 3;
+      wbCtx.lineCap = 'round';
+      wbCtx.lineJoin = 'round';
+      wbCtx.moveTo(x, y);
+      wbCanvas.setPointerCapture(e.pointerId);
+    }
+
+    function wbPointerMove(e){
+      if(!wbDrawing || !wbCurrentStroke) return;
+      e.preventDefault();
+      var rect = wbCanvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left);
+      var y = (e.clientY - rect.top);
+      wbCurrentStroke.points.push({x:x, y:y});
+      wbCtx.lineTo(x, y);
+      wbCtx.stroke();
+    }
+
+    function wbPointerUp(e){
+      if(!wbDrawing || !wbCurrentStroke) return;
+      wbDrawing = false;
+      wbCanvas.releasePointerCapture(e.pointerId);
+      if(wbCurrentStroke.points.length > 1){
+        wbPages[wbCurrentPage].strokes.push(wbCurrentStroke);
+        wbUndoStack.push({type:'stroke', idx:wbPages[wbCurrentPage].strokes.length - 1});
+        wbRedoStack = [];
+        wbPages[wbCurrentPage].dataURL = null;
+      }
+      wbCurrentStroke = null;
+    }
+
+    function wbEraserStart(e){
+      e.preventDefault();
+      wbDrawing = true;
+      var rect = wbCanvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left);
+      var y = (e.clientY - rect.top);
+      wbCurrentStroke = {color: '#fff', width: 20, points: [{x:x, y:y}]};
+      wbCtx.beginPath();
+      wbCtx.strokeStyle = '#fff';
+      wbCtx.lineWidth = 20;
+      wbCtx.lineCap = 'round';
+      wbCtx.lineJoin = 'round';
+      wbCtx.moveTo(x, y);
+      wbCanvas.setPointerCapture(e.pointerId);
+    }
+
+    function wbUndo(){
+      if(wbUndoStack.length === 0) return;
+      var entry = wbUndoStack.pop();
+      if(entry.type === 'stroke'){
+        var removed = wbPages[wbCurrentPage].strokes.splice(entry.idx, 1);
+        wbRedoStack.push({type:'stroke', stroke:removed[0], idx:entry.idx});
+        wbPages[wbCurrentPage].dataURL = null;
+      }
+      wbRenderPage();
+    }
+
+    function wbRedo(){
+      if(wbRedoStack.length === 0) return;
+      var entry = wbRedoStack.pop();
+      if(entry.type === 'stroke'){
+        wbPages[wbCurrentPage].strokes.splice(entry.idx, 0, entry.stroke);
+        wbUndoStack.push({type:'stroke', idx:entry.idx});
+        wbPages[wbCurrentPage].dataURL = null;
+      }
+      wbRenderPage();
+    }
+
+    function wbClear(){
+      if(wbPages[wbCurrentPage].strokes.length === 0) return;
+      if(!confirm('Clear all drawings on this whiteboard page?')) return;
+      wbPages[wbCurrentPage].strokes = [];
+      wbPages[wbCurrentPage].dataURL = null;
+      wbUndoStack = [];
+      wbRedoStack = [];
+      wbRenderPage();
+    }
+
+    function wbNewPage(){
+      wbPages.push({strokes:[], dataURL:null});
+      wbCurrentPage = wbPages.length - 1;
+      wbUndoStack = [];
+      wbRedoStack = [];
+      wbRenderPage();
+    }
+
+    function wbSavePage(){
+      var dataURL = wbCanvas.toDataURL('image/png');
+      var idx = wbSavedPages.length;
+      wbSavedPages.push({dataURL: dataURL, pageIndex: wbCurrentPage});
+      var container = $('wbSavedPagesContainer');
+      var empty = $('wbSavedEmpty');
+      if(empty) empty.style.display = 'none';
+      var thumb = document.createElement('div');
+      thumb.className = 'wb-saved-thumbnail';
+      thumb.title = 'Saved page ' + (idx + 1);
+      var c = document.createElement('canvas');
+      c.width = 240;
+      c.height = 160;
+      var ctx = c.getContext('2d');
+      var img = new Image();
+      img.onload = function(){
+        ctx.drawImage(img, 0, 0, 240, 160);
+        thumb.appendChild(c);
+        var label = document.createElement('span');
+        label.className = 'wb-saved-thumbnail-label';
+        label.textContent = 'Page ' + (idx + 1);
+        thumb.appendChild(label);
+        container.appendChild(thumb);
+      };
+      img.src = dataURL;
+    }
+
+    wbCanvas.addEventListener('pointerdown', wbPointerDown);
+    wbCanvas.addEventListener('pointermove', wbPointerMove);
+    wbCanvas.addEventListener('pointerup', wbPointerUp);
+    wbCanvas.addEventListener('pointercancel', function(){ wbDrawing = false; });
+
+    $('wbDrawBtn').addEventListener('click', function(){
+      wbTool = 'pen';
+      document.querySelectorAll('.wb-tool-btn').forEach(function(b){ b.classList.remove('wb-active'); });
+      this.classList.add('wb-active');
+      wbCanvas.style.cursor = 'crosshair';
+    });
+
+    $('wbEraserBtn').addEventListener('click', function(){
+      wbTool = 'eraser';
+      document.querySelectorAll('.wb-tool-btn').forEach(function(b){ b.classList.remove('wb-active'); });
+      this.classList.add('wb-active');
+      wbCanvas.style.cursor = 'cell';
+    });
+
+    $('wbUndoBtn').addEventListener('click', wbUndo);
+    $('wbRedoBtn').addEventListener('click', wbRedo);
+    $('wbClearBtn').addEventListener('click', wbClear);
+    $('wbNewPageBtn').addEventListener('click', wbNewPage);
+    $('wbSavePageBtn').addEventListener('click', wbSavePage);
+
+    setTimeout(wbResize, 100);
+    window.addEventListener('resize', wbResize);
+  }
 })();

@@ -970,61 +970,72 @@
   margin: 0 4px;
   flex-shrink: 0;
 }
-.workspace-canvas-area {
+.workspace-canvas-wrap {
   min-height: 340px;
   border: 2px dashed var(--line);
   border-radius: 16px;
-  background: #fafbfd;
-  display: flex;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  touch-action: none;
+}
+#whiteboardCanvas {
+  display: block;
+  width: 100%;
+  height: 340px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.wb-active {
+  background: var(--gold) !important;
+  color: #111 !important;
+  opacity: 1 !important;
+  cursor: default !important;
+}
+.wb-page-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 0 8px;
+}
+.wb-saved-thumbnail {
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px;
-  margin-bottom: 16px;
+  gap: 4px;
+  margin: 4px 8px 4px 0;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  overflow: hidden;
+  background: #fff;
+  transition: border-color .15s;
+  vertical-align: top;
 }
-.workspace-placeholder {
-  text-align: center;
-  max-width: 400px;
+.wb-saved-thumbnail:hover {
+  border-color: var(--navy);
 }
-.workspace-icon {
-  font-size: 48px;
-  line-height: 1;
-  margin-bottom: 16px;
-  opacity: .5;
+.wb-saved-thumbnail canvas {
+  display: block;
+  width: 120px;
+  height: 80px;
+  pointer-events: none;
 }
-.workspace-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 8px;
-}
-.workspace-subtitle {
-  font-size: 14px;
+.wb-saved-thumbnail-label {
+  font-size: 10px;
+  font-weight: 700;
   color: var(--muted);
-  line-height: 1.5;
-  margin: 0;
-}
-.workspace-saved-pages {
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-}
-.workspace-saved-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 10px;
-  letter-spacing: 0;
-}
-.workspace-empty {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-  padding: 8px 0;
+  padding: 2px 0 4px;
 }
 
 @media (max-width: 768px) {
-  .workspace-canvas-area {
+  .workspace-canvas-wrap {
     min-height: 260px;
+  }
+  #whiteboardCanvas {
+    height: 260px;
   }
   .workspace-toolbar {
     gap: 3px;
@@ -1036,15 +1047,11 @@
   }
 }
 @media (max-width: 480px) {
-  .workspace-canvas-area {
+  .workspace-canvas-wrap {
     min-height: 220px;
-    padding: 16px;
   }
-  .workspace-icon {
-    font-size: 36px;
-  }
-  .workspace-title {
-    font-size: 16px;
+  #whiteboardCanvas {
+    height: 220px;
   }
   .wb-tool-btn {
     padding: 6px 8px;
