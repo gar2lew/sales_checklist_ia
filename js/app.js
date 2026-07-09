@@ -2635,7 +2635,7 @@
     return c;
   }
 
-  function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale){
+  function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
     var W = 595, H = 842;
     var c = document.createElement('canvas');
     c.width = Math.round(W * scale);
@@ -2649,15 +2649,27 @@
     ctx.font = '700 14px Inter, Arial, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillText('Whiteboard Page ' + (pageIdx + 1), 42, 42);
-    /* Draw saved whiteboard content from dataURL */
-    if(typeof wbSavedPages !== 'undefined' && wbSavedPages[pageIdx] && wbSavedPages[pageIdx].dataURL){
+    /* Draw saved whiteboard content */
+    if(loadedImg && loadedImg.width > 0 && loadedImg.height > 0){
+      var margin = 42;
+      var drawW = W - margin * 2;
+      var drawH = H - margin * 2 - 40; /* leave room for title + footer */
+      var drawY = margin + 10;
+      var imgW = loadedImg.width;
+      var imgH = loadedImg.height;
+      var aspect = Math.min(drawW / imgW, drawH / imgH);
+      var renderW = Math.round(imgW * aspect);
+      var renderH = Math.round(imgH * aspect);
+      var renderX = Math.round((W - renderW) / 2);
+      var renderY = Math.round(drawY + (drawH - renderH) / 2);
+      ctx.drawImage(loadedImg, renderX, renderY, renderW, renderH);
+    } else {
       ctx.fillStyle = '#f5f5fa';
       ctx.fillRect(42, 70, W - 84, H - 130);
       ctx.fillStyle = '#737887';
       ctx.font = '400 13px Inter, Arial, sans-serif';
       ctx.textBaseline = 'top';
-      ctx.fillText('Whiteboard content', W/2 - 60, H/2 - 20);
-      ctx.fillText('(image rendering in future update)', W/2 - 100, H/2);
+      ctx.fillText('Whiteboard page could not be rendered.', W/2 - 100, H/2 - 10);
     }
     drawGeneratedFooter(ctx, pageNumber, totalPages, 'Whiteboard', 42, 817);
     return c;
@@ -3128,7 +3140,13 @@
         return drawIAPage(pageDef.form || 'perth', index+1, totalPages, scale);
       }
       if(pageDef.id === 'whiteboard'){
-        return drawWhiteboardPage(pageDef.pageIdx, index+1, totalPages, scale);
+        var wbLoaded = null;
+        try {
+          if(typeof wbSavedPages !== 'undefined' && wbSavedPages[pageDef.pageIdx] && wbSavedPages[pageDef.pageIdx].dataURL){
+            wbLoaded = await loadImage(wbSavedPages[pageDef.pageIdx].dataURL);
+          }
+        } catch(e) { /* image load failed, use fallback */ }
+        return drawWhiteboardPage(pageDef.pageIdx, index+1, totalPages, scale, wbLoaded);
       }
       return null;
     }
