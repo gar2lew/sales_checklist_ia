@@ -21,8 +21,8 @@ s.listen(0, async () => {
     await p.evaluate(() => {
       const si = document.querySelector('#landingStaff');
       if (si) { si.value = 'T'; si.dispatchEvent(new Event('input', {bubbles:true})); si.dispatchEvent(new Event('change', {bubbles:true})); }
-      document.querySelectorAll('.mode-btn')[1].classList.add('active');
-      document.querySelectorAll('.mode-btn')[0].classList.remove('active');
+      document.querySelectorAll('.mode-card')[1].classList.add('active');
+      document.querySelectorAll('.mode-card')[0].classList.remove('active');
     });
     await p.waitForTimeout(1000);
     const btnState = await p.evaluate(() => {

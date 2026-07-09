@@ -254,7 +254,7 @@
   }
 
   function updateContinueButtonText(){
-    var activeBtn = document.querySelector('.mode-btn.active');
+    var activeBtn = document.querySelector('.mode-card.active');
     var mode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
     var text = mode === 'zoom' ? 'Start Zoom Appointment' : 'Start In-person Appointment';
     $('continueButtonText').textContent = text;
@@ -331,7 +331,7 @@
   function enterAppointment(){
     var staff = ($('landingStaff').value || '').trim();
     if(!staff) return;
-    var activeBtn = document.querySelector('.mode-btn.active');
+    var activeBtn = document.querySelector('.mode-card.active');
     appointmentMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
     setControlValue('teamMember', staff);
     preserveDraftDropdownValue('staff', staff);
@@ -4180,10 +4180,11 @@
   $('landingContinue').addEventListener('click', enterAppointment);
   if($('backToStart')) $('backToStart').addEventListener('click', backToStart);
 if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraft);
-  document.querySelectorAll('.mode-btn').forEach(function(btn){
+  document.querySelectorAll('.mode-card').forEach(function(btn){
     btn.addEventListener('click', function(){
-      document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.mode-card').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
+      updateContinueButtonText();
     });
   });
   window._testState = {

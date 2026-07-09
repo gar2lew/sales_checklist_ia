@@ -24,38 +24,48 @@
             <img src="icons/asg-logo.png" alt="Amplify Solutions Group" draggable="false">
           </div>
           <div class="landing-card-header">
+            <p class="landing-greeting">Welcome back</p>
             <h1>Sales Appointment Capture</h1>
-            <p class="landing-subtitle">Choose your appointment type and staff member to begin.</p>
+            <p class="landing-subtitle">Who's running this appointment today?</p>
             <div class="landing-version" data-app-version-label>v2.4.0-alpha.1</div>
           </div>
           <div class="landing-card-body">
             <div class="landing-field">
-              <label for="landingStaff">Staff Member</label>
               <div id="landingStaffControl">
-                <input id="landingStaff" type="text" placeholder="Select or enter your name" autocomplete="off">
+                <input id="landingStaff" type="text" placeholder="Enter your name" autocomplete="off">
               </div>
             </div>
             <div class="landing-field">
               <label>Appointment Type</label>
-              <div class="mode-toggle">
-                <button type="button" class="mode-btn active" data-mode="inPerson">In-person Appointment</button>
-                <button type="button" class="mode-btn" data-mode="zoom">Zoom / Online Appointment</button>
+              <div class="mode-cards">
+                <button type="button" class="mode-card active" data-mode="inPerson">
+                  <span class="mode-card-icon">👤</span>
+                  <span class="mode-card-title">In-person</span>
+                  <span class="mode-card-desc">Face-to-face appointment</span>
+                </button>
+                <button type="button" class="mode-card" data-mode="zoom">
+                  <span class="mode-card-icon">🖥</span>
+                  <span class="mode-card-title">Zoom</span>
+                  <span class="mode-card-desc">Online video appointment</span>
+                </button>
               </div>
             </div>
             <div id="recentDraftCard" class="recent-draft-card hidden">
-              <div class="card-header">Recent draft available</div>
-              <div class="card-body">
-                <div class="draft-info">
-                  <div class="draft-item"><span class="label">Appointment type:</span> <span class="value" id="draftType"></span></div>
-                  <div class="draft-item"><span class="label">Client:</span> <span class="value" id="draftClient"></span></div>
-                  <div class="draft-item"><span class="label">Date:</span> <span class="value" id="draftDate"></span></div>
-                  <div class="draft-item"><span class="label">Staff:</span> <span class="value" id="draftStaff"></span></div>
-                  <div class="draft-item draft-saved-at"><span class="label">Last saved:</span> <span class="value" id="draftSavedAt"></span></div>
+              <div class="recent-draft-header">
+                <span class="recent-draft-dot"></span>
+                Recent draft available
+              </div>
+              <div class="recent-draft-body">
+                <div class="recent-draft-grid">
+                  <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
+                  <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
+                  <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
+                  <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
+                  <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
                 </div>
-                <div class="draft-status-badge">Ready to resume</div>
-                <div class="draft-footer">
-                  <button id="resumeDraftBtn" class="btn secondary">Resume Draft</button>
-                  <button id="deleteDraftBtn" class="btn danger">Delete Draft</button>
+                <div class="recent-draft-footer">
+                  <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
+                  <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
                 </div>
               </div>
             </div>
