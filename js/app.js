@@ -312,6 +312,7 @@
     localStorage.removeItem('salesAppointmentDraft');
     var card = $('recentDraftCard');
     if(card) card.classList.add('hidden');
+    updateSaveStatus('idle');
     toast('Draft deleted.');
   }
 
@@ -1347,6 +1348,7 @@
     renderLiveSummary();
     updateSummaryCard();
     updatePackagePreview();
+    scheduleAutosave();
   }
 
   function updateIndicator(indicatorId, isCompleted) {
@@ -4099,8 +4101,68 @@
       data.draftSavedAt = new Date().toISOString();
       localStorage.setItem('salesAppointmentDraft', JSON.stringify(data));
       toast('Draft saved on this device.');
+      updateSaveStatus('saved');
     }catch(e){
       toast('Draft could not be saved. Photos may be too large for browser storage.');
+      updateSaveStatus('error');
+    }
+  }
+
+  /* Autosave — debounced after field changes */
+  var AUTOSAVE_DELAY = 15000;
+  var autosaveTimer = null;
+  var autosaveHasData = false;
+
+  function scheduleAutosave(){
+    /* Do not autosave if landing screen is visible (no active appointment) */
+    var ls = $('landingScreen');
+    if(ls && !ls.classList.contains('hidden')){ cancelAutosave(); return; }
+    /* Do not autosave if no meaningful data has been entered */
+    var hasData = false;
+    var checkFields = ['clientName','teamMember','date','firstConsultNotes','clientReviewStrategy'];
+    for(var i=0;i<checkFields.length;i++){ if(fieldText(checkFields[i])){ hasData = true; break; } }
+    if(!hasData){ cancelAutosave(); return; }
+    autosaveHasData = true;
+    if(autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(doAutosave, AUTOSAVE_DELAY);
+    updateSaveStatus('saving');
+  }
+  function cancelAutosave(){
+    if(autosaveTimer){ clearTimeout(autosaveTimer); autosaveTimer = null; }
+  }
+  function doAutosave(){
+    try {
+      var data = getDraft();
+      data.draftSavedAt = new Date().toISOString();
+      localStorage.setItem('salesAppointmentDraft', JSON.stringify(data));
+      updateSaveStatus('saved');
+    } catch(e) {
+      updateSaveStatus('error');
+    }
+    autosaveTimer = null;
+  }
+  function updateSaveStatus(state){
+    var el = $('saveStatus');
+    if(!el) return;
+    el.className = 'save-status';
+    if(state === 'saving'){
+      el.textContent = 'Saving…';
+      el.classList.add('saving');
+      el.style.display = '';
+    } else if(state === 'saved'){
+      el.textContent = 'Saved just now';
+      el.classList.add('saved');
+      el.style.display = '';
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(function(){ el.style.display = 'none'; }, 4000);
+    } else if(state === 'error'){
+      el.textContent = 'Save failed';
+      el.classList.add('error');
+      el.style.display = '';
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(function(){ el.style.display = 'none'; }, 6000);
+    } else {
+      el.style.display = 'none';
     }
   }
   async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
@@ -4148,7 +4210,7 @@
     if ($('additionalDocsCount')) $('additionalDocsCount').value = '0';
     photos.length = 4;
     renderAdditionalDocsUI();
-    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); if(typeof wbReset !== 'undefined') wbReset(); toast('Form reset.');
+	    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); if(typeof wbReset !== 'undefined') wbReset(); cancelAutosave(); updateSaveStatus('idle'); toast('Form reset.');
     returnToLanding();
   }
 
