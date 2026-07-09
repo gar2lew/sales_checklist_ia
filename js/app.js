@@ -541,6 +541,9 @@
     var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
     return 'IA - ' + c + ' - ' + s + ' - ' + d + '.pdf';
   }
+  function zoomWhiteboardFilename(){
+    return 'Whiteboard Page.pdf';
+  }
 
   function individualPhotoFilename(photo, idx){
     const ID_FRONT_BACK = ['Client 1 - ID Front', 'Client 1 - ID Back', 'Client 2 - ID Front', 'Client 2 - ID Back'];
@@ -1499,6 +1502,7 @@
     var labels = {
       cover:'Cover Page', firstConsult:'First Consultation', clientReview:'Client Review / Assessment',
       eoi:'Standard EOI', 'eoi-laVida':'La Vida EOI', ia:'IA',
+      whiteboard:'Whiteboard Pages',
       client1_front:'Client 1 – Front ID', client1_back:'Client 1 – Back ID',
       client2_front:'Client 2 – Front ID', client2_back:'Client 2 – Back ID'
     };
@@ -2631,6 +2635,34 @@
     return c;
   }
 
+  function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale){
+    var W = 595, H = 842;
+    var c = document.createElement('canvas');
+    c.width = Math.round(W * scale);
+    c.height = Math.round(H * scale);
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    /* Title */
+    ctx.fillStyle = '#111';
+    ctx.font = '700 14px Inter, Arial, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Whiteboard Page ' + (pageIdx + 1), 42, 42);
+    /* Draw saved whiteboard content from dataURL */
+    if(typeof wbSavedPages !== 'undefined' && wbSavedPages[pageIdx] && wbSavedPages[pageIdx].dataURL){
+      ctx.fillStyle = '#f5f5fa';
+      ctx.fillRect(42, 70, W - 84, H - 130);
+      ctx.fillStyle = '#737887';
+      ctx.font = '400 13px Inter, Arial, sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Whiteboard content', W/2 - 60, H/2 - 20);
+      ctx.fillText('(image rendering in future update)', W/2 - 100, H/2);
+    }
+    drawGeneratedFooter(ctx, pageNumber, totalPages, 'Whiteboard', 42, 817);
+    return c;
+  }
+
     // =========================================================================
   // SECTION M: EOI & LA VIDA PAGE DRAWING
   // =========================================================================
@@ -3024,6 +3056,19 @@
       offset++;
     }
 
+    /* Optional Whiteboard pages (saved pages only) */
+    if(typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0){
+      var wbCount = 0;
+      for(var wb=0; wb<wbSavedPages.length; wb++){
+        pages.push({id:'whiteboard', pageIdx:wb});
+        wbCount++;
+      }
+      if(wbCount > 0){
+        groups.push({id:'whiteboard', pageOffset:offset, pageCount:wbCount, getFilename:zoomWhiteboardFilename});
+        offset += wbCount;
+      }
+    }
+
     return { totalPages: offset, pages: pages, groups: groups };
   }
   function buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos){
@@ -3081,6 +3126,9 @@
         await ensurePageLogo();
         await ensureIAImage(pageDef.form || 'perth');
         return drawIAPage(pageDef.form || 'perth', index+1, totalPages, scale);
+      }
+      if(pageDef.id === 'whiteboard'){
+        return drawWhiteboardPage(pageDef.pageIdx, index+1, totalPages, scale);
       }
       return null;
     }
