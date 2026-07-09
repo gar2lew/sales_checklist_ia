@@ -519,7 +519,7 @@
     @media print{.hero,.appHeader,#liveSummary,.footerBar,.previewWrap .card:first-child,.toast,.appointment-summary-card{display:none}.app{padding:0}.grid{display:block}.card{box-shadow:none;border:0;padding:0}.card:not(.printable){display:none}}
 
     /* =========================================================================
-       LANDING SCREEN
+       LANDING SCREEN — ASG CRM style
        ========================================================================= */
     .landing-screen {
       position: fixed;
@@ -533,61 +533,60 @@
     .landing-bg {
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, #07103A, #0A184B, #13265E);
+      background: linear-gradient(135deg, #07103A 0%, #0A184B 50%, #13265E 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px;
     }
     .landing-panel {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       width: 100%;
-      max-width: 400px;
-    }
-    .landing-logo-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 24px;
-    }
-    .landing-logo {
-      display: block;
-      width: 160px;
-      height: auto;
-      filter: drop-shadow(0 8px 24px rgba(0,0,0,.35));
+      max-width: 420px;
     }
     .landing-card {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 16px 48px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.08);
-      width: 100%;
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 22px;
+      box-shadow: 0 32px 72px rgba(0,0,0,.4), 0 2px 12px rgba(0,0,0,.15);
       overflow: hidden;
     }
-    .landing-header {
-      padding: 28px 28px 0;
+    .landing-card-logo {
+      display: flex;
+      justify-content: center;
+      padding: 32px 28px 0;
     }
-    .landing-header h1 {
+    .landing-card-logo img {
+      width: 160px;
+      height: auto;
+      display: block;
+    }
+    .landing-card-header {
+      padding: 20px 28px 0;
+      text-align: center;
+    }
+    .landing-card-header h1 {
       font-size: 20px;
       font-weight: 800;
       color: var(--navy);
-      margin: 0 0 4px;
+      margin: 0 0 6px;
       letter-spacing: -.01em;
     }
     .landing-subtitle {
       font-size: 13px;
       color: var(--muted);
-      line-height: 1.4;
-      margin: 0 0 4px;
+      line-height: 1.45;
+      margin: 0 0 6px;
     }
     .landing-version {
       font-size: 11px;
       color: var(--muted);
-      opacity: .6;
-      margin: 0 0 8px;
+      opacity: .45;
+      margin: 0;
     }
-    .landing-body {
-      padding: 16px 28px 28px;
+    .landing-card-body {
+      padding: 20px 28px 28px;
     }
     .landing-field {
       margin-bottom: 18px;
@@ -617,16 +616,14 @@
       border-color: var(--gold);
       box-shadow: 0 0 0 4px rgba(209,171,111,.18);
     }
-
-    /* Mode toggle pill buttons */
-    .mode-toggle {
+    .landing-card .mode-toggle {
       display: flex;
       gap: 0;
       border-radius: 14px;
       overflow: hidden;
       border: 1.5px solid #dfe1eb;
     }
-    .mode-btn {
+    .landing-card .mode-btn {
       flex: 1;
       padding: 13px 16px;
       border: 0;
@@ -639,24 +636,23 @@
       white-space: nowrap;
       text-align: center;
     }
-    .mode-btn:first-child {
+    .landing-card .mode-btn:first-child {
       border-right: 1px solid #dfe1eb;
     }
-    .mode-btn.active {
+    .landing-card .mode-btn.active {
       background: var(--gold);
       color: #111;
     }
-    .mode-btn:not(.active):hover {
+    .landing-card .mode-btn:not(.active):hover {
       background: #eeeef5;
     }
-
     .landing-continue {
       width: 100%;
       justify-content: center;
       padding: 15px 24px;
       font-size: 16px;
       font-weight: 800;
-      margin-top: 6px;
+      margin-top: 10px;
       border-radius: 14px;
       letter-spacing: .01em;
     }
