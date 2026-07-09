@@ -3838,6 +3838,16 @@
     data.eoiNextAppointment=formatNextAppointment();
     data.eoiIdAttached='';
     data.appointmentMode = appointmentMode;
+    /* Include whiteboard pages */
+    if(wbPages){
+      data.whiteboardPages = wbPages.map(function(p){
+        return {strokes: p.strokes, dataURL: null};
+      });
+      data.wbSavedPages = wbSavedPages.map(function(p){
+        return {dataURL: p.dataURL, pageIndex: p.pageIndex};
+      });
+      data.wbCurrentPage = wbCurrentPage;
+    }
     return data;
   }
   async function setDraft(data){
@@ -3970,6 +3980,45 @@
       }
     }
     syncLaVidaContactsFromChoices(false);
+    /* Restore whiteboard pages */
+    if(Array.isArray(data.whiteboardPages) && data.whiteboardPages.length > 0 && typeof wbReset !== 'undefined'){
+      wbReset();
+      wbPages = data.whiteboardPages.map(function(p){
+        return {strokes: p.strokes || [], dataURL: null};
+      });
+      wbCurrentPage = typeof data.wbCurrentPage === 'number' && data.wbCurrentPage < wbPages.length ? data.wbCurrentPage : 0;
+      if(Array.isArray(data.wbSavedPages)){
+        wbSavedPages = data.wbSavedPages.map(function(p){
+          return {dataURL: p.dataURL, pageIndex: p.pageIndex};
+        });
+        /* Rebuild thumbnail UI */
+        var container = $('wbSavedPagesContainer');
+        if(container){
+          container.innerHTML = '';
+          wbSavedPages.forEach(function(sp, idx){
+            var thumb = document.createElement('div');
+            thumb.className = 'wb-saved-thumbnail';
+            thumb.title = 'Saved page ' + (idx + 1);
+            var c = document.createElement('canvas');
+            c.width = 240; c.height = 160;
+            var ctx = c.getContext('2d');
+            var img = new Image();
+            img.onload = function(){
+              ctx.drawImage(img, 0, 0, 240, 160);
+              thumb.appendChild(c);
+              var label = document.createElement('span');
+              label.className = 'wb-saved-thumbnail-label';
+              label.textContent = 'Page ' + (idx + 1);
+              thumb.appendChild(label);
+              container.appendChild(thumb);
+            };
+            img.src = sp.dataURL;
+          });
+        }
+      }
+      setTimeout(wbResize, 50);
+      wbRenderPage();
+    }
     /* Restore appointment mode from draft */
     appointmentMode = data.appointmentMode || 'inPerson';
     $('landingScreen').classList.add('hidden');
@@ -4033,7 +4082,7 @@
     if ($('additionalDocsCount')) $('additionalDocsCount').value = '0';
     photos.length = 4;
     renderAdditionalDocsUI();
-    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); toast('Form reset.');
+    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); if(typeof wbReset !== 'undefined') wbReset(); toast('Form reset.');
     returnToLanding();
   }
 
@@ -4265,6 +4314,23 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
         container.appendChild(thumb);
       };
       img.src = dataURL;
+    }
+
+    function wbReset(){
+      wbPages = [{strokes:[], dataURL:null}];
+      wbCurrentPage = 0;
+      wbSavedPages = [];
+      wbUndoStack = [];
+      wbRedoStack = [];
+      var container = $('wbSavedPagesContainer');
+      if(container){
+        container.innerHTML = '<p class="workspace-empty" id="wbSavedEmpty">No whiteboard pages created. Future pages will appear here.</p>';
+      }
+      if(wbCanvas && wbCtx){
+        wbCtx.clearRect(0, 0, wbCanvas.width, wbCanvas.height);
+      }
+      setTimeout(wbResize, 50);
+      wbRenderPage();
     }
 
     wbCanvas.addEventListener('pointerdown', wbPointerDown);
