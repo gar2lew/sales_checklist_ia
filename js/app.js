@@ -1348,6 +1348,7 @@
     renderLiveSummary();
     updateSummaryCard();
     updatePackagePreview();
+    updateCollapseIndicators();
     scheduleAutosave();
   }
 
@@ -1518,6 +1519,33 @@
     html += '<div class="preview-row preview-zip"><span class="preview-label">Estimated ZIP contents</span><span class="preview-pages">' + plan.groups.length + ' separated file' + (plan.groups.length !== 1 ? 's' : '') + '</span></div>';
     html += '</div>';
     container.innerHTML = html;
+  }
+
+  function updateCollapseIndicators(){
+    document.querySelectorAll('[data-collapsible]').forEach(function(section){
+      var dot = section.querySelector('.collapse-indicator');
+      if(!dot) return;
+      var id = section.id;
+      var complete = false;
+      if(id === 'firstConsultSection'){
+        complete = fieldText('firstConsultNotes') || document.querySelector('input[name="firstConsultGoalType"]:checked');
+      } else if(id === 'fcFinancial'){
+        complete = ['firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','fcMinBudget','fcMaxBudget'].some(function(f){ return fieldText(f); });
+      } else if(id === 'crProfessionalTeam'){
+        complete = ['clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer'].some(function(f){ return fieldText(f); });
+      } else if(id === 'crNextActions'){
+        complete = fieldText('clientReviewStrategy') || fieldText('clientReviewNextActions') || fieldText('clientReviewProperty') || fieldText('clientReviewTimeline');
+      } else if(id === 'zoomWorkspaceSection'){
+        complete = typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0;
+      } else if(id === 'eoiDetailsCard'){
+        complete = isChecked('includeEOI') && fieldText('eoiSaleAddress');
+      } else if(id === 'iaDetailsCard'){
+        complete = isChecked('includeIA') && fieldText('iaForm');
+      } else if(id === 'zoomOutputsSection'){
+        complete = isChecked('zoomIncludeStandardEOI') || isChecked('zoomIncludeLaVidaEOI') || isChecked('zoomIncludeIA');
+      }
+      dot.className = 'collapse-indicator ' + (complete ? 'complete' : 'incomplete');
+    });
   }
 
   document.querySelectorAll('.summary-card-item').forEach(item => {
@@ -4247,6 +4275,45 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
       document.querySelectorAll('.mode-card').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       updateContinueButtonText();
+    });
+  });
+  /* Collapsible sections */
+  document.querySelectorAll('[data-collapsible]').forEach(function(section){
+    var h2 = section.querySelector('h2');
+    var body = section.querySelector('.collapse-body');
+    if(!h2 || body) return; /* skip if already initialized or no h2 */
+    /* Gather all child nodes after h2 and hint */
+    var children = [];
+    var afterH2 = false;
+    for(var ci = 0; ci < section.childNodes.length; ci++){
+      var cn = section.childNodes[ci];
+      if(cn === h2 || (cn.classList && cn.classList.contains('hint'))) continue;
+      if(cn.nodeType === 3 && !cn.textContent.trim()) continue; /* skip whitespace text nodes */
+      children.push(cn);
+    }
+    /* Create collapse body */
+    var bodyDiv = document.createElement('div');
+    bodyDiv.className = 'collapse-body';
+    bodyDiv.setAttribute('id', section.id + '-body');
+    for(var ci2 = 0; ci2 < children.length; ci2++){
+      bodyDiv.appendChild(children[ci2]);
+    }
+    section.appendChild(bodyDiv);
+    /* Create toggle button */
+    var toggle = document.createElement('button');
+    toggle.className = 'collapse-toggle';
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-controls', section.id + '-body');
+    toggle.innerHTML = '<span class="collapse-indicator incomplete" aria-hidden="true"></span><span class="collapse-label">' + h2.textContent + '</span><span class="collapse-chevron" aria-hidden="true">▲</span>';
+    section.insertBefore(toggle, bodyDiv);
+    /* Hide the original h2 */
+    h2.style.display = 'none';
+    /* Wire toggle */
+    toggle.addEventListener('click', function(){
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      this.querySelector('.collapse-chevron').classList.toggle('collapsed', expanded);
+      bodyDiv.classList.toggle('collapsed', expanded);
     });
   });
   window._testState = {
