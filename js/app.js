@@ -3937,7 +3937,7 @@
     /* Include whiteboard pages */
     if(wbPages){
       data.whiteboardPages = wbPages.map(function(p){
-        return {strokes: p.strokes, dataURL: null};
+        return {strokes: p.strokes, dataURL: null, template: p.template || null};
       });
       data.wbSavedPages = wbSavedPages.map(function(p){
         return {dataURL: p.dataURL, pageIndex: p.pageIndex};
@@ -4079,9 +4079,9 @@
     /* Restore whiteboard pages */
     if(Array.isArray(data.whiteboardPages) && data.whiteboardPages.length > 0 && typeof wbReset !== 'undefined'){
       wbReset();
-      wbPages = data.whiteboardPages.map(function(p){
-        return {strokes: p.strokes || [], dataURL: null};
-      });
+	      wbPages = data.whiteboardPages.map(function(p){
+	        return {strokes: p.strokes || [], dataURL: null, template: p.template || null};
+	      });
       wbCurrentPage = typeof data.wbCurrentPage === 'number' && data.wbCurrentPage < wbPages.length ? data.wbCurrentPage : 0;
       if(Array.isArray(data.wbSavedPages)){
         wbSavedPages = data.wbSavedPages.map(function(p){
@@ -4345,9 +4345,112 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     var wbCurrentStroke = null;
     var wbUndoStack = [];
     var wbRedoStack = [];
-    var wbSavedPages = [];
+	    var wbSavedPages = [];
 
-    function wbResize(){
+	    /* Template definitions */
+	    var WHITEBOARD_TEMPLATES = {
+	      borrowing: { name: 'Borrowing Capacity',
+	        draw: function(ctx, w, h){
+	          ctx.strokeStyle = '#d0d5dd'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+	          ctx.font = '700 18px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Borrowing Capacity', w/2, 36);
+	          var rows = ['Annual Income','Existing Mortgage','Savings','Super Balance'];
+	          var y = 80;
+	          for(var i=0;i<rows.length;i++){
+	            ctx.font = '400 13px Inter, Arial, sans-serif'; ctx.fillStyle = '#172033'; ctx.textAlign = 'left';
+	            ctx.fillText(rows[i]+':', 50, y+4);
+	            ctx.strokeRect(190, y-10, 200, 28);
+	            y += 44;
+	          }
+	          ctx.setLineDash([]);
+	          ctx.font = '700 14px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Estimated Borrowing Range:  $________  \u2013  $________', w/2, y+10);
+	        }
+	      },
+	      cashflow: { name: 'Cashflow',
+	        draw: function(ctx, w, h){
+	          ctx.font = '700 18px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Cashflow', w/2, 36);
+	          var colX = [50, 200, 330]; var colW = [120, 100, 120];
+	          var labels = ['Income','Amount','Frequency']; var startY = 70;
+	          ctx.font = '700 12px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f';
+	          ctx.strokeStyle = '#d0d5dd'; ctx.lineWidth = 1;
+	          for(var c=0;c<3;c++){ ctx.fillText(labels[c], colX[c], startY+4); ctx.strokeRect(colX[c], startY-8, colW[c], 24); }
+	          var rows2 = ['Employment','Investment','Other'];
+	          for(var r=0;r<rows2.length;r++){
+	            var yy = startY + 30 + r*30;
+	            ctx.font = '400 12px Inter, Arial, sans-serif'; ctx.fillStyle = '#172033'; ctx.textAlign = 'left';
+	            ctx.fillText(rows2[r], colX[0], yy+4);
+	            for(var c2=0;c2<3;c2++){ ctx.strokeRect(colX[c2], yy-8, colW[c2], 24); }
+	          }
+	          var expY = startY + 30 + rows2.length*30 + 20;
+	          ctx.font = '700 14px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Net Position:  $________  per month', w/2, expY);
+	        }
+	      },
+	      smsf: { name: 'SMSF Structure',
+	        draw: function(ctx, w, h){
+	          ctx.font = '700 18px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('SMSF Structure', w/2, 36);
+	          ctx.fillStyle = '#d0d5dd'; ctx.strokeStyle = '#d0d5dd'; ctx.lineWidth = 1.5;
+	          var cx = w/2;
+	          ctx.font = '600 13px Inter, Arial, sans-serif'; ctx.fillStyle = '#172033'; ctx.textAlign = 'center';
+	          ctx.strokeRect(cx-60, 60, 120, 34); ctx.fillText('Members', cx, 82);
+	          ctx.beginPath(); ctx.moveTo(cx, 94); ctx.lineTo(cx, 110); ctx.stroke();
+	          ctx.strokeRect(cx-60, 110, 120, 34); ctx.fillText('SMSF Fund', cx, 132);
+	          ctx.beginPath(); ctx.moveTo(cx, 144); ctx.lineTo(cx-60, 170); ctx.moveTo(cx, 144); ctx.lineTo(cx, 170); ctx.moveTo(cx, 144); ctx.lineTo(cx+60, 170); ctx.stroke();
+	          var boxes = [{x: cx-100, label:'Cash'},{x: cx-20, label:'Shares'},{x: cx+60, label:'Property'}];
+	          for(var b=0;b<boxes.length;b++){ ctx.strokeRect(boxes[b].x, 170, 80, 34); ctx.fillText(boxes[b].label, boxes[b].x+40, 192); }
+	        }
+	      },
+	      trust: { name: 'Trust Structure',
+	        draw: function(ctx, w, h){
+	          ctx.font = '700 18px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Trust Structure', w/2, 36);
+	          ctx.strokeStyle = '#d0d5dd'; ctx.lineWidth = 1.5; ctx.fillStyle = '#172033'; ctx.font = '600 13px Inter, Arial, sans-serif';
+	          ctx.strokeRect(50, 65, 90, 34); ctx.fillText('Settlor', 95, 87);
+	          ctx.strokeRect(220, 65, 90, 34); ctx.fillText('Trustee', 265, 87);
+	          ctx.strokeRect(390, 65, 100, 34); ctx.fillText('Beneficiaries', 440, 87);
+	          ctx.beginPath(); ctx.moveTo(140, 82); ctx.lineTo(220, 82); ctx.stroke();
+	          ctx.moveTo(265, 82); ctx.lineTo(390, 82); ctx.stroke();
+	          ctx.strokeRect(220, 120, 90, 34); ctx.fillText('Trust Fund', 265, 142);
+	          ctx.beginPath(); ctx.moveTo(265, 154); ctx.lineTo(265, 175); ctx.stroke();
+	          var tBoxes = [{x:200,label:'Cash'},{x:265,label:'Shares'},{x:330,label:'Property'}];
+	          for(var tb=0;tb<tBoxes.length;tb++){ ctx.strokeRect(tBoxes[tb].x, 175, 65, 34); ctx.fillText(tBoxes[tb].label, tBoxes[tb].x+32, 197); }
+	        }
+	      },
+	      propertyJourney: { name: 'Property Journey',
+	        draw: function(ctx, w, h){
+	          ctx.font = '700 18px Inter, Arial, sans-serif'; ctx.fillStyle = '#1e3a5f'; ctx.textAlign = 'center';
+	          ctx.fillText('Property Journey', w/2, 36);
+	          ctx.strokeStyle = '#d0d5dd'; ctx.lineWidth = 1.5; ctx.fillStyle = '#172033'; ctx.font = '600 12px Inter, Arial, sans-serif';
+	          var steps = ['Search','\uD83D\uDD0D','Inspect','\uD83D\uDCCF','Offer','\u270D','Finance','\uD83D\uDCB0','Exchange','\u2709','Settle','\uD83C\uDFE0'];
+	          var stepW = Math.floor((w - 60) / 6);
+	          for(var si=0;si<6;si++){
+	            var sx = 30 + si*stepW;
+	            ctx.beginPath(); ctx.arc(sx + stepW/2, 100, 16, 0, Math.PI*2); ctx.stroke();
+	            ctx.fillText(String(si+1), sx + stepW/2, 106);
+	            if(si<5){ ctx.beginPath(); ctx.moveTo(sx + stepW/2 + 16, 100); ctx.lineTo(sx + stepW/2 + stepW - 16, 100); ctx.stroke(); }
+	            ctx.fillText(steps[si*2], sx + stepW/2, 140);
+	            ctx.font = '400 16px Inter, Arial, sans-serif'; ctx.fillText(steps[si*2+1], sx + stepW/2, 165);
+	            ctx.font = '600 12px Inter, Arial, sans-serif';
+	          }
+	        }
+	      },
+	      blank: { name: 'Custom Blank Page', draw: null }
+	    };
+
+	    function drawTemplateOnPage(){
+	      var page = wbPages[wbCurrentPage];
+	      if(!page || !page.template || !WHITEBOARD_TEMPLATES[page.template]) return;
+	      wbCtx.save();
+	      wbCtx.setTransform(1, 0, 0, 1, 0, 0);
+	      wbCtx.scale(2, 2);
+	      WHITEBOARD_TEMPLATES[page.template].draw(wbCtx, wbCanvas.width/2, wbCanvas.height/2);
+	      wbCtx.restore();
+	    }
+
+	    function wbResize(){
       var wrap = wbCanvas.parentElement;
       if(!wrap) return;
       var w = wrap.clientWidth;
@@ -4360,16 +4463,25 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
       wbRenderPage();
     }
 
-    function wbRenderPage(){
-      var idx = wbCurrentPage;
-      if(!wbPages[idx]) return;
-      wbCtx.save();
-      wbCtx.setTransform(1, 0, 0, 1, 0, 0);
-      wbCtx.scale(2, 2);
-      wbCtx.clearRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
-      wbCtx.fillStyle = '#fff';
-      wbCtx.fillRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
-      wbCtx.restore();
+	    function wbRenderPage(){
+	      var idx = wbCurrentPage;
+	      if(!wbPages[idx]) return;
+	      wbCtx.save();
+	      wbCtx.setTransform(1, 0, 0, 1, 0, 0);
+	      wbCtx.scale(2, 2);
+	      wbCtx.clearRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
+	      wbCtx.fillStyle = '#fff';
+	      wbCtx.fillRect(0, 0, wbCanvas.width / 2, wbCanvas.height / 2);
+	      wbCtx.restore();
+	      /* Draw template background if set */
+	      var curPage = wbPages[idx];
+	      if(curPage && curPage.template && WHITEBOARD_TEMPLATES[curPage.template] && WHITEBOARD_TEMPLATES[curPage.template].draw){
+	        wbCtx.save();
+	        wbCtx.setTransform(1, 0, 0, 1, 0, 0);
+	        wbCtx.scale(2, 2);
+	        WHITEBOARD_TEMPLATES[curPage.template].draw(wbCtx, wbCanvas.width/2, wbCanvas.height/2);
+	        wbCtx.restore();
+	      }
       for(var s = 0; s < wbPages[idx].strokes.length; s++){
         var stroke = wbPages[idx].strokes[s];
         if(stroke.points.length < 2) continue;
@@ -4477,13 +4589,13 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
       wbRenderPage();
     }
 
-    function wbNewPage(){
-      wbPages.push({strokes:[], dataURL:null});
-      wbCurrentPage = wbPages.length - 1;
-      wbUndoStack = [];
-      wbRedoStack = [];
-      wbRenderPage();
-    }
+	    function wbNewPage(){
+	      wbPages.push({strokes:[], dataURL:null, template: null});
+	      wbCurrentPage = wbPages.length - 1;
+	      wbUndoStack = [];
+	      wbRedoStack = [];
+	      wbRenderPage();
+	    }
 
     function wbSavePage(){
       var dataURL = wbCanvas.toDataURL('image/png');
@@ -4513,7 +4625,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     }
 
     function wbReset(){
-      wbPages = [{strokes:[], dataURL:null}];
+      wbPages = [{strokes:[], dataURL:null, template: null}];
       wbCurrentPage = 0;
       wbSavedPages = [];
       wbUndoStack = [];
@@ -4552,9 +4664,39 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     $('wbRedoBtn').addEventListener('click', wbRedo);
     $('wbClearBtn').addEventListener('click', wbClear);
     $('wbNewPageBtn').addEventListener('click', wbNewPage);
-    $('wbSavePageBtn').addEventListener('click', wbSavePage);
+	    $('wbSavePageBtn').addEventListener('click', wbSavePage);
 
-    setTimeout(wbResize, 100);
+	    /* Template picker */
+	    var picker = $('wbTemplatePicker');
+	    var pickerClose = $('wbPickerClose');
+	    $('wbTemplateBtn').addEventListener('click', function(){
+	      if(picker) picker.hidden = !picker.hidden;
+	    });
+	    if(pickerClose) pickerClose.addEventListener('click', function(){ if(picker) picker.hidden = true; });
+	    if(picker){
+	      picker.querySelectorAll('.wb-template-opt').forEach(function(opt){
+	        opt.addEventListener('click', function(){
+	          var tplKey = this.getAttribute('data-template');
+	          if(!tplKey) return;
+	          if(wbPages[wbCurrentPage].strokes.length > 0 && wbPages[wbCurrentPage].template !== tplKey){
+	            if(!confirm('Replace current template? Your drawings will be kept.')) return;
+	          }
+	          wbPages[wbCurrentPage].template = tplKey;
+	          wbPages[wbCurrentPage].dataURL = null;
+	          picker.hidden = true;
+	          wbRenderPage();
+	        });
+	      });
+	      /* Close picker on click outside */
+	      document.addEventListener('pointerdown', function(e){
+	        if(picker.hidden) return;
+	        var btn = $('wbTemplateBtn');
+	        if(picker.contains(e.target) || (btn && btn.contains(e.target))) return;
+	        picker.hidden = true;
+	      });
+	    }
+
+	    setTimeout(wbResize, 100);
     window.addEventListener('resize', wbResize);
   }
 })();

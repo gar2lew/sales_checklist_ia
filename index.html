@@ -362,8 +362,8 @@
               <span class="wb-tool-icon">⬜</span>
               <span class="wb-tool-label">Shapes</span>
             </button>
-            <button class="wb-tool-btn" disabled aria-label="Templates" title="Coming in Phase 7C">
-              <span class="wb-tool-icon">📋</span>
+            <button class="wb-tool-btn" id="wbTemplateBtn" aria-label="Sketch templates" title="Open sketch templates">
+              <span class="wb-tool-icon">📐</span>
               <span class="wb-tool-label">Templates</span>
             </button>
             <span class="wb-separator" role="separator"></span>
@@ -395,6 +395,38 @@
             </button>
             <span class="wb-separator" role="separator"></span>
             <span class="wb-page-counter" id="wbPageCounter">Page 1 / 1</span>
+          </div>
+          <div class="wb-templates-picker" id="wbTemplatePicker" role="dialog" aria-label="Choose a sketch template" hidden>
+            <div class="wb-picker-header">
+              <span>Sketch Templates</span>
+              <button class="wb-picker-close" id="wbPickerClose" aria-label="Close template picker">✕</button>
+            </div>
+            <div class="wb-picker-grid">
+              <button class="wb-template-opt" data-template="borrowing">
+                <span class="wb-tpl-icon">💰</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Borrowing Capacity</span><span class="wb-tpl-desc">Calculate borrowing capacity</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="cashflow">
+                <span class="wb-tpl-icon">📊</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Cashflow</span><span class="wb-tpl-desc">Map income and expenses</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="smsf">
+                <span class="wb-tpl-icon">🏛️</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">SMSF Structure</span><span class="wb-tpl-desc">SMSF entity diagram</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="trust">
+                <span class="wb-tpl-icon">📜</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Trust Structure</span><span class="wb-tpl-desc">Trust entity diagram</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="propertyJourney">
+                <span class="wb-tpl-icon">🏡</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Property Journey</span><span class="wb-tpl-desc">Purchase timeline</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="blank">
+                <span class="wb-tpl-icon">📄</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Custom Blank Page</span><span class="wb-tpl-desc">Clean whiteboard page</span></span>
+              </button>
+            </div>
           </div>
 
           <div class="workspace-canvas-wrap" role="region" aria-label="Whiteboard workspace">
