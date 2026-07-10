@@ -106,6 +106,61 @@ s.listen(0, async () => {
   chk('Plan: cover+fc[0-5]+cr[0-3]+eoi+ia = 13 pages', plan1 && plan1.total === 13);
   chk('Page order correct', plan1 && plan1.ids.indexOf('cover,firstConsult[0],firstConsult[1],firstConsult[2],firstConsult[3],firstConsult[4],firstConsult[5],clientReview[0],clientReview[1],clientReview[2],clientReview[3],eoi,ia') >= 0);
   chk('Brisbane PDF generated', await gen(p1));
+
+  /* Inline validation: no errors on fresh load */
+  const noErrs = await p1.evaluate(() => {
+    return document.querySelectorAll('.invalidField').length === 0 && document.querySelectorAll('.fieldError').length === 0;
+  });
+  chk('No inline errors on fully valid form', noErrs);
+
+  /* Inline validation: missing fields on Generate */
+  const p1b = await b.newPage();
+  await p1b.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
+  await p1b.waitForTimeout(500); await enZ(p1b);
+  /* Click Generate with empty fields */
+  await p1b.evaluate(() => document.getElementById('generateTop').click());
+  await p1b.waitForTimeout(800);
+  const errsAfter = await p1b.evaluate(() => {
+    var inv = document.querySelectorAll('.invalidField');
+    var errs = document.querySelectorAll('.fieldError');
+    return { invalidCount: inv.length, errorCount: errs.length, firstCardVisible: (function(){
+      var invEls = document.querySelectorAll('.invalidField');
+      if(invEls.length === 0) return false;
+      var card = invEls[0].closest('.card');
+      if(!card) return false;
+      var rect = card.getBoundingClientRect();
+      return rect.top >= 0 && rect.top < window.innerHeight;
+    })() };
+  });
+  chk('Generate with missing fields shows inline errors', errsAfter.invalidCount > 0 && errsAfter.errorCount > 0);
+  chk('First incomplete section visible after Generate', errsAfter.firstCardVisible);
+  /* Fill date field and verify its error clears */
+  await p1b.fill('#date','15/07/2026');
+  await p1b.waitForTimeout(600);
+  const dateErrCleared = await p1b.evaluate(() => {
+    var el = document.getElementById('date');
+    return el && !el.classList.contains('invalidField');
+  });
+  chk('Filling a field clears its error', dateErrCleared);
+
+  /* Timeline aria-label has missing count */
+  const tlAria = await p1b.evaluate(() => {
+    var btn = document.querySelector('#timelineZoom [data-tl-target="zoomPackagePreview"]');
+    return btn ? btn.getAttribute('aria-label') || '' : '';
+  });
+  chk('Timeline Ready step shows missing count', tlAria.indexOf('remaining') >= 0);
+
+  /* Re-validate: fill remaining required fields, check PDF still generates */
+  await p1b.fill('#teamMember','Sarah'); await p1b.fill('#clientName','Alice');
+  await p1b.waitForTimeout(500);
+  await p1b.evaluate(() => {
+    document.getElementById('zoomIncludeStandardEOI').checked = true;
+    document.getElementById('zoomIncludeStandardEOI').dispatchEvent(new Event('change', {bubbles:true}));
+  });
+  await p1b.waitForTimeout(200);
+  chk('Valid form still generates PDF after validation', await gen(p1b));
+  await p1b.close();
+
   await p1.evaluate(() => document.getElementById('previewTop').click()); await p1.waitForTimeout(1000);
   chk('Preview visible', await p1.evaluate(() => { const paper = document.getElementById('previewPaper'); return paper && paper.querySelector('canvas') !== null; }));
 

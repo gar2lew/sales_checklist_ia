@@ -168,6 +168,8 @@
     .required{color:var(--danger)}
     .invalidField{border-color:var(--danger)!important;box-shadow:0 0 0 4px rgba(180,35,24,.12)!important}
     .fieldError{color:var(--danger);font-size:12px;font-weight:700;line-height:1.35;margin:6px 0 0}
+    .section-summary{display:block;font-size:11px;font-weight:700;color:#b54708;line-height:1.35;margin:4px 0 0;padding:4px 8px;background:rgba(254,243,199,.6);border-radius:6px}
+    .section-summary.hidden{display:none}
     .hidden{display:none!important}
     .toast{position:fixed;right:14px;bottom:92px;background:#101828;color:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);z-index:50;max-width:360px;opacity:0;transform:translateY(10px);transition:.22s ease;pointer-events:none;font-size:14px;line-height:1.35}
     .toast.show{opacity:1;transform:translateY(0)}

@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.5.1-alpha.1';
+  const APP_VERSION = '2.6.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -199,6 +199,7 @@
   }
   function refreshFormBindings(){
     updateName(); clearGenerated(); clearValidation();
+    if(validationActive) scheduleRevalidate();
   }
 
   // =========================================================================
@@ -329,6 +330,7 @@
     updateSummaryCard();
     updatePackagePreview();
     updateTimeline();
+    deactivateValidation();
   }
   function enterAppointment(){
     var staff = ($('landingStaff').value || '').trim();
@@ -1591,6 +1593,202 @@
     return { ready: (missing === 0), missing: missing };
   }
 
+  /* ── Smart Inline Validation ── */
+
+  var validationActive = false;
+  var revalidateTimer = null;
+
+  /* Mirrors validateBeforePdf() exactly. Returns {ready, missingCount, items:[{id,message}]}.
+     Only fields that would block PDF generation are "required missing items." */
+  function structuredReadinessCheck(){
+    var items = [];
+    if(appointmentMode === 'zoom'){
+      var plan = zoomOutputPlan();
+      if(!plan.totalPages) items.push({id:null, message:'Enable at least one output option in Appointment Outputs.'});
+      if(!fieldText('date')) items.push({id:'date', message:'Enter the appointment date.'});
+      if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
+      if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
+      return { ready: items.length === 0, missingCount: items.length, items: items };
+    }
+    /* In-person */
+    var plan2 = outputPlan();
+    if(!plan2 || !plan2.totalPages) items.push({id:null, message:'Select an IA form, include EOI, or attach at least one ID image.'});
+    if(!fieldText('date')) items.push({id:'date', message:'Enter the appointment date.'});
+    if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
+    if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
+    if(plan2 && plan2.includeEOI){
+      if(!fieldText('eoiDate')) items.push({id:'eoiDate', message:'Enter the EOI date.'});
+      if(!fieldText('eoiNextApptDate')) items.push({id:'eoiNextApptDate', message:'Enter the next appointment date.'});
+      if(!eoiSaleAddressValue || !eoiSaleAddressValue()){
+        var eoiShow = isChecked('showEoiOverrides');
+        items.push({id: eoiShow ? 'eoiSaleAddress' : 'propertySaleAddress', message:'Enter the property sale address.'});
+      }
+    }
+    if(plan2 && plan2.selectedIA){
+      if(!fieldText('iaDate')) items.push({id:'iaDate', message:'Enter the IA date.'});
+      var showIa = isChecked('showIaOverrides');
+      var iaNames = showIa ? (fieldText('iaClientNames') || mergedClientNames()) : mergedClientNames();
+      var iaAddr = resolvedIaField('iaAddress', 'clientAddress');
+      var iaProp = resolvedIaField('iaProperty', 'propertySaleAddress');
+      if(!iaNames) items.push({id: showIa ? 'iaClientNames' : 'clientName', message:'Enter the client name.'});
+      if(!iaAddr) items.push({id: showIa ? 'iaAddress' : 'clientAddress', message:'Enter the client address.'});
+      if(!iaProp) items.push({id: showIa ? 'iaProperty' : 'propertySaleAddress', message:'Enter the property sold address.'});
+    }
+    return { ready: items.length === 0, missingCount: items.length, items: items };
+  }
+
+  /* Remove invalidField and fieldError for one specific field */
+  function clearFieldError(id){
+    var el = document.getElementById(id);
+    if(el){
+      el.classList.remove('invalidField');
+      el.removeAttribute('aria-invalid');
+    }
+    var err = document.querySelector('.fieldError[data-field="'+id+'"]');
+    if(err) err.remove();
+  }
+
+  /* Clear all inline validation UI */
+  function clearAllFieldErrors(){
+    document.querySelectorAll('.invalidField').forEach(function(el){
+      el.classList.remove('invalidField');
+      el.removeAttribute('aria-invalid');
+    });
+    document.querySelectorAll('.fieldError').forEach(function(el){ el.remove(); });
+    document.querySelectorAll('.section-summary').forEach(function(el){
+      el.classList.add('hidden');
+      el.textContent = '';
+    });
+  }
+
+  /* Show inline errors for required-missing items */
+  function showInlineValidation(items){
+    if(!validationActive) return;
+    clearAllFieldErrors();
+    /* Apply errors */
+    var sectionCounts = {};
+    for(var i=0; i<items.length; i++){
+      var item = items[i];
+      if(item.id){
+        var el = $(item.id);
+        if(el){
+          el.classList.add('invalidField');
+          el.setAttribute('aria-invalid','true');
+          /* Create error div with stable data-field attribute */
+          var msg = document.createElement('div');
+          msg.className = 'fieldError';
+          msg.setAttribute('data-field', item.id);
+          msg.textContent = item.message;
+          var parent = el.parentElement || el;
+          parent.appendChild(msg);
+          /* Attempt aria-describedby – only if field has an id */
+          var descId = 'err-' + item.id;
+          msg.id = descId;
+          el.setAttribute('aria-describedby', descId);
+        }
+        /* Track which section this field belongs to */
+        var sectionId = sectionForField(item.id);
+        if(sectionId){
+          sectionCounts[sectionId] = (sectionCounts[sectionId] || 0) + 1;
+        }
+      }
+    }
+    /* Update section summaries */
+    for(var secId in sectionCounts){
+      var sum = document.getElementById('sectionSummary-' + secId);
+      if(sum){
+        var n = sectionCounts[secId];
+        sum.textContent = n + ' item' + (n !== 1 ? 's' : '') + ' remaining';
+        sum.classList.remove('hidden');
+      }
+    }
+  }
+
+  /* Map a field ID to its containing section ID */
+  function sectionForField(fieldId){
+    if(!fieldId) return null;
+    var el = document.getElementById(fieldId);
+    if(!el) return null;
+    var card = el.closest('.card');
+    return card ? card.id : null;
+  }
+
+  /* Debounced re-validation after field change */
+  function scheduleRevalidate(){
+    if(!validationActive) return;
+    if(revalidateTimer) clearTimeout(revalidateTimer);
+    revalidateTimer = setTimeout(function(){
+      var check = structuredReadinessCheck();
+      showInlineValidation(check.items);
+      /* Update timeline aria-labels */
+      updateTimelineAriaLabels(check);
+    }, 400);
+  }
+
+  /* Update timeline step aria-labels with missing counts */
+  function updateTimelineAriaLabels(check){
+    if(!check) check = structuredReadinessCheck();
+    var isZoom = (appointmentMode === 'zoom');
+    var tl = isZoom ? $('timelineZoom') : $('timelineInPerson');
+    if(!tl) return;
+    var readyBtn = tl.querySelector('[data-tl-target="' + (isZoom ? 'zoomPackagePreview' : 'appointmentSummaryCard') + '"]');
+    if(readyBtn){
+      var baseLabel = readyBtn.getAttribute('data-tl-label') || 'Ready';
+      if(!check.ready && check.missingCount > 0){
+        readyBtn.setAttribute('aria-label', baseLabel + ' — ' + check.missingCount + ' item' + (check.missingCount !== 1 ? 's' : '') + ' remaining');
+      } else {
+        readyBtn.setAttribute('aria-label', baseLabel);
+      }
+    }
+  }
+
+  /* Activate inline validation (called on Generate click failure or incomplete timeline step click) */
+  function activateValidation(){
+    validationActive = true;
+    var check = structuredReadinessCheck();
+    showInlineValidation(check.items);
+    updateTimelineAriaLabels(check);
+    /* Expand and scroll to first missing section */
+    if(check.items.length > 0 && check.items[0].id){
+      var firstId = check.items[0].id;
+      var el = document.getElementById(firstId);
+      if(el){
+        var card = el.closest('.card');
+        if(card){
+          if(card.hasAttribute('data-collapsible')){
+            var toggle = card.querySelector('.collapse-toggle');
+            var body = card.querySelector('.collapse-body');
+            if(toggle && body && body.classList.contains('collapsed')) toggle.click();
+            setTimeout(function(){ card.scrollIntoView({behavior:'smooth',block:'start'}); highlightSection(card); }, 100);
+          } else {
+            card.scrollIntoView({behavior:'smooth',block:'start'});
+            highlightSection(card);
+          }
+        }
+      }
+    }
+  }
+
+  function deactivateValidation(){
+    validationActive = false;
+    if(revalidateTimer){ clearTimeout(revalidateTimer); revalidateTimer = null; }
+    clearAllFieldErrors();
+  }
+
+  /* Override setFieldError to add data-field attribute for stable targeting */
+  var _origSetFieldError = setFieldError;
+  setFieldError = function(id, message){
+    _origSetFieldError(id, message);
+    /* Add data-field to the error div that was just appended */
+    var el = $(id);
+    if(el && el.parentElement){
+      var errs = el.parentElement.querySelectorAll('.fieldError:not([data-field])');
+      for(var ei = 0; ei < errs.length; ei++){
+        errs[ei].setAttribute('data-field', id);
+      }
+    }
+  };
+
   function updateTimeline(){
     var isZoom = (appointmentMode === 'zoom');
     var tlZoom = $('timelineZoom');
@@ -1652,6 +1850,8 @@
         s.el.removeAttribute('aria-current');
       }
     }
+    /* Update Ready step aria-label with missing count */
+    updateTimelineAriaLabels();
   }
 
   function scrollToStep(targetId){
@@ -1712,6 +1912,11 @@
     /* Click handlers on all timeline step buttons */
     document.querySelectorAll('.tl-step-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
+        var parentStep = this.closest('.timeline-step');
+        /* If this step is incomplete, activate inline validation */
+        if(parentStep && (parentStep.classList.contains('tl-incomplete') || parentStep.classList.contains('tl-current'))){
+          activateValidation();
+        }
         var target = this.getAttribute('data-tl-target');
         if(target) scrollToStep(target);
       });
@@ -3813,6 +4018,13 @@
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
   }
   async function generatePdfOnly(){
+    /* Pre-validation gate */
+    var check = structuredReadinessCheck();
+    if(!check.ready){
+      activateValidation();
+      status('Complete ' + check.missingCount + ' required item' + (check.missingCount !== 1 ? 's' : '') + ' before generating.');
+      return;
+    }
     try{
       await buildPdf();
       await refreshPreview();
@@ -3824,6 +4036,15 @@
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
   }
   async function downloadPdf(){
+    /* Pre-validation only when generating new PDF */
+    if(!lastPdfBlob){
+      var dCheck = structuredReadinessCheck();
+      if(!dCheck.ready){
+        activateValidation();
+        status('Complete ' + dCheck.missingCount + ' required item' + (dCheck.missingCount !== 1 ? 's' : '') + ' before generating.');
+        return;
+      }
+    }
     try{
       if(!lastPdfBlob) await buildPdf();
       downloadBlob(lastPdfBlob,lastPdfName || pdfFileName());

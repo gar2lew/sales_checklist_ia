@@ -213,6 +213,7 @@
 
         <section class="card" id="appointmentInfoSection">
           <h2>1. Appointment & client information</h2>
+          <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
             <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
@@ -249,6 +250,7 @@
         <!-- ZOOM SECTION 2: Discovery Conversation ================================= -->
         <section class="card zoom-only" id="firstConsultSection" data-collapsible="true">
           <h2>Discovery Conversation</h2>
+          <span class="section-summary hidden" id="sectionSummary-firstConsultSection"></span>
           <p class="hint">Understand the client's goals and capture key discussion points.</p>
           <div class="fields two" style="margin-bottom:12px">
             <div id="zoomFirstConsultTemplateControl">
@@ -290,6 +292,7 @@
         <!-- ZOOM SECTION 3: Financial Position ===================================== -->
         <section class="card zoom-only" id="fcFinancial" data-collapsible="true">
           <h2>Financial Position</h2>
+          <span class="section-summary hidden" id="sectionSummary-fcFinancial"></span>
           <p class="hint">Current financial position — enter approximate figures.</p>
           <div class="fields two zoom-fin-grid">
             <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
@@ -306,6 +309,7 @@
 	        <!-- ZOOM SECTION 5: Professional Team ====================================== -->
         <section class="card zoom-only" id="crProfessionalTeam" data-collapsible="true">
           <h2>Professional Team</h2>
+          <span class="section-summary hidden" id="sectionSummary-crProfessionalTeam"></span>
           <p class="hint">Select preferred partners for this appointment.</p>
           <div class="fields two">
             <div id="clientReviewBuilderControl">
@@ -338,6 +342,7 @@
         <!-- ZOOM SECTION 6: Next Actions =========================================== -->
         <section class="card zoom-only" id="crNextActions" data-collapsible="true">
           <h2>Strategy & Next Actions</h2>
+          <span class="section-summary hidden" id="sectionSummary-crNextActions"></span>
           <p class="hint">Document the recommended strategy, timeline, and next steps for this client.</p>
           <div class="subsection">
             <h3>Recommended Strategy</h3>
@@ -368,6 +373,7 @@
           <div class="workspace-header">
             <h2>Consultation Workspace</h2>
           </div>
+          <span class="section-summary hidden" id="sectionSummary-zoomWorkspaceSection"></span>
           <div class="workspace-toolbar" role="toolbar" aria-label="Whiteboard tools">
             <button class="wb-tool-btn wb-active" id="wbDrawBtn" aria-label="Draw tool" title="Draw">
               <span class="wb-tool-icon">✏</span>
@@ -463,6 +469,7 @@
         <!-- ZOOM SECTION 8: Appointment Outputs ==================================== -->
         <section class="card zoom-only" id="zoomOutputsSection" data-collapsible="true">
           <h2>Appointment Outputs</h2>
+          <span class="section-summary hidden" id="sectionSummary-zoomOutputsSection"></span>
           <p class="hint">Select which documents to include when generating the appointment PDF and package.</p>
           <div class="toggleRow zoom-checkboxes">
             <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
@@ -494,6 +501,7 @@
 
         <section class="card in-person-only" id="eoiDetailsCard" data-collapsible="true">
           <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <span class="section-summary hidden" id="sectionSummary-eoiDetailsCard"></span>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 details are filled from the appointment details. Use this section as the source for sale/property details.</p>
 
           <div id="eoiFormContent">
@@ -665,6 +673,7 @@
 
         <section class="card in-person-only" id="iaDetailsCard" data-collapsible="true">
           <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <span class="section-summary hidden" id="sectionSummary-iaDetailsCard"></span>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div id="iaFormContent">
             <div class="fields">
@@ -713,6 +722,7 @@
 
         <section class="card in-person-only" id="clientIdSection">
           <h2>4. Client ID Documents</h2>
+          <span class="section-summary hidden" id="sectionSummary-clientIdSection"></span>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
 
@@ -745,6 +755,7 @@
 
         <section class="card in-person-only" id="signaturesSection">
           <h2>5. Signatures & Notes</h2>
+          <span class="section-summary hidden" id="sectionSummary-signaturesSection"></span>
           <p class="hint">Capture final signatures and add any additional notes for this appointment.</p>
           
           <div style="margin-bottom:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
