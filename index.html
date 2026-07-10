@@ -112,6 +112,29 @@
       </div>
     </header>
 
+    <!-- Consultation Progress Timeline -->
+    <nav class="progress-timeline" id="progressTimeline" aria-label="Consultation progress">
+      <ol class="timeline-steps zoom-only" id="timelineZoom" aria-label="Zoom appointment steps">
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="firstConsultSection" data-tl-label="Discovery"><span class="tl-circle">2</span><span class="tl-label">Discovery</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="fcFinancial" data-tl-label="Financial"><span class="tl-circle">3</span><span class="tl-label">Financial</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="crProfessionalTeam" data-tl-label="Professional"><span class="tl-circle">4</span><span class="tl-label">Professional</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="crNextActions" data-tl-label="Strategy"><span class="tl-circle">5</span><span class="tl-label">Strategy</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomWorkspaceSection" data-tl-label="Workspace"><span class="tl-circle">6</span><span class="tl-label">Workspace</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomOutputsSection" data-tl-label="Outputs"><span class="tl-circle">7</span><span class="tl-label">Outputs</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomPackagePreview" data-tl-label="Ready"><span class="tl-circle">8</span><span class="tl-label">Ready</span></button></li>
+      </ol>
+      <ol class="timeline-steps in-person-only" id="timelineInPerson" aria-label="In-person appointment steps">
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="eoiDetailsCard" data-tl-label="EOI"><span class="tl-circle">2</span><span class="tl-label">EOI</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="iaDetailsCard" data-tl-label="IA"><span class="tl-circle">3</span><span class="tl-label">IA</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="clientIdSection" data-tl-label="ID Docs"><span class="tl-circle">4</span><span class="tl-label">ID Docs</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="signaturesSection" data-tl-label="Signatures"><span class="tl-circle">5</span><span class="tl-label">Signatures</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="checklistCard" data-tl-label="Checklist"><span class="tl-circle">6</span><span class="tl-label">Checklist</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">7</span><span class="tl-label">Ready</span></button></li>
+      </ol>
+    </nav>
+
     <div class="grid">
       <main>
         <section class="card appointment-summary-card full" id="appointmentSummaryCard">
@@ -192,7 +215,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card" id="appointmentInfoSection">
           <h2>1. Appointment & client information</h2>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
             <div class="fields three">
@@ -755,7 +778,7 @@
           </div>
         </section>
 
-        <section class="card in-person-only">
+        <section class="card in-person-only" id="checklistCard">
           <h2>6. Pre-departure Checklist / Final Reminder</h2>
           <p class="hint">Verify that all required steps have been completed before generating the final PDF.</p>
           <div class="checklist">

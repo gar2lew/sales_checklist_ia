@@ -536,6 +536,207 @@
       margin-left: 0;
     }
 
+    /* ── Consultation Progress Timeline ── */
+    :root {
+      --tl-offset: 120px; /* default; JS measures actual header+timeline height */
+    }
+    /* scroll-margin so section scroll targets clear the sticky header + timeline */
+    .card[id],
+    #appointmentInfoSection,
+    #checklistCard {
+      scroll-margin-top: var(--tl-offset);
+    }
+    .progress-timeline {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 4px rgba(30,58,95,.05);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin: 0 -14px;
+      padding: 0;
+    }
+    .progress-timeline::-webkit-scrollbar { display: none; }
+    .timeline-steps {
+      display: flex;
+      gap: 0;
+      list-style: none;
+      margin: 0;
+      padding: 4px 14px;
+      min-width: max-content;
+    }
+    .timeline-step {
+      flex-shrink: 0;
+      position: relative;
+    }
+    .timeline-step + .timeline-step {
+      padding-left: 32px;
+    }
+    /* Connector line between steps */
+    .timeline-step + .timeline-step::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 50%;
+      width: 20px;
+      height: 2px;
+      background: var(--line);
+      transform: translateY(-50%);
+    }
+    .tl-step-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 4px 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      border-radius: 6px;
+      transition: background .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tl-step-btn:hover {
+      background: var(--soft);
+    }
+    .tl-step-btn:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+    }
+    .tl-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 2px solid var(--line);
+      color: var(--muted);
+      background: #fff;
+      transition: all .2s ease;
+    }
+    .tl-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      transition: color .2s ease;
+    }
+    /* ── Step States ── */
+    /* Complete */
+    .tl-complete .tl-circle {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+    .tl-complete .tl-label {
+      color: var(--success);
+    }
+    /* Complete connector */
+    .tl-complete + .timeline-step::before {
+      background: var(--success);
+    }
+    /* Current */
+    .tl-current .tl-circle {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(184,147,58,.18);
+    }
+    .tl-current .tl-label {
+      color: var(--navy);
+      font-weight: 800;
+    }
+    /* Incomplete */
+    .tl-incomplete .tl-circle {
+      border-color: var(--line);
+      color: var(--muted);
+      background: #fff;
+    }
+    .tl-incomplete .tl-label {
+      color: var(--muted);
+    }
+    /* Not required */
+    .tl-not-required .tl-circle {
+      border-color: #eaecf0;
+      color: #98a2b3;
+      background: #f9fafb;
+    }
+    .tl-not-required .tl-label {
+      color: #98a2b3;
+      font-weight: 500;
+    }
+    /* ── Section highlight animation ── */
+    .timeline-highlight {
+      animation: tl-highlight 1.5s ease-out;
+    }
+    @keyframes tl-highlight {
+      0%   { box-shadow: 0 0 0 6px rgba(184,147,58,.25); }
+      100% { box-shadow: 0 0 0 0px rgba(184,147,58,0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tl-circle,
+      .tl-label,
+      .tl-step-btn,
+      .timeline-highlight { animation: none; transition: none; }
+    }
+    /* ── Mobile responsive ── */
+    @media (max-width: 768px) {
+      .timeline-steps {
+        padding: 4px 8px;
+        gap: 0;
+      }
+      .timeline-step + .timeline-step {
+        padding-left: 24px;
+      }
+      .timeline-step + .timeline-step::before {
+        width: 14px;
+        left: 5px;
+      }
+      .tl-step-btn {
+        min-width: 40px;
+        min-height: 44px;
+        padding: 2px 4px;
+      }
+      .tl-circle {
+        width: 20px;
+        height: 20px;
+        font-size: 9px;
+      }
+      .tl-label {
+        font-size: 9px;
+      }
+    }
+    @media (max-width: 480px) {
+      .tl-label {
+        font-size: 8px;
+        letter-spacing: 0;
+      }
+      .tl-circle {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+      }
+      .timeline-step + .timeline-step {
+        padding-left: 20px;
+      }
+      .timeline-step + .timeline-step::before {
+        width: 10px;
+        left: 4px;
+      }
+    }
+
     /* Keyboard focus styles */
     .btn:focus-visible,
     .toolbar-btn:focus-visible,

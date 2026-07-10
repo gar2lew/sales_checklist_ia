@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.4.0-alpha.1';
+  const APP_VERSION = '2.5.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -328,6 +328,7 @@
     app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
     updateSummaryCard();
     updatePackagePreview();
+    updateTimeline();
   }
   function enterAppointment(){
     var staff = ($('landingStaff').value || '').trim();
@@ -1349,6 +1350,7 @@
     updateSummaryCard();
     updatePackagePreview();
     updateCollapseIndicators();
+    updateTimeline();
     scheduleAutosave();
   }
 
@@ -1546,6 +1548,185 @@
       }
       dot.className = 'collapse-indicator ' + (complete ? 'complete' : 'incomplete');
     });
+  }
+
+  /* ── Consultation Progress Timeline ── */
+
+  /* Side-effect-free readiness check. Mirrors validateBeforePdf() logic
+     but never alerts, scrolls, or mutates the DOM.
+     Returns { ready: boolean, missing: number } */
+  function readinessCheck(){
+    var missing = 0;
+    var dateOk = !!fieldText('date');
+    var teamOk = !!fieldText('teamMember');
+    var clientOk = !!fieldText('clientName');
+    if(!dateOk) missing++;
+    if(!teamOk) missing++;
+    if(!clientOk) missing++;
+
+    if(appointmentMode === 'zoom'){
+      var plan = zoomOutputPlan();
+      if(!plan.totalPages) return { ready: false, missing: missing + 1 };
+      return { ready: (missing === 0), missing: missing };
+    }
+
+    /* In-person */
+    var plan2 = outputPlan();
+    if(!plan2 || !plan2.totalPages) return { ready: false, missing: missing + 1 };
+    if(plan2.includeEOI){
+      if(!fieldText('eoiDate')) missing++;
+      if(!fieldText('eoiNextApptDate')) missing++;
+      if(!eoiSaleAddressValue || !eoiSaleAddressValue()) missing++;
+    }
+    if(plan2.selectedIA){
+      var showIaOverrides = isChecked('showIaOverrides');
+      var iaNames = showIaOverrides ? (fieldText('iaClientNames') || mergedClientNames()) : mergedClientNames();
+      var iaAddr = resolvedIaField('iaAddress', 'clientAddress');
+      var iaProp = resolvedIaField('iaProperty', 'propertySaleAddress');
+      if(!fieldText('iaDate')) missing++;
+      if(!iaNames) missing++;
+      if(!iaAddr) missing++;
+      if(!iaProp) missing++;
+    }
+    return { ready: (missing === 0), missing: missing };
+  }
+
+  function updateTimeline(){
+    var isZoom = (appointmentMode === 'zoom');
+    var tlZoom = $('timelineZoom');
+    var tlIp = $('timelineInPerson');
+    if(!tlZoom || !tlIp) return;
+
+    /* Show/hide correct timeline */
+    tlZoom.style.display = isZoom ? '' : 'none';
+    tlIp.style.display = isZoom ? 'none' : '';
+
+    var steps;
+    if(isZoom){
+      steps = [
+        { el: tlZoom.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return fieldText('teamMember') && fieldText('clientName') && fieldText('date'); }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="firstConsultSection"]'), complete: function(){ return document.querySelector('input[name="firstConsultGoalType"]:checked') || fieldText('firstConsultNotes') || fieldText('fcPreferredSuburbs'); }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="fcFinancial"]'), complete: function(){ return ['firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','fcMinBudget','fcMaxBudget'].some(function(f){ return fieldText(f); }); }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="crProfessionalTeam"]'), complete: function(){ return ['clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer'].some(function(f){ return fieldText(f); }); }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="crNextActions"]'), complete: function(){ return fieldText('clientReviewStrategy') || fieldText('clientReviewNextActions') || fieldText('clientReviewProperty') || fieldText('clientReviewTimeline'); }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="zoomWorkspaceSection"]'), complete: function(){ return typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0; }, optional: true, isIncluded: function(){ return typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0; } },
+        { el: tlZoom.querySelector('[data-tl-target="zoomOutputsSection"]'), complete: function(){ return true; /* FC + CR always included */ }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="zoomPackagePreview"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
+      ];
+    } else {
+      steps = [
+        { el: tlIp.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return fieldText('teamMember') && fieldText('clientName') && fieldText('date'); }, optional: false },
+        { el: tlIp.querySelector('[data-tl-target="eoiDetailsCard"]'), complete: function(){ return isChecked('includeEOI') && fieldText('eoiSaleAddress'); }, optional: true, isIncluded: function(){ return isChecked('includeEOI'); } },
+        { el: tlIp.querySelector('[data-tl-target="iaDetailsCard"]'), complete: function(){ return isChecked('includeIA') && fieldText('iaForm'); }, optional: true, isIncluded: function(){ return isChecked('includeIA'); } },
+        { el: tlIp.querySelector('[data-tl-target="clientIdSection"]'), complete: function(){ var ok = hasC1Photo(); if(hasClient2()) ok = ok && hasC2Photo(); return ok; }, optional: false },
+        { el: tlIp.querySelector('[data-tl-target="signaturesSection"]'), complete: function(){ var ok = hasSignature; if(hasClient2()) ok = ok && hasSignature2; return ok; }, optional: false },
+        { el: tlIp.querySelector('[data-tl-target="checklistCard"]'), complete: function(){ return isChecked('item1') || isChecked('item2') || isChecked('item3') || isChecked('item4'); }, optional: false },
+        { el: tlIp.querySelector('[data-tl-target="appointmentSummaryCard"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
+      ];
+    }
+
+    var foundCurrent = false;
+    var parentEl;
+    for(var i = 0; i < steps.length; i++){
+      var s = steps[i];
+      if(!s.el) continue;
+      parentEl = s.el.closest('.timeline-step');
+      if(!parentEl) continue;
+      var isComplete = s.complete();
+      var isOptionalExcluded = s.optional && s.isIncluded && !s.isIncluded();
+
+      parentEl.classList.remove('tl-complete','tl-current','tl-incomplete','tl-not-required');
+      if(isOptionalExcluded){
+        parentEl.classList.add('tl-not-required');
+      } else if(isComplete){
+        parentEl.classList.add('tl-complete');
+      } else if(!foundCurrent){
+        parentEl.classList.add('tl-current');
+        s.el.setAttribute('aria-current','step');
+        foundCurrent = true;
+      } else {
+        parentEl.classList.add('tl-incomplete');
+      }
+      /* Remove aria-current from non-current steps */
+      if(!parentEl.classList.contains('tl-current')){
+        s.el.removeAttribute('aria-current');
+      }
+    }
+  }
+
+  function scrollToStep(targetId){
+    var section = document.getElementById(targetId);
+    if(!section) return;
+    /* Expand if collapsed */
+    if(section.hasAttribute('data-collapsible')){
+      var toggle = section.querySelector('.collapse-toggle');
+      var body = section.querySelector('.collapse-body');
+      if(toggle && body && body.classList.contains('collapsed')){
+        toggle.click();
+        /* Wait for expand animation before scrolling */
+        setTimeout(function(){
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          highlightSection(section);
+        }, 100);
+        return;
+      }
+    }
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    highlightSection(section);
+    /* Focus first field only on non-touch devices (avoid mobile keyboard pop) */
+    if(!window.matchMedia('(pointer: coarse)').matches){
+      var firstField = section.querySelector('input:not([type="hidden"]), textarea, select');
+      if(firstField){ setTimeout(function(){ firstField.focus({ preventScroll: true }); }, 300); }
+    }
+  }
+
+  function highlightSection(section){
+    section.classList.remove('timeline-highlight');
+    void section.offsetWidth; /* force reflow */
+    section.classList.add('timeline-highlight');
+    setTimeout(function(){ section.classList.remove('timeline-highlight'); }, 1600);
+  }
+
+  function setupTimelineListeners(){
+    /* Measure and set --tl-offset */
+    function measureOffset(){
+      var header = document.querySelector('.stickyHeader');
+      var timeline = $('progressTimeline');
+      var h = (header ? header.offsetHeight : 0) + (timeline ? timeline.offsetHeight : 0) + 8;
+      document.documentElement.style.setProperty('--tl-offset', h + 'px');
+    }
+    measureOffset();
+    window.addEventListener('resize', measureOffset);
+
+    /* Timeline only sticky after header; set its top dynamically */
+    function positionTimeline(){
+      var header = document.querySelector('.stickyHeader');
+      var tl = $('progressTimeline');
+      if(header && tl){
+        tl.style.top = header.offsetHeight + 'px';
+      }
+    }
+    positionTimeline();
+    window.addEventListener('resize', positionTimeline);
+
+    /* Click handlers on all timeline step buttons */
+    document.querySelectorAll('.tl-step-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var target = this.getAttribute('data-tl-target');
+        if(target) scrollToStep(target);
+      });
+    });
+  }
+
+  /* Initialize timeline after DOM ready */
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      setupTimelineListeners();
+      updateTimeline();
+    });
+  } else {
+    setupTimelineListeners();
+    updateTimeline();
   }
 
   document.querySelectorAll('.summary-card-item').forEach(item => {
@@ -4622,6 +4803,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
         container.appendChild(thumb);
       };
       img.src = dataURL;
+      updateTimeline();
     }
 
     function wbReset(){

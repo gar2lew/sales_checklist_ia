@@ -77,6 +77,29 @@ s.listen(0, async () => {
   });
   await p1.waitForTimeout(200);
 
+  /* Timeline: zoom renders 8 steps */
+  const tlZoom1 = await p1.evaluate(() => {
+    var tl = document.getElementById('timelineZoom');
+    if(!tl) return { found: false };
+    var steps = tl.querySelectorAll('.tl-step-btn');
+    return { found: true, count: steps.length, display: tl.style.display || '' };
+  });
+  chk('Zoom timeline has 8 steps', tlZoom1.found && tlZoom1.count === 8);
+  /* After filling fields, at least one step complete */
+  const tlComp1 = await p1.evaluate(() => {
+    var steps = document.querySelectorAll('#timelineZoom .timeline-step');
+    var states = [];
+    steps.forEach(function(s){ states.push(s.className); });
+    return states.join('|');
+  });
+  chk('At least one zoom step is complete', tlComp1.indexOf('tl-complete') >= 0);
+  /* Ready step check */
+  const tlReady1 = await p1.evaluate(() => {
+    var last = document.querySelector('#timelineZoom .timeline-step:last-child');
+    return last ? last.classList.contains('tl-complete') : false;
+  });
+  chk('Ready step is tl-complete after all fields', tlReady1);
+
   const plan1 = await p1.evaluate(() => {
     try { const pl = window._testState.getZoomOutputPlan(); return {total: pl.totalPages, ids: pl.pages.map(function(p){return p.id+(p.subIdx !== undefined ? '['+p.subIdx+']' : '');}).join(',')}; } catch(e) { return null; }
   });
@@ -276,6 +299,37 @@ s.listen(0, async () => {
   await p5.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p5.waitForTimeout(1000);
   await p5.fill('#landingStaff','T'); await p5.click('#landingContinue'); await p5.waitForTimeout(300);
+
+  /* Timeline: in-person renders 7 steps */
+  const tlIp1 = await p5.evaluate(() => {
+    var tl = document.getElementById('timelineInPerson');
+    if(!tl) return { found: false };
+    var steps = tl.querySelectorAll('.tl-step-btn');
+    return { found: true, count: steps.length };
+  });
+  chk('In-person timeline has 7 steps', tlIp1.found && tlIp1.count === 7);
+  /* EOI and IA steps show not-required when unchecked */
+  const tlIpStates = await p5.evaluate(() => {
+    var steps = document.querySelectorAll('#timelineInPerson .timeline-step');
+    var states = [];
+    steps.forEach(function(s){ states.push(s.className); });
+    return states.join('|');
+  });
+  chk('EOI step is not-required when excluded', tlIpStates.indexOf('tl-not-required') >= 0);
+  /* Click a step: click Checklist step, verify Checklist section visible */
+  await p5.evaluate(() => {
+    var btn = document.querySelector('[data-tl-target="checklistCard"]');
+    if(btn) btn.click();
+  });
+  await p5.waitForTimeout(800);
+  const tlScrollVisible = await p5.evaluate(() => {
+    var el = document.getElementById('checklistCard');
+    if(!el) return false;
+    var rect = el.getBoundingClientRect();
+    return rect.top >= 0 && rect.top < window.innerHeight;
+  });
+  chk('Clicking a timeline step scrolls to section', tlScrollVisible);
+
   await p5.fill('#clientName','J'); await p5.fill('#date','01/01/2026');
   await p5.fill('#propertySaleAddress','123'); await p5.fill('#clientAddress','456');
   await p5.evaluate(() => {
