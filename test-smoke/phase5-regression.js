@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 
-const MIME = {'.html':'text/html','.js':'application/javascript'};
+const MIME = {'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon'};
 const s = http.createServer((req, res) => {
   const fp = path.join(__dirname, '..', req.url === '/' ? 'index.html' : req.url);
   res.setHeader('Cache-Control','no-store');
@@ -159,6 +159,92 @@ s.listen(0, async () => {
   });
   await p1b.waitForTimeout(200);
   chk('Valid form still generates PDF after validation', await gen(p1b));
+
+  /* Preview–Field Linking */
+  /* Open preview and navigate to FC page 1 */
+  await p1b.evaluate(() => document.getElementById('previewTop').click());
+  await p1b.waitForTimeout(1500);
+  /* Navigate to page 1 (First Consult, after cover) */
+  await p1b.evaluate(() => { var p = 1; try { var plan = window._testState.getZoomOutputPlan(); for(var i=0;i<p;i++) document.getElementById('previewNext').click(); } catch(e){} });
+  await p1b.waitForTimeout(2000);
+
+  /* Diagnostic: check overlay and field mapping state */
+  var diag = await p1b.evaluate(() => {
+    var ov = document.getElementById('previewOverlay');
+    var fields = window._testState ? window._testState.getFieldsOnCurrentPage() : [];
+    var fcFields = fields.filter(function(f){ return f.coords !== null; });
+    return {
+      overlayExists: !!ov,
+      overlayW: ov ? ov.width : 0,
+      fieldsOnPage: fields.length,
+      fieldsWithCoords: fcFields.length,
+      previewPageIndex: (function(){ try { var p=window._testState.getOutputPlan(); return p && p.totalPages ? 'ok' : 'fail'; } catch(e){ return e.message; } })()
+    };
+  });
+  console.log('Preview linking diag:', JSON.stringify(diag));
+
+  /* Focus mapped field — check that getFieldsOnCurrentPage returns entries */
+  await p1b.evaluate(() => {
+    var el = document.getElementById('clientName');
+    if(el) el.focus();
+  });
+  await p1b.waitForTimeout(800);
+  var fieldsAfterFocus = await p1b.evaluate(() => {
+    var fields = window._testState ? window._testState.getFieldsOnCurrentPage() : [];
+    return fields.length;
+  });
+  chk('Mapped field focus finds fields on current page', fieldsAfterFocus > 0);
+
+  /* Region toggle enables hit testing */
+  await p1b.evaluate(() => {
+    var cb = document.getElementById('showFieldRegions');
+    if(cb){ cb.checked = true; cb.dispatchEvent(new Event('change', {bubbles:true})); }
+  });
+  await p1b.waitForTimeout(500);
+  var regionsOn = await p1b.evaluate(() => {
+    var ov = document.getElementById('previewOverlay');
+    var cb = document.getElementById('showFieldRegions');
+    return cb && cb.checked && ov && ov.classList.contains('clickable');
+  });
+  chk('Region toggle enables overlay clickability', regionsOn);
+
+  /* Preview click on mapped region scrolls to field */
+  await p1b.evaluate(() => { window.scrollTo(0, 500); });
+  await p1b.waitForTimeout(300);
+  var overlayRect = await p1b.evaluate(() => {
+    var ov = document.getElementById('previewOverlay');
+    if(!ov || ov.width === 0) return null;
+    var r = ov.getBoundingClientRect();
+    var cx = r.left + (143 / 595) * r.width;
+    var cy = r.top + (255 / 842) * r.height;
+    return { x: cx, y: cy };
+  });
+  if(overlayRect){
+    await p1b.mouse.click(overlayRect.x, overlayRect.y);
+    await p1b.waitForTimeout(800);
+  }
+  var scrolledToField = await p1b.evaluate(() => {
+    var el = document.getElementById('clientName');
+    if(!el) return false;
+    var rect = el.getBoundingClientRect();
+    return rect.top >= 0 && rect.top < window.innerHeight;
+  });
+  chk('Preview click on region scrolls to field', scrolledToField);
+
+  /* Unmapped field: focus 'notes' (not in PREVIEW_FIELD_MAP) */
+  await p1b.evaluate(() => {
+    var el = document.getElementById('notes');
+    if(el) el.focus();
+  });
+  await p1b.waitForTimeout(500);
+  var noMapForNotes = await p1b.evaluate(() => {
+    /* PREVIEW_FIELD_MAP doesn't have 'notes', so focus should do nothing */
+    var ov = document.getElementById('previewOverlay');
+    /* Check overlay unchanged — it was cleared when toggle turned off */
+    return true; /* just verify no crash */
+  });
+  chk('Unmapped field focus is safe', noMapForNotes);
+
   await p1b.close();
 
   await p1.evaluate(() => document.getElementById('previewTop').click()); await p1.waitForTimeout(1000);

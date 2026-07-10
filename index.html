@@ -801,7 +801,11 @@
       <aside class="previewWrap">
         <section class="card">
           <h2>Output preview</h2>
-          <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.</p>
+          <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.
+            <label class="region-toggle-label" style="display:block;margin-top:4px">
+              <input type="checkbox" id="showFieldRegions"> Show field regions
+            </label>
+          </p>
           <div class="toggleRow" style="justify-content:space-between;margin-bottom:10px">
             <button type="button" class="btn small" id="previewPrev">Previous</button>
             <span class="hint" id="previewPageLabel" style="margin:0">No output pages</span>
@@ -839,7 +843,11 @@
               <ul id="sumMissingList" class="missingList"></ul>
             </div>
           </div>
-          <div class="paper" id="previewPaper" style="display:none">Click “Refresh Preview”</div>
+          <div class="paper" id="previewPaper" style="display:none">
+            Click "Refresh Preview"
+            <canvas id="previewOverlay" aria-hidden="true"></canvas>
+          </div>
+          <div class="mapped-fields-list hidden" id="mappedFieldsList" role="list" aria-label="Fields on this preview page"></div>
         </section>
       </aside>
     </div>

@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '2.6.0-alpha.1';
+  const APP_VERSION = '2.7.0-alpha.1';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -58,6 +58,50 @@
     'templates/rendered/client-review-page-4.jpg'
   ];
   const zoomClientReviewCache = [];
+
+  /* ── Preview Field-Region Map (Zoom Template Pages, Phase 1) ──
+     Source-image coords mapped to A4: xA4 = (sx / iw) * 595, yA4 = (sy / ih) * 842 */
+  const PREVIEW_FIELD_MAP = {
+    /* ── First Consult template page 0 ── */
+    clientName:      [{ doc:'firstConsult', sub:0, sx:210, sy:396, sw:160, h:13 }],
+    clientPhone:     [{ doc:'firstConsult', sub:0, sx:360, sy:396, sw:160, h:13 }],
+    clientEmail:     [{ doc:'firstConsult', sub:0, sx:515, sy:396, sw:160, h:13 }],
+    clientAddress:   [{ doc:'firstConsult', sub:0, sx:210, sy:418, sw:160, h:26 }],
+    client2Name:     [{ doc:'firstConsult', sub:0, sx:210, sy:530, sw:160, h:13 }],
+    propertySaleAddress: [{ doc:'firstConsult', sub:0, sx:210, sy:792, sw:180, h:26 }],
+    date:            [{ doc:'firstConsult', sub:0, sx:790, sy:258, sw:150, h:14 },
+                      { doc:'firstConsult', sub:1, sx:790, sy:256, sw:150, h:14 },
+                      { doc:'clientReview',  sub:0, sx:230, sy:142, sw:170, h:13 },
+                      { doc:'clientReview',  sub:1, sx:230, sy:142, sw:170, h:13 }],
+    teamMember:      [{ doc:'firstConsult', sub:0, sx:765, sy:283, sw:170, h:13 },
+                      { doc:'firstConsult', sub:1, sx:765, sy:292, sw:170, h:13 },
+                      { doc:'clientReview',  sub:0, sx:75,  sy:156, sw:140, h:13 },
+                      { doc:'clientReview',  sub:1, sx:75,  sy:156, sw:140, h:13 }],
+    firstConsultGoalType: [{ doc:'firstConsult', sub:0, sx:200, sy:966, sw:160, h:13 }],
+    firstConsultAnnualIncome:      [{ doc:'firstConsult', sub:0, sx:210, sy:1128, sw:160, h:13 }],
+    firstConsultExistingMortgage:  [{ doc:'firstConsult', sub:0, sx:385, sy:1128, sw:160, h:13 }],
+    firstConsultSavings:           [{ doc:'firstConsult', sub:0, sx:210, sy:1170, sw:160, h:13 }],
+    firstConsultSuper:             [{ doc:'firstConsult', sub:0, sx:385, sy:1170, sw:160, h:13 }],
+    firstConsultInvestmentProperties: [{ doc:'firstConsult', sub:0, sx:210, sy:1252, sw:220, h:13 }],
+    firstConsultBorrowingCapacity: [{ doc:'firstConsult', sub:0, sx:385, sy:1252, sw:160, h:13 }],
+    firstConsultNotes: [{ doc:'firstConsult', sub:0, sx:210, sy:1395, sw:1180, h:168 },
+                        { doc:'firstConsult', sub:1, sx:210, sy:700,  sw:1220, h:140 }],
+    /* ── Client Review template page 0 ── */
+    clientReviewStrategy:  [{ doc:'clientReview', sub:0, sx:100, sy:880, sw:630, h:126 }],
+    clientReviewBuilder:   [{ doc:'clientReview', sub:0, sx:100, sy:398, sw:155, h:13 }],
+    clientReviewDeveloper: [{ doc:'clientReview', sub:0, sx:100, sy:483, sw:155, h:13 }],
+    /* ── Client Review template page 1 ── */
+    clientReviewBroker:      [{ doc:'clientReview', sub:1, sx:210, sy:640,  sw:135, h:13 }],
+    clientReviewConveyancer: [{ doc:'clientReview', sub:1, sx:210, sy:816,  sw:135, h:13 }],
+    clientReviewTimeline:    [{ doc:'clientReview', sub:1, sx:210, sy:991,  sw:135, h:13 }],
+    clientReviewProperty:    [{ doc:'clientReview', sub:1, sx:125, sy:1160, sw:230, h:13 }],
+    clientReviewNextActions: [{ doc:'clientReview', sub:1, sx:125, sy:1675, sw:230, h:39 }]
+  };
+
+  /* ── Preview linking state ── */
+  var previewHighlightTimer = null;
+  var previewRegionsVisible = false;
+
   const LOGO_PATH = 'icons/asg_logo.png';
   let pageLogoImage = null;
   let lastPdfBlob = null;
@@ -3940,7 +3984,17 @@
 
   async function refreshPreview(delta=0){
     const paper=$('previewPaper');
-    paper.innerHTML='';
+    /* Remove only preview canvases, preserve overlay */
+    var oldCanvases = paper.querySelectorAll('canvas:not(#previewOverlay)');
+    for(var oc=0;oc<oldCanvases.length;oc++) oldCanvases[oc].remove();
+    /* Re-ensure overlay exists */
+    if(!$('previewOverlay')){
+      var ov = document.createElement('canvas');
+      ov.id = 'previewOverlay';
+      ov.setAttribute('aria-hidden','true');
+      paper.appendChild(ov);
+      ov.addEventListener('click', onOverlayClick);
+    }
     const liveSummary = $('liveSummary');
     if (liveSummary) liveSummary.style.display = 'none';
     if (paper) paper.style.display = 'block';
@@ -3949,7 +4003,11 @@
       if(!plan.totalPages){
         previewPageIndex = 0;
         updatePreviewControls(0);
-        paper.textContent = appointmentMode === 'zoom' ? 'Zoom appointment documents will appear here once generated.' : 'Final PDF will include selected client forms and attached ID/photo pages only. The staff checklist is not included.';
+        /* Preserve overlay when setting placeholder */
+        var existingOv = $('previewOverlay');
+        paper.textContent = '';
+        paper.appendChild(document.createTextNode(appointmentMode === 'zoom' ? 'Zoom appointment documents will appear here once generated.' : 'Final PDF will include selected client forms and attached ID/photo pages only. The staff checklist is not included.'));
+        if(existingOv) paper.appendChild(existingOv);
       } else {
         previewPageIndex = (previewPageIndex + delta + plan.totalPages) % plan.totalPages;
         updatePreviewControls(plan.totalPages);
@@ -3962,6 +4020,282 @@
       paper.textContent = 'Preview could not be refreshed, but you can still try generating the PDF.';
       status('Preview failed.');
     }
+    /* Redraw overlay if regions are enabled */
+    if(previewRegionsVisible) drawAllRegionOutlines();
+  }
+
+  /* ── Preview–Field Linking ── */
+
+  /* Map source-image coords to A4 overlay coords using cached template image dimensions */
+  function computeRegionCoords(entry){
+    var city = fieldText('zoomFirstConsultTemplate') || 'brisbane';
+    var img = null;
+    if(entry.doc === 'firstConsult'){
+      var fcCache = zoomFirstConsultCache[city];
+      img = fcCache && fcCache[entry.sub];
+    } else if(entry.doc === 'clientReview'){
+      img = zoomClientReviewCache && zoomClientReviewCache[entry.sub];
+    }
+    if(!img || !img.naturalWidth) return null;
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    return {
+      x: (entry.sx / iw) * 595,
+      y: (entry.sy / ih) * 842,
+      w: (entry.sw / iw) * 595,
+      h: (entry.h  / ih) * 842
+    };
+  }
+
+  /* Get page definition for current zoom preview page */
+  function getCurrentPageDef(){
+    if(appointmentMode !== 'zoom') return null;
+    var plan = zoomOutputPlan();
+    if(previewPageIndex >= plan.pages.length) return null;
+    return plan.pages[previewPageIndex];
+  }
+
+  /* Find fields mapped to the current preview page */
+  function getFieldsOnCurrentPage(){
+    var def = getCurrentPageDef();
+    if(!def) return [];
+    var results = [];
+    for(var fieldId in PREVIEW_FIELD_MAP){
+      var entries = PREVIEW_FIELD_MAP[fieldId];
+      for(var i=0;i<entries.length;i++){
+        var e = entries[i];
+        if(e.doc === def.id && e.sub === def.subIdx){
+          results.push({ fieldId: fieldId, entry: e, coords: computeRegionCoords(e) });
+        }
+      }
+    }
+    return results;
+  }
+
+  /* Find the first preview page containing a given field */
+  function findPageForField(fieldId){
+    var entries = PREVIEW_FIELD_MAP[fieldId];
+    if(!entries) return -1;
+    var plan = zoomOutputPlan();
+    for(var i=0;i<entries.length;i++){
+      var e = entries[i];
+      for(var p=0;p<plan.pages.length;p++){
+        var def = plan.pages[p];
+        if(def.id === e.doc && def.subIdx === e.sub){
+          return p;
+        }
+      }
+    }
+    return -1;
+  }
+
+  /* Get overlay canvas, sizing to match preview canvas */
+  function getOverlayCanvas(){
+    var paper = $('previewPaper');
+    var overlay = $('previewOverlay');
+    var previewCanvas = paper ? paper.querySelector('canvas:not(#previewOverlay)') : null;
+    if(!overlay || !previewCanvas) return null;
+    var rect = previewCanvas.getBoundingClientRect();
+    var paperRect = paper.getBoundingClientRect();
+    overlay.style.width = rect.width + 'px';
+    overlay.style.height = rect.height + 'px';
+    overlay.style.left = (rect.left - paperRect.left) + 'px';
+    overlay.style.top = (rect.top - paperRect.top) + 'px';
+    overlay.width = rect.width;
+    overlay.height = rect.height;
+    return overlay;
+  }
+
+  /* Draw a gold highlight rectangle for a specific field */
+  function drawHighlightOnOverlay(fieldId){
+    var overlay = getOverlayCanvas();
+    if(!overlay) return;
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    var fields = getFieldsOnCurrentPage();
+    for(var i=0;i<fields.length;i++){
+      if(fields[i].fieldId !== fieldId) continue;
+      var c = fields[i].coords;
+      if(!c) continue;
+      var scaleX = overlay.width / 595;
+      var scaleY = overlay.height / 842;
+      ctx.fillStyle = 'rgba(184,147,58,.18)';
+      ctx.fillRect(c.x * scaleX, c.y * scaleY, c.w * scaleX, c.h * scaleY);
+      ctx.strokeStyle = 'rgba(184,147,58,.7)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(c.x * scaleX, c.y * scaleY, c.w * scaleX, c.h * scaleY);
+    }
+    /* Clear highlight after 2s */
+    if(previewHighlightTimer) clearTimeout(previewHighlightTimer);
+    previewHighlightTimer = setTimeout(function(){
+      if(!previewRegionsVisible) clearOverlay();
+    }, 2000);
+  }
+
+  /* Draw subtle outlines for all mapped fields on current page */
+  function drawAllRegionOutlines(){
+    var overlay = getOverlayCanvas();
+    if(!overlay) return;
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    var fields = getFieldsOnCurrentPage();
+    var scaleX = overlay.width / 595;
+    var scaleY = overlay.height / 842;
+    for(var i=0;i<fields.length;i++){
+      var c = fields[i].coords;
+      if(!c) continue;
+      ctx.strokeStyle = 'rgba(184,147,58,.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,3]);
+      ctx.strokeRect(c.x * scaleX, c.y * scaleY, c.w * scaleX, c.h * scaleY);
+    }
+    ctx.setLineDash([]);
+  }
+
+  function clearOverlay(){
+    var overlay = $('previewOverlay');
+    if(!overlay) return;
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+
+  /* Build keyboard-accessible mapped-fields list */
+  function updateMappedFieldsList(){
+    var list = $('mappedFieldsList');
+    if(!list) return;
+    list.innerHTML = '';
+    if(!previewRegionsVisible){ list.classList.add('hidden'); return; }
+    var fields = getFieldsOnCurrentPage();
+    if(fields.length === 0){ list.classList.add('hidden'); return; }
+    list.classList.remove('hidden');
+    for(var i=0;i<fields.length;i++){
+      var btn = document.createElement('button');
+      btn.className = 'mapped-fields-btn';
+      btn.textContent = fields[i].fieldId.replace(/([A-Z])/g,' $1').replace(/^./,function(s){return s.toUpperCase();});
+      btn.setAttribute('role','listitem');
+      btn.setAttribute('aria-label','Scroll to ' + btn.textContent + ' field');
+      (function(fid){
+        btn.addEventListener('click', function(){
+          var el = document.getElementById(fid);
+          if(el){
+            var card = el.closest('.card');
+            if(card && card.hasAttribute('data-collapsible')){
+              var toggle = card.querySelector('.collapse-toggle');
+              var body = card.querySelector('.collapse-body');
+              if(toggle && body && body.classList.contains('collapsed')) toggle.click();
+              setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+            } else {
+              el.scrollIntoView({behavior:'smooth',block:'center'});
+            }
+            if(!window.matchMedia('(pointer: coarse)').matches){
+              setTimeout(function(){ el.focus({preventScroll:true}); }, 300);
+            }
+          }
+        });
+      })(fields[i].fieldId);
+      list.appendChild(btn);
+    }
+  }
+
+  /* Field focus handler */
+  function onMappedFieldFocus(e){
+    var fieldId = e.target.id;
+    if(!fieldId || !PREVIEW_FIELD_MAP[fieldId]) return;
+    /* Only highlight if preview is open (has a generated canvas) or regions toggle is on */
+    var paper = $('previewPaper');
+    var hasPreview = paper && paper.querySelector('canvas:not(#previewOverlay)');
+    if(!hasPreview && !previewRegionsVisible) return;
+    /* Navigate preview to first page containing this field */
+    var targetPage = findPageForField(fieldId);
+    if(targetPage >= 0 && hasPreview && previewPageIndex !== targetPage){
+      var plan = outputPlan();
+      if(targetPage < plan.totalPages){
+        previewPageIndex = targetPage;
+        updatePreviewControls(plan.totalPages);
+        refreshPreview().then(function(){
+          drawHighlightOnOverlay(fieldId);
+        });
+        return;
+      }
+    }
+    if(hasPreview) drawHighlightOnOverlay(fieldId);
+  }
+
+  function onMappedFieldBlur(){
+    if(previewHighlightTimer) clearTimeout(previewHighlightTimer);
+    previewHighlightTimer = setTimeout(function(){
+      if(!previewRegionsVisible) clearOverlay();
+    }, 300);
+  }
+
+  /* Overlay click → scroll to field */
+  function onOverlayClick(e){
+    if(!previewRegionsVisible) return;
+    var overlay = $('previewOverlay');
+    if(!overlay) return;
+    var rect = overlay.getBoundingClientRect();
+    var cx = e.clientX - rect.left;
+    var cy = e.clientY - rect.top;
+    var scaleX = overlay.width / 595;
+    var scaleY = overlay.height / 842;
+    var fields = getFieldsOnCurrentPage();
+    for(var i=0;i<fields.length;i++){
+      var c = fields[i].coords;
+      if(!c) continue;
+      var rx = c.x * scaleX, ry = c.y * scaleY, rw = c.w * scaleX, rh = c.h * scaleY;
+      if(cx >= rx && cx <= rx + rw && cy >= ry && cy <= ry + rh){
+        var el = document.getElementById(fields[i].fieldId);
+        if(el){
+          var card = el.closest('.card');
+          if(card && card.hasAttribute('data-collapsible')){
+            var toggle = card.querySelector('.collapse-toggle');
+            var body = card.querySelector('.collapse-body');
+            if(toggle && body && body.classList.contains('collapsed')) toggle.click();
+            setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+          } else {
+            el.scrollIntoView({behavior:'smooth',block:'center'});
+          }
+          if(!window.matchMedia('(pointer: coarse)').matches){
+            setTimeout(function(){ el.focus({preventScroll:true}); }, 300);
+          }
+        }
+        return;
+      }
+    }
+  }
+
+  /* Setup all preview-field linking */
+  function setupPreviewLinking(){
+    /* Field focus listeners */
+    var allInputs = document.querySelectorAll('input, textarea, select');
+    for(var i=0;i<allInputs.length;i++){
+      allInputs[i].addEventListener('focus', onMappedFieldFocus);
+      allInputs[i].addEventListener('blur', onMappedFieldBlur);
+    }
+    /* Overlay click */
+    var overlay = $('previewOverlay');
+    if(overlay) overlay.addEventListener('click', onOverlayClick);
+    /* Region toggle */
+    var toggle = $('showFieldRegions');
+    if(toggle){
+      toggle.addEventListener('change', function(){
+        previewRegionsVisible = this.checked;
+        var ov = $('previewOverlay');
+        if(ov) ov.className = previewRegionsVisible ? 'clickable' : '';
+        if(previewRegionsVisible){
+          drawAllRegionOutlines();
+        } else {
+          clearOverlay();
+        }
+        updateMappedFieldsList();
+      });
+    }
+  }
+
+  /* Initialize linking after DOM ready */
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', setupPreviewLinking);
+  } else {
+    setupPreviewLinking();
   }
 
   function dataURLToBytes(dataURL){
@@ -4730,7 +5064,10 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     getZoomPdfName: () => zoomPdfFileName(),
     getOutputPlan: () => outputPlan(),
     loadDraft: () => loadDraft(),
-    setDraft: (data) => setDraft(data)
+    setDraft: (data) => setDraft(data),
+    getFieldsOnCurrentPage: () => getFieldsOnCurrentPage(),
+    getOverlayCanvas: () => getOverlayCanvas(),
+    computeRegionCoords: (entry) => computeRegionCoords(entry)
   };
   refreshPreview();
 
