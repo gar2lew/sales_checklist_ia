@@ -805,169 +805,199 @@
     }
     .landing-panel {
       width: 100%;
-      max-width: 420px;
+      max-width: 380px;
     }
     .landing-card {
-      background: rgba(255,255,255,.97);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.22);
-      border-radius: 22px;
-      box-shadow: 0 32px 72px rgba(0,0,0,.4), 0 2px 12px rgba(0,0,0,.15);
+      background: rgba(7,16,58,.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.5);
       overflow: hidden;
     }
-    .landing-card-logo {
-      display: flex;
-      justify-content: center;
-      padding: 32px 28px 0;
-    }
-    .landing-card-logo img {
-      width: 160px;
-      height: auto;
-      display: block;
-    }
+    /* ── Card header ── */
     .landing-card-header {
-      padding: 16px 28px 0;
+      padding: 28px 28px 0;
       text-align: center;
     }
-    .landing-greeting {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--muted);
-      margin: 0 0 4px;
-      letter-spacing: .02em;
+    .landing-brand {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
     }
     .landing-card-header h1 {
       font-size: 20px;
       font-weight: 800;
-      color: var(--navy);
+      color: #fff;
       margin: 0 0 8px;
       letter-spacing: -.01em;
     }
     .landing-subtitle {
       font-size: 13px;
-      color: var(--muted);
+      color: rgba(255,255,255,.55);
       line-height: 1.45;
-      margin: 0 0 4px;
-    }
-    .landing-version {
-      font-size: 11px;
-      color: var(--muted);
-      opacity: .4;
       margin: 0;
     }
+    .landing-version {
+      font-size: 10px;
+      color: rgba(255,255,255,.25);
+      text-align: center;
+      padding: 0 28px 16px;
+      margin: 0;
+    }
+    /* ── Card body ── */
     .landing-card-body {
-      padding: 18px 28px 28px;
+      padding: 20px 28px 22px;
     }
     .landing-card-body .landing-field {
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
     .landing-card-body .landing-field label {
-      font-size: 13px;
-      font-weight: 800;
-      color: #30364a;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,.5);
       display: block;
       margin: 0 0 8px;
-      letter-spacing: .02em;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
+    /* ── Staff field (input & select) ── */
     .landing-field input[type="text"],
     .landing-field select {
       width: 100%;
-      border: 1.5px solid #dfe1eb;
-      background: #fff;
-      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      border-radius: 8px;
       padding: 12px 14px;
-      color: var(--ink);
+      color: #fff;
       outline: none;
       font-size: 15px;
+      font-family: inherit;
       transition: border-color .18s ease, box-shadow .18s ease;
+      min-height: 44px;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    .landing-field input::placeholder,
+    .landing-field select::placeholder {
+      color: rgba(255,255,255,.3);
     }
     .landing-field input:focus,
     .landing-field select:focus {
       border-color: var(--gold);
-      box-shadow: 0 0 0 4px rgba(209,171,111,.18);
+      box-shadow: 0 0 0 3px rgba(184,147,58,.15);
     }
-    /* Mode option cards */
+    /* Override native select option styling (best-effort) */
+    .landing-field select option {
+      background: #0A184B;
+      color: #fff;
+    }
+    /* Hide native select arrow in IE */
+    .landing-field select::-ms-expand { display: none; }
+    /* ── Mode cards (segmented control) ── */
     .mode-cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
     }
     .mode-card {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      padding: 14px 10px;
-      border: 1.5px solid #dfe1eb;
-      border-radius: 14px;
-      background: #fafafe;
+      gap: 4px;
+      padding: 10px 8px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,.04);
       cursor: pointer;
       transition: all .18s ease;
       text-align: center;
       font-family: inherit;
       outline: none;
+      min-height: 44px;
+      justify-content: center;
     }
     .mode-card:hover {
-      background: #f0f0f8;
-      border-color: #c8c8d8;
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.18);
     }
     .mode-card.active {
       border-color: var(--gold);
-      background: #fefcf5;
-      box-shadow: 0 0 0 3px rgba(209,171,111,.2);
+      background: rgba(184,147,58,.15);
+      box-shadow: 0 0 0 1px rgba(184,147,58,.3);
     }
     .mode-card-icon {
-      font-size: 24px;
+      font-size: 20px;
       line-height: 1;
     }
     .mode-card-title {
-      font-weight: 800;
-      font-size: 14px;
-      color: var(--navy);
+      font-weight: 700;
+      font-size: 13px;
+      color: rgba(255,255,255,.7);
     }
-    .mode-card-desc {
+    .mode-card.active .mode-card-title {
+      color: var(--gold);
+    }
+    .mode-card-hint {
       font-size: 11px;
-      color: var(--muted);
-      line-height: 1.3;
+      color: rgba(255,255,255,.35);
+      text-align: center;
+      margin: 6px 0 0;
     }
+    /* ── Continue button ── */
     .landing-continue {
       width: 100%;
       justify-content: center;
-      padding: 14px 24px;
-      font-size: 16px;
+      padding: 13px 24px;
+      font-size: 15px;
       font-weight: 800;
-      margin-top: 14px;
-      border-radius: 14px;
+      margin-top: 12px;
+      border-radius: 8px;
       letter-spacing: .01em;
+      background: var(--gold);
+      color: #111;
+      border: none;
+      min-height: 44px;
+    }
+    .landing-continue:hover:not(:disabled) {
+      background: #c9a040;
     }
     .landing-continue:disabled {
-      opacity: .35;
+      opacity: .3;
       cursor: not-allowed;
       transform: none;
     }
-    /* Recent draft card */
+    /* ── Recent draft card ── */
     .recent-draft-card {
-      margin-top: 14px;
-      border: 1px solid #e0e7f0;
-      border-radius: 14px;
-      background: #f5f8fe;
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,.04);
       overflow: hidden;
+      padding: 0;
     }
     .recent-draft-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: var(--navy);
+      color: rgba(255,255,255,.5);
       text-transform: uppercase;
-      letter-spacing: .04em;
-      padding: 12px 14px 4px;
+      letter-spacing: .05em;
+      padding: 10px 14px 4px;
     }
     .recent-draft-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #1b8a5a;
       flex-shrink: 0;
@@ -978,23 +1008,23 @@
     .recent-draft-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2px 12px;
+      gap: 1px 12px;
       margin-bottom: 10px;
     }
     .recent-draft-item {
       display: flex;
       gap: 4px;
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.6;
     }
     .rd-label {
       font-weight: 600;
-      color: var(--muted);
+      color: rgba(255,255,255,.4);
       flex-shrink: 0;
     }
     .rd-value {
       font-weight: 700;
-      color: var(--ink);
+      color: rgba(255,255,255,.75);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1018,78 +1048,40 @@
       background: var(--danger);
       color: #fff;
     }
-
-	    /* Recent draft card */
-	    .recent-draft-card {
-	      margin-top: 12px;
-	      border: 1px solid #e0e7f0;
-	      border-radius: 14px;
-	      background: #f5f8fe;
-	      padding: 0;
-	    }
-	    .recent-draft-card .card-header {
-	      font-size: 12px;
-	      font-weight: 700;
-	      color: var(--navy);
-	      text-transform: uppercase;
-	      letter-spacing: .04em;
-	      padding: 10px 14px 4px;
-	    }
-	    .recent-draft-card .card-body {
-	      padding: 0 14px 12px;
-	    }
-	    .draft-item {
-	      display: flex;
-	      gap: 6px;
-	      font-size: 12px;
-	      line-height: 1.5;
-	    }
-	    .draft-item .label {
-	      font-weight: 600;
-	      color: var(--muted);
-	      flex: none;
-	    }
-	    .draft-item .value {
-	      font-weight: 700;
-	      color: var(--ink);
-	    }
-	    .draft-saved-at {
-	      margin-top: 2px;
-	    }
-	    .draft-saved-at .value {
-	      font-weight: 500;
-	      font-size: 11px;
-	      color: var(--muted);
-	    }
-	    .draft-status-badge {
-	      display: inline-block;
-	      font-size: 11px;
-	      font-weight: 700;
-	      color: #1b8a5a;
-	      background: #e4f5ec;
-	      border-radius: 10px;
-	      padding: 2px 10px;
-	      margin: 6px 0 10px;
-	    }
-	    .draft-footer {
-	      display: flex;
-	      gap: 8px;
-	    }
-	    .draft-footer .btn {
-	      flex: 1;
-	      justify-content: center;
-	      font-size: 12px;
-	      padding: 10px 12px;
-	    }
-	    .btn.danger {
-	      background: transparent;
-	      color: var(--danger);
-	      border: 1px solid var(--danger);
-	    }
-    .btn.danger:hover {
-      background: var(--danger);
-      color: #fff;
+    /* ── Responsive landing ── */
+    @media (min-width: 900px) {
+      .landing-panel {
+        max-width: 380px;
+      }
     }
+    @media (max-width: 500px) {
+      .landing-card-header {
+        padding: 22px 20px 0;
+      }
+      .landing-card-body {
+        padding: 14px 20px 18px;
+      }
+      .landing-card-header h1 {
+        font-size: 18px;
+      }
+      .landing-version {
+        padding: 0 20px 12px;
+      }
+    }
+    @media (max-height: 700px) {
+      .landing-card-header {
+        padding-top: 18px;
+      }
+      .landing-card-body {
+        padding-top: 12px;
+        padding-bottom: 14px;
+      }
+      .landing-brand {
+        margin-bottom: 6px;
+      }
+    }
+
+    /* Save status indicator (autosave) */
     .save-status {
       font-size: 11px;
       font-weight: 600;
@@ -1100,31 +1092,6 @@
     .save-status.saved { color: var(--success); }
     .save-status.error { color: var(--danger); }
     .save-status.saving { color: var(--muted); }
-
-	    /* Responsive landing */
-	    @media (min-width: 900px) {
-	      .landing-panel {
-	        max-width: 420px;
-	      }
-	      .landing-logo {
-	        width: 180px;
-	      }
-	    }
-	    @media (max-width: 500px) {
-	      .landing-header {
-	        padding: 24px 20px 0;
-	      }
-	      .landing-body {
-	        padding: 12px 20px 24px;
-	      }
-	      .landing-header h1 {
-	        font-size: 18px;
-	      }
-	    }
-      .landing-field {
-        margin-bottom: 16px;
-      }
-    }
 
     /* =========================================================================
        MODE VISIBILITY
