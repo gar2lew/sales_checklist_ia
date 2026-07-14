@@ -26,7 +26,5 @@
     "jszip": "^3.10.1",
     "playwright": "^1.61.1"
   },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  }
+  "devDependencies": {}
 }
