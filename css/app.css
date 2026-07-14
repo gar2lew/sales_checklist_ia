@@ -547,28 +547,18 @@
   margin-bottom: 44px;
   position: relative;
   z-index: 2;
-}
-.landing-logo {
-  max-width: 220px;
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.landing-logo-fallback {
-  display: none;
-  font-size: 18px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-}
-.landing-logo-fallback small {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  letter-spacing: 0.06em;
-  margin-top: 2px;
+  width: 220px;
+  max-width: 100%;
+  height: 54px;
+  background: #fff;
+  mask-image: url(../icons/asg_logo.png);
+  mask-repeat: no-repeat;
+  mask-position: left center;
+  mask-size: contain;
+  -webkit-mask-image: url(../icons/asg_logo.png);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: left center;
+  -webkit-mask-size: contain;
 }
 .landing-left-content {
   flex: 1;
@@ -824,9 +814,8 @@
   }
   .landing-logo-wrap {
     margin-bottom: 32px;
-  }
-  .landing-logo {
-    max-width: 180px;
+    width: 180px;
+    height: 44px;
   }
   .landing-heading {
     font-size: clamp(24px, 3vw, 32px);
@@ -868,9 +857,8 @@
   }
   .landing-logo-wrap {
     margin-bottom: 24px;
-  }
-  .landing-logo {
-    max-width: 160px;
+    width: 160px;
+    height: 40px;
   }
   .landing-heading {
     font-size: 26px;
