@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.2';
+  const APP_VERSION = '1.6.3';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -3143,6 +3143,7 @@
     photos.length = 4;
     renderAdditionalDocsUI();
     photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); toast('Form reset.');
+    showLandingScreen();
   }
 
   // =========================================================================
@@ -3169,6 +3170,73 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
+
+  // =========================================================================
+  // Landing Screen Logic
+  // =========================================================================
+  function showLandingScreen() {
+    var ls = $('landingScreen');
+    var app = $('mainApp');
+    if(ls) ls.style.display = '';
+    if(app) app.style.display = 'none';
+  }
+  function hideLandingScreen() {
+    var ls = $('landingScreen');
+    var app = $('mainApp');
+    if(ls) ls.style.display = 'none';
+    if(app) app.style.display = '';
+  }
+  function updateLandingStartBtn() {
+    var staff = $('landingStaff');
+    var client1 = $('landingClient1');
+    var btn = $('landingStartBtn');
+    if(!btn) return;
+    btn.disabled = !(staff && staff.value && client1 && client1.value.trim());
+  }
+  if($('landingStaff')) {
+    $('landingStaff').addEventListener('change', updateLandingStartBtn);
+  }
+  if($('landingClient1')) {
+    $('landingClient1').addEventListener('input', updateLandingStartBtn);
+  }
+  if($('landingForm')) {
+    $('landingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var staff = $('landingStaff');
+      var client1 = $('landingClient1');
+      var client2 = $('landingClient2');
+      var btn = $('landingStartBtn');
+      if(!staff || !staff.value || !client1 || !client1.value.trim()) return;
+      if($('teamMember')) setControlValue('teamMember', staff.value);
+      if($('clientName')) setControlValue('clientName', client1.value.trim());
+      if($('client2Name') && client2 && client2.value.trim()) {
+        setControlValue('client2Name', client2.value.trim());
+      }
+      hideLandingScreen();
+      refreshAllUI();
+    });
+  }
+  if($('landingClient2')) {
+    $('landingClient2').addEventListener('keydown', function(e) {
+      if(e.key === 'Enter' && !$('landingStartBtn').disabled) {
+        $('landingForm').dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+  if($('landingClient1')) {
+    $('landingClient1').addEventListener('keydown', function(e) {
+      if(e.key === 'Enter' && !$('landingStartBtn').disabled) {
+        $('landingForm').dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+  if($('backToStart')) {
+    $('backToStart').addEventListener('click', function() {
+      showLandingScreen();
+    });
+  }
+  updateLandingStartBtn();
+
   window._testState = {
     getPhotos: () => photos,
     setPhotoImg: (idx, val) => { photos[idx].img = val; },

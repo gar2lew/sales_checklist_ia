@@ -15,20 +15,102 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 </head>
 <body>
-  <div class="app">
+  <!-- Premium Landing Screen -->
+  <div class="landing-screen" id="landingScreen">
+    <div class="landing-container">
+      <div class="landing-left">
+        <div class="landing-brand">
+          <img src="icons/asg_logo.png" alt="Amplify Solutions Group" class="landing-logo">
+        </div>
+        <div class="landing-left-content">
+          <h1 class="landing-heading">
+            Sales Appointment<br>
+            Capture
+          </h1>
+          <p class="landing-tagline">Professional. Compliant. Complete.</p>
+          <p class="landing-description">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
+          <div class="landing-benefits">
+            <div class="benefit-item">
+              <span class="benefit-icon">✓</span>
+              <div>
+                <strong>Compliant</strong>
+                <span>Built for Australian standards</span>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">✓</span>
+              <div>
+                <strong>Complete</strong>
+                <span>All documents in one place</span>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">✓</span>
+              <div>
+                <strong>Secure</strong>
+                <span>Your information is protected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="landing-footer-text landing-footer-left">
+          <span data-app-version-label>Version 1.6.3</span>
+          <span>© 2026 Amplify Solutions Group. All rights reserved.</span>
+        </div>
+      </div>
+      <div class="landing-right">
+        <div class="landing-form-wrap">
+          <div class="landing-badge">Secure &amp; Professional</div>
+          <span class="landing-eyebrow">WELCOME</span>
+          <h2 class="landing-form-title">Start New Appointment</h2>
+          <p class="landing-form-subtitle">Select your name to auto-fill staff details, then enter client names to begin.</p>
+          <form class="landing-form" id="landingForm">
+            <div class="landing-field">
+              <label for="landingStaff">Staff Member <span class="required">*</span></label>
+              <select id="landingStaff" class="landing-select">
+                <option value="">— Choose your name —</option>
+                <option value="Blake">Blake</option>
+                <option value="Joe">Joe</option>
+                <option value="Natalie">Natalie</option>
+                <option value="Mike">Mike</option>
+                <option value="Josh">Josh</option>
+                <option value="Sam">Sam</option>
+              </select>
+            </div>
+            <div class="landing-field">
+              <label for="landingClient1">Client 1 Name <span class="required">*</span></label>
+              <input type="text" id="landingClient1" class="landing-input" placeholder="Enter client 1 full name" autocomplete="off">
+            </div>
+            <div class="landing-field">
+              <label for="landingClient2">Client 2 Name <span class="hint-mild">optional</span></label>
+              <input type="text" id="landingClient2" class="landing-input" placeholder="Enter client 2 full name (optional)" autocomplete="off">
+            </div>
+            <button type="submit" class="landing-start-btn" id="landingStartBtn" disabled>Start Appointment</button>
+          </form>
+          <div class="landing-footer-text landing-footer-mobile">
+            <span data-app-version-label>Version 1.6.3</span>
+            <span>© 2026 Amplify Solutions Group. All rights reserved.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app" id="mainApp" style="display:none">
     <header class="appHeader stickyHeader">
       <div class="headerInner">
         <div class="headerBrand">
           <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
           <div class="brandText">
             <span class="brandTitle">Sales Appointment Capture</span>
-            <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
+            <span class="brandVersion" data-app-version-label>Version 1.6.3</span>
           </div>
           <div class="statusBadge">Status: <span id="status">Ready.</span></div>
         </div>
         
         <div class="headerActions">
           <div class="actionGroup">
+            <button class="btn toolbar-btn" id="backToStart" title="Change Staff / Clients">↩ Change Staff / Clients</button>
             <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
             <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
             <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
@@ -416,7 +498,7 @@
             <label class="check"><input id="item3" type="checkbox"><span>IA form details are completed and the correct Perth/Brisbane template is selected, if required</span></label>
             <label class="check"><input id="item4" type="checkbox"><span>Clear photos of all client ID documents have been taken</span></label>
           </div>
-          <p class="legal" style="margin-top:20px">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | <span data-app-version-label>Version 1.6.2</span></p>
+          <p class="legal" style="margin-top:20px">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | <span data-app-version-label>Version 1.6.3</span></p>
         </section>
       </main>
 
@@ -587,7 +669,7 @@
         </div>
       </div>
       <div class="settingsVersion" style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
-        <span data-app-version-label>Version 1.6.2</span>
+        <span data-app-version-label>Version 1.6.3</span>
       </div>
     </section>
   </div>
