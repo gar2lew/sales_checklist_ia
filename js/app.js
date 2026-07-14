@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.5';
+  const APP_VERSION = '1.6.6';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -333,6 +333,9 @@
   }
   function updateVersionLabels(){
     document.querySelectorAll('[data-app-version-label]').forEach(el=>{ el.textContent = `Version ${APP_VERSION}`; });
+    document.querySelectorAll('[data-app-copyright]').forEach(el=>{
+      el.textContent = el.textContent.replace(/\d{4}/, new Date().getFullYear().toString());
+    });
   }
   function setSettingsTab(tab){
     document.querySelectorAll('.settingsTab').forEach(btn=>btn.classList.toggle('active', btn.dataset.settingsTab === tab));
@@ -3193,8 +3196,86 @@
     if(!btn) return;
     btn.disabled = !(staff && staff.value && client1 && client1.value.trim());
   }
-  if($('landingStaff')) {
-    $('landingStaff').addEventListener('change', updateLandingStartBtn);
+  function updateLandingGreeting() {
+    var sel = $('landingStaff');
+    var el = $('landingGreeting');
+    if(!el) return;
+    if(!sel || !sel.value) {
+      el.textContent = 'WELCOME';
+      return;
+    }
+    var h = new Date().getHours();
+    var part = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    el.textContent = part + ' ' + sel.value;
+  }
+  function updateLandingAvatar() {
+    var sel = $('landingStaff');
+    var av = $('landingAvatar');
+    if(!av) return;
+    if(sel && sel.value) {
+      av.textContent = sel.value.charAt(0).toUpperCase();
+      av.style.display = 'flex';
+    } else {
+      av.style.display = 'none';
+    }
+  }
+  function updateLandingClock() {
+    var el = $('landingClock');
+    if(!el) return;
+    var d = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var day = days[d.getDay()];
+    var date = d.getDate();
+    var month = months[d.getMonth()];
+    var year = d.getFullYear();
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    var min = m < 10 ? '0' + m : '' + m;
+    el.textContent = day + ', ' + date + ' ' + month + ' ' + year + '\n' + h + ':' + min + ' ' + ampm;
+    el.style.whiteSpace = 'pre-line';
+  }
+  function loadRecentAppointments() {
+    var textEl = $('landingRecentText');
+    var listEl = $('landingRecentList');
+    if(!textEl) return;
+    try {
+      var data = JSON.parse(localStorage.getItem('salesAppointmentRecentStarts') || '[]');
+      if(data.length === 0) {
+        textEl.textContent = 'No recent appointments';
+        if(listEl) listEl.classList.remove('show');
+        return;
+      }
+      textEl.textContent = data.length + ' recent appointment' + (data.length > 1 ? 's' : '');
+      if(listEl) {
+        listEl.innerHTML = data.map(function(item) {
+          var t = item.timestamp ? new Date(item.timestamp) : null;
+          var ts = t ? (t.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'}) + ' ' + t.toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit'})) : '';
+          return '<div class="recent-item"><span>' + htmlEscape(item.client || '') + ' / ' + htmlEscape(item.staff || '') + '</span><span>' + ts + '</span></div>';
+        }).join('');
+      }
+    } catch(e) { textEl.textContent = 'No recent appointments'; }
+  }
+  function addRecentAppointment() {
+    try {
+      var staff = $('landingStaff');
+      var client1 = $('landingClient1');
+      var data = JSON.parse(localStorage.getItem('salesAppointmentRecentStarts') || '[]');
+      data.unshift({ client: (client1 ? client1.value.trim() : ''), staff: (staff ? staff.value : ''), timestamp: new Date().toISOString() });
+      if(data.length > 5) data.length = 5;
+      localStorage.setItem('salesAppointmentRecentStarts', JSON.stringify(data));
+      loadRecentAppointments();
+    } catch(e) {}
+  }
+  var staffEl = $('landingStaff');
+  if(staffEl) {
+    staffEl.addEventListener('change', function() {
+      updateLandingStartBtn();
+      updateLandingGreeting();
+      updateLandingAvatar();
+    });
   }
   if($('landingClient1')) {
     $('landingClient1').addEventListener('input', updateLandingStartBtn);
@@ -3205,13 +3286,13 @@
       var staff = $('landingStaff');
       var client1 = $('landingClient1');
       var client2 = $('landingClient2');
-      var btn = $('landingStartBtn');
       if(!staff || !staff.value || !client1 || !client1.value.trim()) return;
       if($('teamMember')) setControlValue('teamMember', staff.value);
       if($('clientName')) setControlValue('clientName', client1.value.trim());
       if($('client2Name') && client2 && client2.value.trim()) {
         setControlValue('client2Name', client2.value.trim());
       }
+      addRecentAppointment();
       hideLandingScreen();
       refreshAllUI();
     });
@@ -3235,7 +3316,18 @@
       showLandingScreen();
     });
   }
+  if($('landingRecent')) {
+    $('landingRecent').addEventListener('click', function() {
+      var list = $('landingRecentList');
+      if(list) list.classList.toggle('show');
+    });
+  }
   updateLandingStartBtn();
+  updateLandingGreeting();
+  updateLandingAvatar();
+  updateLandingClock();
+  loadRecentAppointments();
+  setInterval(updateLandingClock, 60000);
 
   window._testState = {
     getPhotos: () => photos,
