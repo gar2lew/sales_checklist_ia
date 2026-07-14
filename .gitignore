@@ -1,0 +1,22 @@
+node_modules/
+test-results/
+playwright-report/
+*.backup
+*.backup*
+*.bak
+*.bak*
+*.orig
+
+# Generated test artefacts
+test-smoke/*.png
+test-smoke/*.pdf
+test-smoke/*.zip
+
+# Local design/reference artefacts
+Landing Page DRAFT.png
+landingPageASG.json
+
+# User-guide files (local only)
+Sales_Appointment_Capture_User_Guide.docx
+Sales_Appointment_Capture_User_Guide.pdf
+User_guide_sales_checklist.py
