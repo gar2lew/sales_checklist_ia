@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.6.6';
+  const APP_VERSION = '1.7.0';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -3196,94 +3196,148 @@
     if(!btn) return;
     btn.disabled = !(staff && staff.value && client1 && client1.value.trim());
   }
-  function updateLandingGreeting() {
-    var sel = $('landingStaff');
-    var el = $('landingGreeting');
-    if(!el) return;
-    if(!sel || !sel.value) {
-      el.textContent = 'WELCOME';
-      return;
-    }
-    var h = new Date().getHours();
-    var part = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-    el.textContent = part + ' ' + sel.value;
-  }
-  function updateLandingAvatar() {
-    var sel = $('landingStaff');
-    var av = $('landingAvatar');
-    if(!av) return;
-    if(sel && sel.value) {
-      av.textContent = sel.value.charAt(0).toUpperCase();
-      av.style.display = 'flex';
+  function syncCustomSelect(value) {
+    var trigger = $('landingStaffTrigger');
+    var valEl = $('landingStaffValue');
+    var avatar = $('landingAvatar');
+    var menu = $('landingStaffMenu');
+    if(!trigger || !valEl) return;
+    if(value) {
+      valEl.textContent = value;
+      valEl.classList.remove('placeholder');
+      if(avatar) {
+        avatar.textContent = value.charAt(0).toUpperCase();
+        avatar.style.display = 'flex';
+      }
+      if(menu) {
+        var items = menu.querySelectorAll('li');
+        items.forEach(function(li) {
+          li.classList.toggle('active', li.dataset.value === value);
+        });
+      }
     } else {
-      av.style.display = 'none';
+      valEl.textContent = '— Choose your name —';
+      valEl.classList.add('placeholder');
+      if(avatar) avatar.style.display = 'none';
+      if(menu) {
+        var items = menu.querySelectorAll('li');
+        items.forEach(function(li) { li.classList.remove('active'); });
+      }
     }
   }
-  function updateLandingClock() {
-    var el = $('landingClock');
-    if(!el) return;
-    var d = new Date();
-    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    var day = days[d.getDay()];
-    var date = d.getDate();
-    var month = months[d.getMonth()];
-    var year = d.getFullYear();
-    var h = d.getHours();
-    var m = d.getMinutes();
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    var min = m < 10 ? '0' + m : '' + m;
-    el.textContent = day + ', ' + date + ' ' + month + ' ' + year + '\n' + h + ':' + min + ' ' + ampm;
-    el.style.whiteSpace = 'pre-line';
-  }
-  function loadRecentAppointments() {
-    var textEl = $('landingRecentText');
-    var listEl = $('landingRecentList');
-    if(!textEl) return;
-    try {
-      var data = JSON.parse(localStorage.getItem('salesAppointmentRecentStarts') || '[]');
-      if(data.length === 0) {
-        textEl.textContent = 'No recent appointments';
-        if(listEl) listEl.classList.remove('show');
-        return;
+  // Custom select
+  var selectWrapper = $('landingStaffWrapper');
+  var selectTrigger = $('landingStaffTrigger');
+  var selectMenu = $('landingStaffMenu');
+  var hiddenSelect = $('landingStaff');
+  var selectValue = $('landingStaffValue');
+  if(selectTrigger && selectMenu && hiddenSelect) {
+    // Open/close
+    selectTrigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var expanded = selectTrigger.getAttribute('aria-expanded') === 'true';
+      if(expanded) {
+        selectTrigger.setAttribute('aria-expanded', 'false');
+        selectMenu.style.display = 'none';
+      } else {
+        selectTrigger.setAttribute('aria-expanded', 'true');
+        selectMenu.style.display = '';
+        // Focus active or first item
+        var active = selectMenu.querySelector('.active') || selectMenu.querySelector('li');
+        if(active) active.focus();
       }
-      textEl.textContent = data.length + ' recent appointment' + (data.length > 1 ? 's' : '');
-      if(listEl) {
-        listEl.innerHTML = data.map(function(item) {
-          var t = item.timestamp ? new Date(item.timestamp) : null;
-          var ts = t ? (t.toLocaleDateString('en-AU', {day:'numeric', month:'short', year:'numeric'}) + ' ' + t.toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit'})) : '';
-          return '<div class="recent-item"><span>' + htmlEscape(item.client || '') + ' / ' + htmlEscape(item.staff || '') + '</span><span>' + ts + '</span></div>';
-        }).join('');
-      }
-    } catch(e) { textEl.textContent = 'No recent appointments'; }
-  }
-  function addRecentAppointment() {
-    try {
-      var staff = $('landingStaff');
-      var client1 = $('landingClient1');
-      var data = JSON.parse(localStorage.getItem('salesAppointmentRecentStarts') || '[]');
-      data.unshift({ client: (client1 ? client1.value.trim() : ''), staff: (staff ? staff.value : ''), timestamp: new Date().toISOString() });
-      if(data.length > 5) data.length = 5;
-      localStorage.setItem('salesAppointmentRecentStarts', JSON.stringify(data));
-      loadRecentAppointments();
-    } catch(e) {}
-  }
-  var staffEl = $('landingStaff');
-  if(staffEl) {
-    staffEl.addEventListener('change', function() {
+    });
+    // Select option
+    selectMenu.addEventListener('click', function(e) {
+      var li = e.target.closest('li');
+      if(!li) return;
+      var value = li.dataset.value;
+      hiddenSelect.value = value;
+      syncCustomSelect(value);
+      selectTrigger.setAttribute('aria-expanded', 'false');
+      selectMenu.style.display = 'none';
       updateLandingStartBtn();
-      updateLandingGreeting();
-      updateLandingAvatar();
+      // Fire change event on hidden select for any other listeners
+      var evt = document.createEvent('HTMLEvents');
+      evt.initEvent('change', true, false);
+      hiddenSelect.dispatchEvent(evt);
+    });
+    // Keyboard
+    selectTrigger.addEventListener('keydown', function(e) {
+      if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if(selectTrigger.getAttribute('aria-expanded') !== 'true') {
+          selectTrigger.setAttribute('aria-expanded', 'true');
+          selectMenu.style.display = '';
+          var active = selectMenu.querySelector('.active') || selectMenu.querySelector('li');
+          if(active) active.focus();
+        } else {
+          var items = selectMenu.querySelectorAll('li');
+          var current = selectMenu.querySelector('[tabindex="0"]') || selectMenu.querySelector('.active');
+          var idx = current ? Array.from(items).indexOf(current) : -1;
+          var next = e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
+          items.forEach(function(li) { li.removeAttribute('tabindex'); li.setAttribute('aria-selected', 'false'); });
+          items[next].setAttribute('tabindex', '0');
+          items[next].setAttribute('aria-selected', 'true');
+          items[next].focus();
+        }
+      }
+      if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        var focused = document.activeElement;
+        if(focused && focused.closest('li')) {
+          focused.click();
+        } else {
+          selectTrigger.click();
+        }
+      }
+      if(e.key === 'Escape') {
+        selectTrigger.setAttribute('aria-expanded', 'false');
+        selectMenu.style.display = 'none';
+        selectTrigger.focus();
+      }
+    });
+    // Close on click outside
+    document.addEventListener('click', function(e) {
+      if(selectWrapper && !selectWrapper.contains(e.target)) {
+        selectTrigger.setAttribute('aria-expanded', 'false');
+        selectMenu.style.display = 'none';
+      }
+    });
+    // Sync menu keyboard navigation
+    selectMenu.addEventListener('keydown', function(e) {
+      if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var items = selectMenu.querySelectorAll('li');
+        var current = document.activeElement && document.activeElement.closest('li') ? document.activeElement : null;
+        var idx = current ? Array.from(items).indexOf(current) : -1;
+        var next = e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
+        items.forEach(function(li) { li.removeAttribute('tabindex'); });
+        items[next].setAttribute('tabindex', '0');
+        items[next].focus();
+      }
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        var focused = document.activeElement;
+        if(focused && focused.closest('li')) focused.click();
+      }
+      if(e.key === 'Escape') {
+        selectTrigger.setAttribute('aria-expanded', 'false');
+        selectMenu.style.display = 'none';
+        selectTrigger.focus();
+      }
     });
   }
+  hiddenSelect.addEventListener('change', function() {
+    updateLandingStartBtn();
+  });
   if($('landingClient1')) {
     $('landingClient1').addEventListener('input', updateLandingStartBtn);
   }
   if($('landingForm')) {
     $('landingForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      var staff = $('landingStaff');
+      var staff = hiddenSelect || $('landingStaff');
       var client1 = $('landingClient1');
       var client2 = $('landingClient2');
       if(!staff || !staff.value || !client1 || !client1.value.trim()) return;
@@ -3292,7 +3346,6 @@
       if($('client2Name') && client2 && client2.value.trim()) {
         setControlValue('client2Name', client2.value.trim());
       }
-      addRecentAppointment();
       hideLandingScreen();
       refreshAllUI();
     });
@@ -3316,18 +3369,8 @@
       showLandingScreen();
     });
   }
-  if($('landingRecent')) {
-    $('landingRecent').addEventListener('click', function() {
-      var list = $('landingRecentList');
-      if(list) list.classList.toggle('show');
-    });
-  }
+  syncCustomSelect('');
   updateLandingStartBtn();
-  updateLandingGreeting();
-  updateLandingAvatar();
-  updateLandingClock();
-  loadRecentAppointments();
-  setInterval(updateLandingClock, 60000);
 
   window._testState = {
     getPhotos: () => photos,
