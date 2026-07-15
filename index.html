@@ -6,6 +6,9 @@
   <title>Sales Appointment Capture</title>
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="/css/app.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
 
   <meta name="theme-color" content="#1e3a5f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -17,76 +20,160 @@
 <body>
   <!-- Landing Screen -->
   <div class="landing-screen" id="landingScreen">
-    <div class="landing-container">
-      <div class="landing-left">
-        <div class="landing-logo-wrap">
-          <img src="icons/asg_logo_white.png" alt="Amplify Solutions Group" class="landing-logo" onerror="this.style.display='none';var p=this.parentNode;if(p){var f=p.querySelector('.landing-logo-fallback');if(f)f.style.display='block'}">
-          <div class="landing-logo-fallback">ASG | AMPLIFY SOLUTIONS GROUP</div>
-        </div>
-        <h1 class="landing-heading">Sales Appointment<br>Capture</h1>
-        <p class="landing-tagline">Professional. Compliant. Complete.</p>
-        <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
-        <div class="landing-benefits">
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M12 4L6 10L3 7" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 2L13 4v5c0 3-2.2 5.5-5 6-2.8-.5-5-3-5-6V4l5-2z" stroke="#D4AF37" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            <div><strong>Compliant</strong><span>Built for Australian standards</span></div>
-          </div>
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2h8a1 1 0 011 1v11l-5-3-5 3V3a1 1 0 011-1z" stroke="#D4AF37" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 6.5h5M5.5 9h5" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <div><strong>Complete</strong><span>All documents in one place</span></div>
-          </div>
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="7" width="8" height="7" rx="1.5" stroke="#D4AF37" stroke-width="1.3"/><path d="M10.5 7V5a2.5 2.5 0 00-5 0v2" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="10.5" r=".8" fill="#D4AF37"/></svg>
-            <div><strong>Secure</strong><span>Your data is always protected</span></div>
-          </div>
-        </div>
-        <div class="landing-version">Version 1.7.0</div>
-      </div>
-      <div class="landing-right">
-        <div class="landing-session">Secure session</div>
-        <div class="landing-right-content">
-          <h2 class="landing-form-title">Start New Appointment</h2>
-          <p class="landing-subtitle">Select your name and enter client details to begin.</p>
-          <form class="landing-form" id="landingForm">
-            <div class="landing-field">
-              <label for="landingStaff">Staff Member <span class="required">*</span></label>
-              <div class="landing-custom-select" id="landingStaffWrapper">
-                <button type="button" class="landing-select-trigger" id="landingStaffTrigger" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="landing-select-avatar" id="landingAvatar" style="display:none"></span>
-                  <span class="landing-select-value" id="landingStaffValue">— Choose your name —</span>
-                  <svg class="landing-select-arrow" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#737887" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
-                </button>
-                <ul class="landing-select-menu" id="landingStaffMenu" role="listbox" aria-label="Staff members" style="display:none">
-                  <li role="option" data-value="Blake">Blake</li>
-                  <li role="option" data-value="Joe">Joe</li>
-                  <li role="option" data-value="Natalie">Natalie</li>
-                  <li role="option" data-value="Mike">Mike</li>
-                  <li role="option" data-value="Josh">Josh</li>
-                  <li role="option" data-value="Sam">Sam</li>
-                </ul>
-                <select id="landingStaff" aria-hidden="true" style="display:none">
-                  <option value="">— Choose your name —</option>
-                  <option value="Blake">Blake</option>
-                  <option value="Joe">Joe</option>
-                  <option value="Natalie">Natalie</option>
-                  <option value="Mike">Mike</option>
-                  <option value="Josh">Josh</option>
-                  <option value="Sam">Sam</option>
-                </select>
+    <div class="landing-outer">
+      <div class="landing-container">
+        <!-- Left Panel -->
+        <div class="landing-left">
+          <svg class="landing-curve" viewBox="0 0 800 800" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(212,175,55,0.0)"/>
+                <stop offset="12%" stop-color="rgba(212,175,55,0.22)"/>
+                <stop offset="50%" stop-color="rgba(212,175,55,0.30)"/>
+                <stop offset="88%" stop-color="rgba(212,175,55,0.22)"/>
+                <stop offset="100%" stop-color="rgba(212,175,55,0.0)"/>
+              </linearGradient>
+            </defs>
+            <path d="M800,0 Q600,80 640,240 Q680,400 620,560 Q560,720 640,800" stroke="url(#curveGrad)" stroke-width="2.5" fill="none"/>
+            <path d="M800,0 Q620,80 655,240 Q690,400 635,560 Q580,720 655,800" stroke="url(#curveGrad)" stroke-width="1" fill="none" opacity="0.5"/>
+          </svg>
+          <svg class="landing-waves" viewBox="0 0 800 800" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,200 Q200,160 400,220 Q600,280 800,200" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none"/>
+            <path d="M0,350 Q250,310 500,370 Q600,400 800,340" stroke="rgba(255,255,255,0.03)" stroke-width="1" fill="none"/>
+            <path d="M0,500 Q300,460 600,530 Q700,550 800,510" stroke="rgba(255,255,255,0.025)" stroke-width="1" fill="none"/>
+            <path d="M0,620 Q200,590 450,640 Q650,680 800,630" stroke="rgba(255,255,255,0.02)" stroke-width="0.8" fill="none"/>
+          </svg>
+          <div class="landing-left-bg"></div>
+          <div class="landing-left-content">
+            <div class="landing-logo-wrap">
+              <div class="landing-logo-row">
+                <span class="landing-logo-asg">ASG</span>
+                <span class="landing-logo-sep"></span>
+                <span class="landing-logo-sub">AMPLIFY SOLUTIONS GROUP</span>
+              </div>
+              <div class="landing-logo-line"></div>
+            </div>
+            <h1 class="landing-heading">Sales Appointment<br>Capture</h1>
+            <p class="landing-tagline">Professional. Compliant. Complete.</p>
+            <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
+            <div class="landing-benefits">
+              <div class="benefit-item">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M16.5 5.5L8.25 14.85L3.85 10.45" stroke="#D4AF37" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.45 2.75L17.6 5.5v7.15c0 4.29-3.08 7.92-7.15 8.58-4.07-.66-7.15-4.29-7.15-8.58V5.5l7.15-2.75z" stroke="#D4AF37" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                <div class="benefit-text">
+                  <strong>Compliant</strong>
+                  <span>Built for Australian standards</span>
+                </div>
+              </div>
+              <div class="benefit-item">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M5.5 3.3h11a1.1 1.1 0 011.1 1.1v14.85l-6.6-3.85-6.6 3.85V4.4a1.1 1.1 0 011.1-1.1z" stroke="#D4AF37" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.7 9.35h6.6M7.7 12.65h6.6" stroke="#D4AF37" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <div class="benefit-text">
+                  <strong>Complete</strong>
+                  <span>All documents in one place</span>
+                </div>
+              </div>
+              <div class="benefit-item">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><rect x="5.5" y="9.9" width="11" height="9.35" rx="2.2" stroke="#D4AF37" stroke-width="1.6"/><path d="M14.85 9.9V7.15a3.85 3.85 0 00-7.7 0V9.9" stroke="#D4AF37" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="14.85" r="1.1" fill="#D4AF37"/></svg>
+                <div class="benefit-text">
+                  <strong>Secure</strong>
+                  <span>Your data is always protected</span>
+                </div>
               </div>
             </div>
-            <div class="landing-field">
-              <label for="landingClient1">Client 1 Name <span class="required">*</span></label>
-              <input type="text" id="landingClient1" class="landing-input" placeholder="Enter client 1 full name" autocomplete="off">
-            </div>
-            <div class="landing-field">
-              <label for="landingClient2">Client 2 Name <span class="hint-mild">optional</span></label>
-              <input type="text" id="landingClient2" class="landing-input" placeholder="Enter client 2 full name (optional)" autocomplete="off">
-            </div>
-            <button type="submit" class="landing-start-btn" id="landingStartBtn" disabled>Start Appointment</button>
-          </form>
+          </div>
+          <div class="landing-version">Version 1.9.0</div>
         </div>
-        <div class="landing-version landing-version-right">Version 1.7.0</div>
+
+        <!-- Right Panel -->
+        <div class="landing-right">
+          <div class="landing-security-badge">
+            <div class="security-badge-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2l6.5 2.5v6.5c0 3.9-2.8 7.2-6.5 7.8-3.7-.6-6.5-3.9-6.5-7.8V4.5L10 2z" stroke="#D4AF37" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 8l-4.5 4.5L6 10" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="security-badge-text">
+              <strong>Secure &amp; Professional</strong>
+              <span>Your information is encrypted and protected</span>
+            </div>
+          </div>
+
+          <div class="landing-right-content">
+            <p class="landing-welcome">WELCOME</p>
+            <h2 class="landing-form-title">Start New Appointment</h2>
+            <div class="landing-divider">
+              <span class="landing-divider-line"></span>
+              <svg class="landing-divider-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.14l4 2v5.14c0 2.51-1.6 4.57-4 5.26-2.4-.69-4-2.75-4-5.26V3.14l4-2z" stroke="#D4AF37" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              <span class="landing-divider-line"></span>
+            </div>
+            <p class="landing-subtitle">Select your name to auto-fill staff details, then enter client names to begin.</p>
+
+            <form class="landing-form" id="landingForm">
+              <div class="landing-field">
+                <label for="landingStaff">Your Name <span class="required">*</span></label>
+                <div class="landing-custom-select" id="landingStaffWrapper">
+                  <button type="button" class="landing-select-trigger" id="landingStaffTrigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="landing-select-avatar" id="landingAvatar" style="display:none"></span>
+                    <span class="landing-select-value" id="landingStaffValue">Select your name</span>
+                    <svg class="landing-select-arrow" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <ul class="landing-select-menu" id="landingStaffMenu" role="listbox" aria-label="Staff members" style="display:none">
+                    <li role="option" data-value="Blake">Blake</li>
+                    <li role="option" data-value="Joe">Joe</li>
+                    <li role="option" data-value="Natalie">Natalie</li>
+                    <li role="option" data-value="Mike">Mike</li>
+                    <li role="option" data-value="Josh">Josh</li>
+                    <li role="option" data-value="Sam">Sam</li>
+                  </ul>
+                  <select id="landingStaff" aria-hidden="true" style="display:none">
+                    <option value="">Select your name</option>
+                    <option value="Blake">Blake</option>
+                    <option value="Joe">Joe</option>
+                    <option value="Natalie">Natalie</option>
+                    <option value="Mike">Mike</option>
+                    <option value="Josh">Josh</option>
+                    <option value="Sam">Sam</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="landing-field">
+                <label for="landingClient1">Client 1 Name <span class="required">*</span></label>
+                <div class="landing-input-wrap">
+                  <svg class="landing-input-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="5.5" r="3.5" stroke="#94a3b8" stroke-width="1.5"/><path d="M2.5 15.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <input type="text" id="landingClient1" class="landing-input" placeholder="Enter client 1 full name" autocomplete="off">
+                </div>
+              </div>
+
+              <div class="landing-field">
+                <label for="landingClient2">Client 2 Name <span class="hint-optional">(optional)</span></label>
+                <div class="landing-input-wrap">
+                  <svg class="landing-input-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="5.5" r="3.5" stroke="#94a3b8" stroke-width="1.5"/><path d="M2.5 15.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  <input type="text" id="landingClient2" class="landing-input" placeholder="Enter client 2 full name (optional)" autocomplete="off">
+                </div>
+              </div>
+
+              <button type="submit" class="landing-start-btn" id="landingStartBtn" disabled>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3.75 9h10.5M9.75 4.5L14.25 9l-4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>START APPOINTMENT</span>
+              </button>
+            </form>
+
+            <div class="landing-info-box">
+              <div class="info-box-icon">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="9.5" stroke="#D4AF37" stroke-width="1.5"/><path d="M11 10v5.5M11 7.5v.5" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="info-box-text">
+                <strong>What happens next?</strong>
+                <p>You'll be guided through the appointment process step-by-step and able to generate all required documents at the end.</p>
+              </div>
+            </div>
+          </div>
+          <div class="landing-footer">
+            <div class="landing-footer-row">
+              <svg width="13" height="15" viewBox="0 0 13 15" fill="none" aria-hidden="true"><rect x="2.5" y="6" width="8" height="7" rx="1.5" stroke="#94A3B8" stroke-width="1.2"/><path d="M9.5 6V4a3 3 0 00-6 0v2" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <span>Sales Appointment Capture v1.9.0</span>
+            </div>
+            <div class="landing-footer-copy">&copy; 2025 Amplify Solutions Group. All rights reserved.</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -98,17 +185,17 @@
           <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
           <div class="brandText">
             <span class="brandTitle">Sales Appointment Capture</span>
-            <span class="brandVersion" data-app-version-label>Version 1.6.5</span>
+            <span class="brandVersion" data-app-version-label>Version 1.8.0</span>
           </div>
           <div class="statusBadge">Status: <span id="status">Ready.</span></div>
         </div>
         
         <div class="headerActions">
           <div class="actionGroup">
-            <button class="btn toolbar-btn" id="backToStart" title="Change Staff / Clients">↩ Change Staff / Clients</button>
-            <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
-            <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
-            <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
+            <button class="btn toolbar-btn" id="backToStart" title="Change Staff / Clients"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h11M7 3l-4 5 4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Change Staff / Clients</button>
+            <button class="btn toolbar-btn" id="saveDraft" title="Save Draft"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 14V2a1 1 0 011-1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v5h4M5 11h6M5 8h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Save Draft</button>
+            <button class="btn toolbar-btn" id="loadDraft" title="Load Draft"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 12V4a1 1 0 011-1h3.5L8 4.5h4a1 1 0 011 1V12a1 1 0 01-1 1H3a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 8l2 2 2-2M7 6v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Load Draft</button>
+            <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 1h5M6 1v5.5L3 13a2 2 0 002 2h6a2 2 0 002-2l-3-6.5V1" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Load Test Data</button>
           </div>
 
           <div class="actionGroup">
@@ -116,7 +203,7 @@
             <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
             <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
             <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="previewTop">↻ Refresh Preview</button>
+            <button class="btn toolbar-btn ghost-dark" id="previewTop"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8a6 6 0 0111.2-3M14 8a6 6 0 01-11.2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 2v4h-4M2 14v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Refresh Preview</button>
           </div>
           
           <div class="actionGroup">
@@ -674,22 +761,22 @@
       <div class="name" id="fileNamePreview">Sales Appointment - DD-MM-YYYY - ClientName.pdf</div>
       <div class="footerButtons">
         <button class="btn" id="resetForm" title="New Appointment">
-          <span class="btn-icon">🗑️</span><span class="btn-text">New Appointment</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4h10M5.5 4V2.5a1 1 0 011-1h3a1 1 0 011 1V4M6 7v4M8 7v4M10 7v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2 4l1 10a1 1 0 001 1h8a1 1 0 001-1l1-10" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="btn-text">New Appointment</span>
         </button>
         <button class="btn" id="saveDraftBottom" title="Save Draft">
-          <span class="btn-icon">💾</span><span class="btn-text">Save Draft</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 14V2a1 1 0 011-1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v5h4M5 11h6M5 8h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="btn-text">Save Draft</span>
         </button>
         <button class="btn dark" id="generateBottom" title="Generate PDF">
-          <span class="btn-icon">⚡</span><span class="btn-text">Generate PDF</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M9 1L3 9h4l-1 6 6-8H8l1-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="btn-text">Generate PDF</span>
         </button>
         <button class="btn" id="downloadBottom" disabled title="Download PDF">
-          <span class="btn-icon">📥</span><span class="btn-text">Download PDF</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v10M4 7l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="btn-text">Download PDF</span>
         </button>
         <button class="btn" id="downloadPackageBottom" disabled title="Download Package">
-          <span class="btn-icon">📦</span><span class="btn-text">Download Package</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1L2 4v5l6 3 6-3V4L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 4l6 3 6-3M8 8v7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="btn-text">Download Package</span>
         </button>
         <button class="btn" id="shareBottom" disabled title="Share PDF">
-          <span class="btn-icon">📤</span><span class="btn-text">Share PDF</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="4" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="3" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="13" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7l5-3M5.5 9l5 3" stroke="currentColor" stroke-width="1.5"/></svg><span class="btn-text">Share PDF</span>
         </button>
       </div>
     </div>
