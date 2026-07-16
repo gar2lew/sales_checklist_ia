@@ -190,6 +190,31 @@
     clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3200);
   }
   function status(msg){ $('status').textContent = msg; }
+  function setDraftConfidence(state){
+    const el=$('draftConfidenceStatus');
+    if(!el) return;
+    const presentations={
+      unsaved:{text:'Unsaved changes',tone:'attention'},
+      saved:{text:'Draft saved',tone:'success'},
+      loaded:{text:'Draft loaded',tone:'success'}
+    };
+    const presentation=presentations[state] || presentations.unsaved;
+    el.textContent=presentation.text;
+    el.dataset.state=presentation.tone;
+  }
+  function markDraftUnsaved(){ setDraftConfidence('unsaved'); }
+  function setOutputConfidence(state){
+    const el=$('outputConfidenceStatus');
+    if(!el) return;
+    const presentations={
+      none:{text:'No PDF generated',tone:'neutral'},
+      ready:{text:'PDF ready',tone:'success'},
+      invalidated:{text:'PDF needs regenerating',tone:'attention'}
+    };
+    const presentation=presentations[state] || presentations.none;
+    el.textContent=presentation.text;
+    el.dataset.state=presentation.tone;
+  }
   function clearValidation(){
     document.querySelectorAll('.invalidField').forEach(el=>{
       el.classList.remove('invalidField');
@@ -665,11 +690,13 @@
     if(!el || el.dataset.bound === 'true') return;
     el.dataset.bound = 'true';
     el.addEventListener('input',()=>{
+      markDraftUnsaved();
       refreshFormBindings();
       if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
       if(id==='eoiPriceTotal') applyPriceFormat(el);
     });
     el.addEventListener('change',()=>{
+      markDraftUnsaved();
       if(dateFieldIds.includes(id)) normalizeDateField(id);
       updateName();
       clearGenerated();
@@ -992,6 +1019,7 @@
       updateIaOverrides();
     }
     clearGenerated();
+    markDraftUnsaved();
     toast('EOI details copied into IA fields.');
   }
   renderConfigurableFields();
@@ -1034,6 +1062,7 @@
   // SECTION E: SUMMARY CARD & PROGRESS INDICATORS
   // =========================================================================
   function clearGenerated(){
+    const hadGeneratedOutput=!!lastPdfBlob;
     lastPdfBlob=null;
     lastPdfName='';
     lastIndividualPdfs=null;
@@ -1045,6 +1074,7 @@
     updateSignatureStatuses();
     renderLiveSummary();
     updateSummaryCard();
+    if(hadGeneratedOutput) setOutputConfidence('invalidated');
   }
 
   function updateIndicator(indicatorId, isCompleted) {
@@ -1052,6 +1082,13 @@
     if (el) {
       el.className = 'summary-card-icon ' + (isCompleted ? 'completed-icon' : 'circle');
     }
+  }
+
+  function updateClient2Presentation(hasC2) {
+    const summary = $('client2Summary');
+    const statusEl = $('client2SummaryStatus');
+    if (summary) summary.dataset.state = hasC2 ? 'active' : 'not-required';
+    if (statusEl) statusEl.textContent = hasC2 ? 'Client 2 added' : 'Not required';
   }
 
   function updateSummaryCard(){
@@ -1067,6 +1104,7 @@
     updateIndicator('indicator-client2Name', !!fieldText('client2Name'));
     updateIndicator('indicator-client2Phone', !!fieldText('client2Phone'));
     updateIndicator('indicator-client2Email', !!fieldText('client2Email'));
+    updateClient2Presentation(hasC2);
 
     updateIndicator('indicator-clientAddress', !!fieldText('clientAddress'));
     updateIndicator('indicator-propertySaleAddress', !!fieldText('propertySaleAddress'));
@@ -1093,7 +1131,9 @@
     const sigsCount = (hasSignature ? 1 : 0) + (hasSignature2 ? 1 : 0);
     const labelSignatures = $('label-signatures');
     if (labelSignatures) {
-      labelSignatures.textContent = `${sigsCount} / 2 Captured`;
+      const requiredSignatures = hasC2 ? 2 : 1;
+      const capturedRequired = hasC2 ? sigsCount : (hasSignature ? 1 : 0);
+      labelSignatures.textContent = `${requiredSignatures} required · ${capturedRequired} captured`;
       if (sigsCount === 0) {
         labelSignatures.style.color = 'var(--muted)';
       } else if (sigsCount === 1) {
@@ -1142,10 +1182,10 @@
     if (statusEl) {
       if (missingCount === 0) {
         statusEl.textContent = 'Ready for PDF';
-        statusEl.style.color = 'var(--asg-success)';
+        statusEl.dataset.state = 'ready';
       } else {
         statusEl.textContent = `${missingCount} item${missingCount > 1 ? 's' : ''} remaining`;
-        statusEl.style.color = 'var(--asg-warning)';
+        statusEl.dataset.state = 'attention';
       }
     }
   }
@@ -1304,6 +1344,7 @@
       clientSelect.addEventListener('change', () => {
         photos[idx].client = clientSelect.value;
         updateAdditionalLabel();
+        markDraftUnsaved();
       });
 
       typeSelect.addEventListener('change', () => {
@@ -1315,10 +1356,14 @@
           if (descInput) descInput.value = '';
         }
         updateAdditionalLabel();
+        markDraftUnsaved();
       });
 
       if (descInput) {
-        descInput.addEventListener('input', updateAdditionalLabel);
+        descInput.addEventListener('input', () => {
+          updateAdditionalLabel();
+          markDraftUnsaved();
+        });
       }
 
       // Set initial dropdown value after binding listeners.
@@ -1334,6 +1379,7 @@
   makePhotoUI();
   if($('additionalDocsCount')) {
     $('additionalDocsCount').addEventListener('change', e => {
+      markDraftUnsaved();
       const count = parseInt(e.target.value, 10);
       const currentAdditional = photos.length - 4;
       if (count > currentAdditional) {
@@ -1609,17 +1655,15 @@
     const sig2 = $('sig2Status');
     if (sig2) {
       const hasC2 = hasClient2();
-      if (hasSignature2) {
+      if (!hasC2) {
+        sig2.textContent = 'Not required';
+        sig2.className = 'status-badge status-optional';
+      } else if (hasSignature2) {
         sig2.textContent = '✓ Captured';
         sig2.className = 'status-badge status-captured';
       } else {
-        if (hasC2) {
-          sig2.textContent = 'Required';
-          sig2.className = 'status-badge status-required';
-        } else {
-          sig2.textContent = 'Optional';
-          sig2.className = 'status-badge status-optional';
-        }
+        sig2.textContent = 'Required';
+        sig2.className = 'status-badge status-required';
       }
     }
   }
@@ -1679,6 +1723,7 @@
       photos[idx] = { ...photos[idx], file, dataURL, img, rotation:0, name:file.name };
       renderPhotoBox(idx);
       clearGenerated();
+      markDraftUnsaved();
       status('Photo loaded.');
     }catch(err){ console.error(err); toast('Could not load that photo.'); status('Ready.'); }
   }
@@ -1697,8 +1742,9 @@
       if (input) input.value='';
     }
   }
-  function rotatePhoto(idx){ if(!photos[idx].img) return; photos[idx].rotation=(photos[idx].rotation+90)%360; renderPhotoBox(idx); clearGenerated(); }
+  function rotatePhoto(idx){ if(!photos[idx].img) return; photos[idx].rotation=(photos[idx].rotation+90)%360; renderPhotoBox(idx); clearGenerated(); markDraftUnsaved(); }
   function removePhoto(idx){
+    const hadPhoto=!!photos[idx].img;
     if(photos[idx].img && !confirm('Are you sure you want to remove this photo?')) return;
     if(idx < 4) {
       photos[idx]={label:photoLabels[idx], file:null, dataURL:null, img:null, rotation:0, name:''};
@@ -1708,18 +1754,21 @@
     }
     renderPhotoBox(idx);
     clearGenerated();
+    if(hadPhoto) markDraftUnsaved();
   }
 
   // Signature pad
   const sig=$('signature'); const sctx=sig.getContext('2d'); let drawing=false;
   function clearSig(){
+    const hadCapturedSignature=hasSignature;
     if(hasSignature && !confirm('Are you sure you want to clear Signature 1?')) return;
     sctx.clearRect(0,0,sig.width,sig.height);
     hasSignature=false;
     clearGenerated();
+    if(hadCapturedSignature) markDraftUnsaved();
   }
   function pos(e){ const r=sig.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig.width/r.width, y:(e.clientY-r.top)*sig.height/r.height}; }
-  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); });
+  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); markDraftUnsaved(); });
   sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); });
   sig.addEventListener('pointerup', e=>{ drawing=false; clearGenerated(); try{sig.releasePointerCapture(e.pointerId)}catch{} });
   sig.addEventListener('pointercancel', ()=>drawing=false);
@@ -1727,13 +1776,15 @@
 
   const sig2=$('signature2'); const sctx2=sig2.getContext('2d'); let drawing2=false;
   function clearSig2(){
+    const hadCapturedSignature=hasSignature2;
     if(hasSignature2 && !confirm('Are you sure you want to clear Signature 2?')) return;
     sctx2.clearRect(0,0,sig2.width,sig2.height);
     hasSignature2=false;
     clearGenerated();
+    if(hadCapturedSignature) markDraftUnsaved();
   }
   function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
-  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); });
+  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); markDraftUnsaved(); });
   sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); });
   sig2.addEventListener('pointerup', e=>{ drawing2=false; clearGenerated(); try{sig2.releasePointerCapture(e.pointerId)}catch{} });
   sig2.addEventListener('pointercancel', ()=>drawing2=false);
@@ -2655,6 +2706,7 @@
     const quality = $('compressPhotos').checked ? 0.78 : 0.92;
     const blob=makePDF(canvases, quality);
     lastPdfBlob=blob; lastPdfName=pdfFileName();
+    setOutputConfidence('ready');
     status(`Generated ${lastPdfName} (${(blob.size/1024/1024).toFixed(2)} MB). Clean PDF includes selected forms/images only.`);
     updateActionButtons();
     return {blob, name:lastPdfName};
@@ -3091,8 +3143,8 @@
     syncLaVidaContactsFromChoices(false);
     refreshAllUI();
   }
-  function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
-  async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
+  function saveDraft(){ try{ localStorage.setItem('salesAppointmentDraft', JSON.stringify(getDraft())); setDraftConfidence('saved'); toast('Draft saved on this device.'); }catch(e){ toast('Draft could not be saved. Photos may be too large for browser storage.'); } }
+  async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); setDraftConfidence('loaded'); setOutputConfidence('none'); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
   function loadTestData(){
     if(!confirm('Load test data? This will replace the current form values (but not save over your draft).')) return;
     const today = localDateISO();
@@ -3116,6 +3168,7 @@
     setControlValue('iaDate', today);
     setControlValue('iaForm', 'perth');
     refreshAllUI();
+    markDraftUnsaved();
     toast('Test data loaded.');
   }
   function resetForm(){
@@ -3138,6 +3191,8 @@
     photos.length = 4;
     renderAdditionalDocsUI();
     photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); toast('Form reset.');
+    markDraftUnsaved();
+    setOutputConfidence('none');
     showLandingScreen();
   }
 
