@@ -6,7 +6,7 @@
 
 'use strict';
   const $ = id => document.getElementById(id);
-  const APP_VERSION = '1.9.0';
+  const APP_VERSION = '1.10.0';
   const ADMIN_PIN = '1234';
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
@@ -1137,11 +1137,11 @@
     const statusEl = $('appointmentStatus');
     if (statusEl) {
       if (missingCount === 0) {
-        statusEl.textContent = '🟢 Ready for PDF';
-        statusEl.style.color = 'var(--success)';
+        statusEl.textContent = 'Ready for PDF';
+        statusEl.style.color = 'var(--asg-success)';
       } else {
-        statusEl.textContent = `🟠 ${missingCount} Item${missingCount > 1 ? 's' : ''} Remaining`;
-        statusEl.style.color = 'var(--gold)';
+        statusEl.textContent = `${missingCount} item${missingCount > 1 ? 's' : ''} remaining`;
+        statusEl.style.color = 'var(--asg-warning)';
       }
     }
   }
