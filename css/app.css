@@ -92,8 +92,6 @@
   --workspace-max:1440px;
   --workspace-gutter:clamp(16px,2.5vw,40px);
   --section-gap:clamp(20px,2vw,32px);
-  --control-height:clamp(46px,4vw,52px);
-  --card-radius-responsive:clamp(14px,1.5vw,20px);
 
   /* === Legacy compatibility (keep for JS references) === */
   --navy:#1e3a5f;
@@ -661,8 +659,8 @@ select:focus{
 .headerActions{display:flex;align-items:center;gap:var(--asg-space-sm);flex-wrap:wrap}
 
 .workspaceSecondaryActions{position:relative}
-.workspaceSecondaryActions > .secondaryActionsTrigger{display:none!important}
-.secondaryActionMenu{display:flex!important;align-items:center;gap:2px}
+.workspaceSecondaryActions > .btn.secondaryActionsTrigger{display:none}
+.secondaryActionMenu{display:flex;align-items:center;gap:2px}
 
 .confidenceStrip{
   flex:1 0 100%;
@@ -1117,6 +1115,26 @@ select:focus{
 html{scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .app input,.app select,.app textarea,.app button{scroll-margin-block:clamp(80px,18dvh,180px)}
 
+@media (max-width:600px),
+       (max-height:600px) and (max-width:1000px),
+       (min-width:900px) and (max-width:1179px) and (min-height:601px){
+  .workspaceSecondaryActions > .btn.secondaryActionsTrigger{display:flex;min-height:44px}
+  .secondaryActionMenu{
+    display:none;
+    position:absolute;
+    right:0;
+    top:calc(100% + 6px);
+    z-index:20;
+    min-width:190px;
+    padding:6px;
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:var(--asg-radius-lg);
+    background:var(--asg-navy);
+    box-shadow:var(--asg-shadow-floating);
+  }
+  .workspaceSecondaryActions:focus-within .secondaryActionMenu{display:grid;gap:4px}
+}
+
 @media (max-width:600px), (max-height:600px) and (max-width:1000px){
   .app{
     padding-bottom:calc(104px + env(safe-area-inset-bottom));
@@ -1138,21 +1156,7 @@ html{scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom))}
   .btn.toolbar-btn{min-height:44px;padding:7px 8px;justify-content:center;text-align:center;line-height:1.15;font-size:var(--asg-text-xs)}
 
   .workspaceSecondaryActions{height:100%}
-  .workspaceSecondaryActions > .secondaryActionsTrigger{display:flex!important;min-height:44px;height:100%;cursor:pointer}
-  .secondaryActionMenu{
-    display:none!important;
-    position:absolute;
-    right:0;
-    top:calc(100% + 6px);
-    z-index:20;
-    min-width:190px;
-    padding:6px;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:var(--asg-radius-lg);
-    background:var(--asg-navy);
-    box-shadow:var(--asg-shadow-floating);
-  }
-  .workspaceSecondaryActions:focus-within .secondaryActionMenu{display:grid!important;gap:4px}
+  .workspaceSecondaryActions > .btn.secondaryActionsTrigger{height:100%;cursor:pointer}
   .secondaryActionMenu .btn{justify-content:flex-start;white-space:nowrap}
 
   #mainApp:not(:has(#outputConfidenceStatus[data-state="success"])) :is(#downloadTop,#downloadPackageTop,#shareTop){display:none}
@@ -1209,21 +1213,6 @@ html{scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom))}
   .headerBrand{grid-column:1}
   .headerActions{grid-column:1/-1;display:flex;flex-wrap:nowrap;width:100%}
   .confidenceStrip{grid-column:2;grid-row:1;flex-basis:auto;white-space:nowrap}
-  .workspaceSecondaryActions > .secondaryActionsTrigger{display:flex!important;min-height:44px}
-  .secondaryActionMenu{
-    display:none!important;
-    position:absolute;
-    right:0;
-    top:calc(100% + 6px);
-    z-index:20;
-    min-width:190px;
-    padding:6px;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:var(--asg-radius-lg);
-    background:var(--asg-navy);
-    box-shadow:var(--asg-shadow-floating);
-  }
-  .workspaceSecondaryActions:focus-within .secondaryActionMenu{display:grid!important;gap:4px}
   .summary-card-body{
     grid-template-columns:minmax(100px,1.1fr) minmax(110px,1.1fr) minmax(180px,1.7fr) minmax(110px,1fr) minmax(90px,.8fr) minmax(135px,1.2fr);
   }

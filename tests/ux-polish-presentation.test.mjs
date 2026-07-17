@@ -90,9 +90,13 @@ try {
           .map((button) => button.id),
         disclosureVisible: !!document.querySelector("#summaryDisclosure")?.getClientRects().length,
         disclosureExpanded: document.querySelector("#summaryDisclosure")?.getAttribute("aria-expanded"),
+        disclosureControls: document.querySelector("#summaryDisclosure")?.getAttribute("aria-controls"),
         summaryDetailsVisible: !!document.querySelector("#summaryDetails")?.getClientRects().length,
         preGenerationOutputVisibility: ["downloadTop", "downloadPackageTop", "shareTop"]
           .map((id) => ({ id, visible: !!document.querySelector(`#${id}`)?.getClientRects().length })),
+        secondaryTriggerVisible: !!document.querySelector(".secondaryActionsTrigger")?.getClientRects().length,
+        inlineSecondaryActionsVisible: ["loadTestData", "openSettings"]
+          .every((id) => !!document.querySelector(`#${id}`)?.getClientRects().length),
       };
     });
     assert.ok(metrics.scrollWidth <= metrics.clientWidth, `${width}x${height} must not have horizontal overflow`);
@@ -100,12 +104,17 @@ try {
     assert.equal(metrics.summaryBeforeContent, true, `${width}x${height} summary must span above form/preview content`);
     const undersizedTargets = metrics.visibleTargets.filter((target) => target.height < 44);
     assert.deepEqual(undersizedTargets, [], `${width}x${height} visible targets must be at least 44px`);
-    if (layout === "split") assert.equal(metrics.workspaceColumns, 2, `${width}x${height} should use the form/preview split`);
+    if (layout === "split") {
+      assert.equal(metrics.workspaceColumns, 2, `${width}x${height} should use the form/preview split`);
+      assert.equal(metrics.secondaryTriggerVisible, false, `${width}x${height} should show secondary actions inline, not duplicate More actions`);
+      assert.equal(metrics.inlineSecondaryActionsVisible, true, `${width}x${height} should expose desktop secondary actions inline`);
+    }
     if (layout === "stacked") assert.equal(metrics.workspaceColumns, 1, `${width}x${height} should stack form then preview`);
     if (layout === "compact") {
       assert.deepEqual(metrics.visibleFooterActions, ["resetForm", "saveDraftBottom", "generateBottom"]);
       assert.equal(metrics.disclosureVisible, true);
       assert.equal(metrics.disclosureExpanded, "false");
+      assert.equal(metrics.disclosureControls, "summaryDetails");
       assert.equal(metrics.summaryDetailsVisible, false);
       assert.ok(metrics.preGenerationOutputVisibility.every((action) => !action.visible), `${width}x${height} unavailable output actions should be hidden`);
     }
@@ -174,6 +183,10 @@ try {
 
   assert.equal(await page.locator("#draftConfidenceStatus").count(), 1, "draft confidence status must exist");
   assert.equal(await page.locator("#outputConfidenceStatus").count(), 1, "output confidence status must exist");
+  for (const id of ["draftConfidenceStatus", "outputConfidenceStatus"]) {
+    assert.equal(await page.locator(`#${id}`).getAttribute("role"), "status", `${id} must retain status semantics`);
+    assert.equal(await page.locator(`#${id}`).getAttribute("aria-live"), "polite", `${id} must retain polite announcements`);
+  }
   assert.match(await page.locator("#draftConfidenceStatus").innerText(), /Unsaved changes/i);
   assert.match(await page.locator("#outputConfidenceStatus").innerText(), /No PDF generated/i);
 
