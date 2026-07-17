@@ -1490,3 +1490,179 @@
 	    min-height: 44px;
 	  }
 	}
+
+/* ==========================================================================
+   Responsive workspace reconciliation
+   Presentation-only overrides for the authenticated workspace. Landing rules
+   above remain authoritative and are intentionally not included here.
+   ========================================================================== */
+:root {
+  --workspace-max: 1440px;
+  --workspace-gutter: clamp(16px, 2.5vw, 40px);
+  --section-gap: clamp(20px, 2vw, 32px);
+  --workspace-radius: 12px;
+  --workspace-shadow-floating: 0 8px 28px rgba(8, 16, 32, 0.08);
+}
+
+.app {
+  max-width: var(--workspace-max);
+  padding-inline: var(--workspace-gutter);
+  padding-bottom: calc(148px + env(safe-area-inset-bottom));
+}
+
+.grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--section-gap);
+  margin-top: var(--section-gap);
+}
+
+.workspaceContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+.workspaceContent > main {
+  display: grid;
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+.workspaceContent > main .card { margin: 0; }
+.workspaceContent > main :is(input, select, textarea) { min-width: 0; }
+.app :is(button, input:not([type="checkbox"]):not([type="radio"]), select, textarea) { min-height: 44px; }
+
+.stickyHeader {
+  margin-inline: calc(-1 * var(--workspace-gutter));
+  margin-bottom: var(--section-gap);
+  padding-inline: var(--workspace-gutter);
+}
+
+.headerInner { max-width: calc(var(--workspace-max) - (2 * var(--workspace-gutter))); }
+.actionGroup-appointment { background: transparent; }
+.actionGroup-output { border-color: rgba(184, 147, 58, 0.32); }
+.actionGroup-admin { background: transparent; border-color: transparent; padding-inline: 0; }
+.btn.toolbar-btn { min-height: 44px; }
+
+.workspaceSecondaryActions { position: relative; }
+.workspaceSecondaryActions > .secondaryActionsTrigger { display: none; }
+.secondaryActionMenu { display: flex; align-items: center; gap: 4px; }
+
+.summary-card-header-actions { display: flex; align-items: center; gap: 8px; }
+.summary-disclosure {
+  display: none;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--workspace-radius);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: none;
+  font-size: 11px;
+}
+.summary-disclosure:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.summary-card-body { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+.previewWrap { position: relative; min-width: 0; }
+.previewHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.previewHeading h2 { margin: 0; }
+.previewHeading #previewTop { flex: none; min-height: 44px; }
+
+html { scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.app :is(input, select, textarea, button) { scroll-margin-block: clamp(80px, 18dvh, 180px); }
+
+@media (min-width: 1180px) {
+  .workspaceContent { grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); }
+  .previewWrap { position: sticky; top: 14px; align-self: start; }
+  .summary-card-body {
+    grid-template-columns: minmax(110px, 1.1fr) minmax(120px, 1.1fr) minmax(190px, 1.8fr) minmax(120px, 1.1fr) minmax(105px, .8fr) minmax(150px, 1.2fr);
+  }
+}
+
+@media (max-width: 600px),
+       (max-height: 600px) and (max-width: 1000px),
+       (min-width: 900px) and (max-width: 1179px) and (min-height: 601px) {
+  .workspaceSecondaryActions > .secondaryActionsTrigger { display: inline-flex; min-height: 44px; }
+  .secondaryActionMenu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
+    min-width: 190px;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--workspace-radius);
+    background: #fff;
+    box-shadow: var(--workspace-shadow-floating);
+  }
+  .secondaryActionsTrigger[aria-expanded="true"] + .secondaryActionMenu { display: grid; gap: 4px; }
+  .secondaryActionMenu .btn { justify-content: flex-start; white-space: nowrap; }
+}
+
+@media (max-width: 600px), (max-height: 600px) and (max-width: 1000px) {
+  .app { min-height: 100dvh; padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+  .stickyHeader { padding-block: 8px; }
+  .headerInner { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .headerBrand { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+  .headerBrand .statusBadge { grid-column: 1 / -1; justify-self: start; }
+  .appLogo { max-height: 36px; }
+  .brandTitle { font-size: 13px; }
+  .headerActions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; width: 100%; }
+  .actionGroup { min-width: 0; border-radius: 16px; }
+  .actionGroup-appointment { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .actionGroup-output { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); width: 100%; }
+  .actionGroup-admin { align-self: stretch; }
+  .btn.toolbar-btn { padding: 7px 8px; justify-content: center; text-align: center; line-height: 1.15; font-size: 11px; }
+  .workspaceSecondaryActions { height: 100%; }
+  .workspaceSecondaryActions > .secondaryActionsTrigger { height: 100%; }
+  .actionGroup-output:has(#downloadTop:disabled) :is(#downloadTop, #downloadPackageTop, #shareTop) { display: none; }
+
+  .summary-card-header { align-items: flex-start; gap: 8px; margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+  .summary-card-header-actions { flex-direction: column; align-items: flex-end; gap: 6px; }
+  .summary-disclosure { display: inline-flex; align-items: center; justify-content: center; }
+  .appointment-summary-card:not(.summary-expanded) .summary-details { display: none; }
+  .appointment-summary-card.summary-expanded .summary-details { display: block; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .appointment-summary-card.summary-expanded .summary-card-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .footerBar { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+  .footerInner { display: grid; grid-template-columns: 1fr; gap: 4px; }
+  .footerInner .name { max-width: 100%; margin: 0; text-align: center; font-size: 0; line-height: 1.2; }
+  .footerInner .name::after { content: attr(data-compact-label); font-size: 11px; }
+  .footerButtons { display: grid; grid-template-columns: repeat(3, minmax(44px, 1fr)); gap: 6px; width: 100%; }
+  .footerButtons :is(#downloadBottom, #downloadPackageBottom, #shareBottom) { display: none; }
+  .footerButtons .btn { width: 100%; min-height: 44px; padding: 7px 6px; justify-content: center; box-shadow: none; }
+  .footerButtons .btn .btn-text { display: inline; }
+}
+
+@media (min-width: 421px) and (max-width: 600px) {
+  .headerInner { grid-template-columns: auto minmax(0, 1fr); }
+  .headerBrand { display: contents; }
+  .headerBrand .appLogo { grid-column: 1; grid-row: 1; }
+  .headerBrand .brandText { grid-column: 2; grid-row: 1; }
+  .headerBrand .statusBadge { grid-column: 1 / -1; grid-row: 2; max-width: 170px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .headerActions { grid-column: 1 / -1; grid-row: 3; }
+}
+
+@media (max-height: 600px) and (min-width: 601px) and (max-width: 1000px) {
+  .stickyHeader { position: relative; }
+  .headerInner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; }
+  .headerBrand { grid-column: 1 / -1; }
+  .headerActions { grid-column: 1 / -1; display: flex; flex-wrap: nowrap; }
+  .actionGroup-appointment, .actionGroup-output { display: flex; flex: 1; width: auto; }
+  .actionGroup-admin { flex: none; }
+  .btn.toolbar-btn { white-space: nowrap; }
+}
+
+@media (min-width: 900px) and (max-width: 1179px) and (min-height: 601px) {
+  .headerInner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; }
+  .headerBrand { grid-column: 1 / -1; }
+  .headerActions { grid-column: 1 / -1; display: flex; flex-wrap: nowrap; width: 100%; }
+  .summary-card-body { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .footerButtons .btn .btn-text { display: none; }
+  .appointment-summary-card.summary-expanded .summary-card-body { grid-template-columns: 1fr; }
+}

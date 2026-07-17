@@ -72,7 +72,7 @@
     </div>
   </div>
 
-  <div class="app">
+  <div class="app" id="mainApp">
     <header class="appHeader stickyHeader">
       <div class="headerInner">
         <div class="headerBrand">
@@ -86,23 +86,27 @@
         </div>
         
         <div class="headerActions">
-          <div class="actionGroup">
+          <div class="actionGroup actionGroup-appointment">
             <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
             <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
             <span class="save-status" id="saveStatus" role="status" aria-live="polite"></span>
-            <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
           </div>
 
-          <div class="actionGroup">
+          <div class="actionGroup actionGroup-output">
             <button class="btn toolbar-btn primary" id="generateTop">Generate PDF</button>
             <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
             <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
             <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="previewTop">↻ Refresh Preview</button>
           </div>
           
-          <div class="actionGroup">
-            <button class="btn toolbar-btn" id="openSettings">Settings</button>
+          <div class="actionGroup actionGroup-admin">
+            <div class="workspaceSecondaryActions" id="workspaceSecondaryActions">
+              <button type="button" class="btn toolbar-btn secondaryActionsTrigger" id="secondaryActionsTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="secondaryActionMenu">More actions</button>
+              <div class="secondaryActionMenu" id="secondaryActionMenu">
+                <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
+                <button class="btn toolbar-btn" id="openSettings">Settings</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -132,12 +136,15 @@
     </nav>
 
     <div class="grid">
-      <main>
         <section class="card appointment-summary-card full" id="appointmentSummaryCard">
           <div class="summary-card-header">
             <span>Appointment Summary</span>
-            <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+            <div class="summary-card-header-actions">
+              <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+              <button type="button" class="btn small summary-disclosure" id="summaryDisclosure" aria-expanded="false" aria-controls="summaryDetails">Show details</button>
+            </div>
           </div>
+          <div class="summary-details" id="summaryDetails">
           <div class="progress-badges">
             <span id="appointmentBadge" class="badge badge-incomplete">Incomplete</span>
             <span id="eoiBadge" class="badge badge-not-required">Not Required</span>
@@ -209,8 +216,11 @@
               <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomIA"></span><span id="zoomSumIA">IA</span></span>
             </div>
           </div>
+          </div>
         </section>
 
+      <div class="workspaceContent">
+      <main>
         <section class="card" id="appointmentInfoSection">
           <h2>1. Appointment & client information</h2>
           <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
@@ -800,7 +810,10 @@
 
       <aside class="previewWrap">
         <section class="card">
-          <h2>Output preview</h2>
+          <div class="previewHeading">
+            <h2>Output preview</h2>
+            <button type="button" class="btn toolbar-btn" id="previewTop">↻ Refresh Preview</button>
+          </div>
           <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.
             <label class="region-toggle-label" style="display:block;margin-top:4px">
               <input type="checkbox" id="showFieldRegions"> Show field regions
@@ -850,6 +863,7 @@
           <div class="mapped-fields-list hidden" id="mappedFieldsList" role="list" aria-label="Fields on this preview page"></div>
         </section>
       </aside>
+      </div>
     </div>
   </div>
 
