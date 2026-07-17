@@ -1111,6 +1111,13 @@
     button.textContent=isExpanded ? 'Hide details' : 'View details';
   }
 
+  function setSecondaryActionsOpen(expanded,restoreFocus=false){
+    const trigger=$('secondaryActionsTrigger');
+    if(!trigger) return;
+    trigger.setAttribute('aria-expanded',String(!!expanded));
+    if(restoreFocus) trigger.focus();
+  }
+
   function updateSummaryCard(){
     const hasC2 = hasClient2();
     const _hasC1Photo = hasC1Photo();
@@ -3243,6 +3250,28 @@
   if($('summaryDisclosure')) $('summaryDisclosure').addEventListener('click',()=>{
     setSummaryDisclosureExpanded($('summaryDisclosure').getAttribute('aria-expanded') !== 'true');
   });
+  if($('secondaryActionsTrigger')){
+    const secondaryActions=$('workspaceSecondaryActions');
+    const secondaryActionMenu=$('secondaryActionMenu');
+    $('secondaryActionsTrigger').addEventListener('click',()=>{
+      setSecondaryActionsOpen($('secondaryActionsTrigger').getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape' && $('secondaryActionsTrigger').getAttribute('aria-expanded') === 'true'){
+        e.preventDefault();
+        setSecondaryActionsOpen(false,true);
+      }
+    });
+    document.addEventListener('focusin',e=>{
+      if($('secondaryActionsTrigger').getAttribute('aria-expanded') === 'true' && !secondaryActions.contains(e.target)) setSecondaryActionsOpen(false);
+    });
+    document.addEventListener('pointerdown',e=>{
+      if($('secondaryActionsTrigger').getAttribute('aria-expanded') === 'true' && !secondaryActions.contains(e.target)) setSecondaryActionsOpen(false);
+    });
+    secondaryActionMenu.addEventListener('click',e=>{
+      if(e.target.closest('button')) setSecondaryActionsOpen(false);
+    });
+  }
 
   // =========================================================================
   // Landing Screen Logic

@@ -122,6 +122,40 @@ try {
   }
 
   const compact = await openWorkspace(440, 956);
+  const secondaryTrigger = compact.page.locator("#secondaryActionsTrigger");
+  const secondaryMenu = compact.page.locator("#secondaryActionMenu");
+  assert.equal(await secondaryTrigger.getAttribute("aria-haspopup"), "true");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false");
+  assert.equal(await secondaryTrigger.getAttribute("aria-controls"), "secondaryActionMenu");
+  assert.equal(await secondaryMenu.isVisible(), false);
+
+  await secondaryTrigger.click();
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "true", "pointer activation must expose the open menu state");
+  assert.equal(await secondaryMenu.isVisible(), true);
+  await secondaryTrigger.click();
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false", "a second pointer activation must explicitly close More actions");
+  await secondaryTrigger.click();
+  await compact.page.locator("#appointmentSummaryCard").click();
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false", "outside pointer activation must close the menu");
+
+  await secondaryTrigger.focus();
+  await compact.page.keyboard.press("Enter");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "true", "Enter must open More actions");
+  await compact.page.keyboard.press("Escape");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false", "Escape must close More actions");
+  assert.equal(await compact.page.evaluate(() => document.activeElement?.id), "secondaryActionsTrigger", "Escape must restore trigger focus");
+
+  await compact.page.keyboard.press("Space");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "true", "Space must open More actions");
+  await compact.page.keyboard.press("Tab");
+  assert.equal(await compact.page.evaluate(() => document.activeElement?.id), "loadTestData", "Tab must enter the open action menu");
+  await compact.page.keyboard.press("Shift+Tab");
+  assert.equal(await compact.page.evaluate(() => document.activeElement?.id), "secondaryActionsTrigger", "Shift+Tab must return to the trigger");
+  await compact.page.keyboard.press("Tab");
+  await compact.page.keyboard.press("Tab");
+  await compact.page.keyboard.press("Tab");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false", "moving focus outside must close More actions");
+
   const compactDisclosure = compact.page.locator("#summaryDisclosure");
   await compact.page.locator("body").click({ position: { x: 1, y: 1 } });
   for (let index = 0; index < 24 && await compact.page.evaluate(() => document.activeElement?.id !== "summaryDisclosure"); index += 1) {
@@ -145,6 +179,7 @@ try {
   await compact.page.click("#workspaceSecondaryActions > .secondaryActionsTrigger");
   assert.equal(await compact.page.locator("#loadTestData").isVisible(), true, "Load Test Data must remain reachable from compact secondary actions");
   await compact.page.click("#loadTestData");
+  assert.equal(await secondaryTrigger.getAttribute("aria-expanded"), "false", "activating a secondary action must close More actions");
   await compact.page.evaluate(() => {
     const imageCanvas = document.createElement("canvas");
     imageCanvas.width = 10;

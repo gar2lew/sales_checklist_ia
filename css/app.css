@@ -1132,7 +1132,7 @@ html{scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom))}
     background:var(--asg-navy);
     box-shadow:var(--asg-shadow-floating);
   }
-  .workspaceSecondaryActions:focus-within .secondaryActionMenu{display:grid;gap:4px}
+  .secondaryActionsTrigger[aria-expanded="true"] + .secondaryActionMenu{display:grid;gap:4px}
 }
 
 @media (max-width:600px), (max-height:600px) and (max-width:1000px){
