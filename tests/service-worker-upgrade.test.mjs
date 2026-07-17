@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2\.7\.0-alpha\.2';/, "reconciled cache must advance from v2.7.0-alpha.1 to v2.7.0-alpha.2");
+assert.match(source, /const CACHE_VERSION = 'v2\.7\.0-alpha\.3';/, "premium landing cache must advance from v2.7.0-alpha.2 to v2.7.0-alpha.3");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -34,7 +34,7 @@ const context = {
   },
   caches: {
     async open(name) { openedCaches.push(name); return cache; },
-    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.2", "unrelated-cache"]; },
+    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.3", "unrelated-cache"]; },
     async delete(name) { deletedCaches.push(name); return true; },
     async match(request) {
       if (request === "/index.html") return cachedIndex;
@@ -56,7 +56,7 @@ assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install"])
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.2", "fresh install must populate the new cache");
+assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.3", "fresh install must populate the new cache");
 assert.equal(skipWaitingCalls, 1, "fresh install must retain immediate worker activation");
 assert.deepEqual(cachedAssets, [
   "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/app.js",
@@ -74,7 +74,7 @@ assert.deepEqual(cachedAssets, [
 
 listeners.get("activate")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.6.0"], "upgrade must delete previous application caches without touching unrelated caches");
+assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.6.0"], "upgrade must delete previous application caches without touching unrelated caches");
 assert.equal(claimCalls, 1, "upgrade must retain immediate client claiming");
 
 async function dispatchFetch(request) {

@@ -17,57 +17,104 @@
 <body>
   <!-- LANDING SCREEN ========================================================= -->
   <div id="landingScreen" class="landing-screen">
-    <div class="landing-bg">
-      <div class="landing-panel">
-        <div class="landing-card">
-          <div class="landing-card-header">
-            <p class="landing-brand">AMPLIFY SOLUTIONS GROUP</p>
-            <h1>Sales Appointment Capture</h1>
-            <p class="landing-subtitle">Select your name</p>
+    <div class="landing-outer">
+      <div class="landing-container">
+        <section class="landing-left" aria-labelledby="landingHeading">
+          <svg class="landing-curve" viewBox="0 0 130 1000" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,0 C70,220 70,780 0,1000 L0,1000 L0,0 Z" fill="#06152B"></path>
+            <path d="M0,0 C70,220 70,780 0,1000" stroke="#C9A45C" stroke-width="2" fill="none"></path>
+          </svg>
+          <svg class="landing-waves" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-50 120 C120 80 280 160 460 100"></path>
+            <path d="M-50 170 C120 130 280 210 460 150"></path>
+            <path d="M-50 220 C120 180 280 260 460 200"></path>
+            <path d="M-50 420 C140 380 260 470 460 410"></path>
+            <path d="M-50 470 C140 430 260 520 460 460"></path>
+          </svg>
+          <div class="landing-left-content">
+            <div class="landing-logo-wrap" aria-label="Amplify Solutions Group">
+              <div class="landing-logo-row">
+                <span class="landing-logo-asg">ASG</span>
+                <span class="landing-logo-sep" aria-hidden="true"></span>
+                <span class="landing-logo-sub"><span>AMPLIFY</span><span>SOLUTIONS</span><span>GROUP</span></span>
+              </div>
+              <div class="landing-logo-line" aria-hidden="true"></div>
+            </div>
+            <h1 class="landing-heading" id="landingHeading">Sales Appointment<br>Capture</h1>
+            <p class="landing-tagline">Professional. Compliant. Complete.</p>
+            <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
+            <div class="landing-benefits">
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">✓</span>
+                <div class="benefit-text"><strong>Compliant</strong><span>Built for Australian standards</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">◇</span>
+                <div class="benefit-text"><strong>Complete</strong><span>All documents in one place</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">⌾</span>
+                <div class="benefit-text"><strong>Secure</strong><span>Your data remains on this device</span></div>
+              </div>
+            </div>
           </div>
-          <div class="landing-card-body">
-            <div class="landing-field">
-              <div id="landingStaffControl">
-                <input id="landingStaff" type="text" placeholder="— Choose your name —" autocomplete="off">
-              </div>
-            </div>
-            <div class="landing-field">
-              <label>Appointment Type</label>
-              <div class="mode-cards">
-                <button type="button" class="mode-card active" data-mode="inPerson">
-                  <span class="mode-card-icon">👤</span>
-                  <span class="mode-card-title">In-person</span>
-                </button>
-                <button type="button" class="mode-card" data-mode="zoom">
-                  <span class="mode-card-icon">🖥</span>
-                  <span class="mode-card-title">Zoom</span>
-                </button>
-              </div>
-              <p class="mode-card-hint">Face-to-face appointment</p>
-            </div>
-            <div id="recentDraftCard" class="recent-draft-card hidden">
-              <div class="recent-draft-header">
-                <span class="recent-draft-dot"></span>
-                Recent draft available
-              </div>
-              <div class="recent-draft-body">
-                <div class="recent-draft-grid">
-                  <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
-                  <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
-                </div>
-                <div class="recent-draft-footer">
-                  <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
-                  <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
-                </div>
-              </div>
-            </div>
-            <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>
+          <div class="landing-version" data-app-version-label>Version 2.7.0-alpha.1</div>
+        </section>
+
+        <section class="landing-right" aria-labelledby="landingFormTitle">
+          <div class="landing-security-badge">
+            <span class="security-badge-icon" aria-hidden="true">✓</span>
+            <div class="security-badge-text"><strong>Secure &amp; Professional</strong><span>Your information is protected on this device</span></div>
           </div>
-          <div class="landing-version" data-app-version-label>v2.5.1-alpha.1</div>
-        </div>
+          <div class="landing-right-content">
+            <p class="landing-welcome">WELCOME</p>
+            <h2 class="landing-form-title" id="landingFormTitle">Start New Appointment</h2>
+            <div class="landing-divider" aria-hidden="true"><span></span><i>◆</i><span></span></div>
+            <p class="landing-subtitle">Select your name and appointment type to begin.</p>
+
+            <div class="landing-card-body">
+              <div class="landing-field">
+                <label for="landingStaff">Your Name <span class="required">*</span></label>
+                <div class="landing-input-shell" id="landingStaffControl">
+                  <span class="landing-input-icon" aria-hidden="true">⌄</span>
+                  <input id="landingStaff" type="text" placeholder="— Choose your name —" autocomplete="off">
+                </div>
+              </div>
+              <div class="landing-field">
+                <label>Appointment Type</label>
+                <div class="mode-cards">
+                  <button type="button" class="mode-card active" data-mode="inPerson">
+                    <span class="mode-card-icon" aria-hidden="true">👤</span>
+                    <span class="mode-card-title">In-person</span>
+                  </button>
+                  <button type="button" class="mode-card" data-mode="zoom">
+                    <span class="mode-card-icon" aria-hidden="true">🖥</span>
+                    <span class="mode-card-title">Zoom</span>
+                  </button>
+                </div>
+                <p class="mode-card-hint">Face-to-face appointment</p>
+              </div>
+              <div id="recentDraftCard" class="recent-draft-card hidden">
+                <div class="recent-draft-header"><span class="recent-draft-dot"></span>Recent draft available</div>
+                <div class="recent-draft-body">
+                  <div class="recent-draft-grid">
+                    <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
+                    <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
+                  </div>
+                  <div class="recent-draft-footer">
+                    <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
+                    <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
+                  </div>
+                </div>
+              </div>
+              <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>
+            </div>
+            <p class="landing-privacy"><span aria-hidden="true">▣</span> Your information stays secure on this device</p>
+          </div>
+        </section>
       </div>
     </div>
   </div>
