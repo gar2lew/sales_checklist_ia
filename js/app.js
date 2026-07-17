@@ -352,13 +352,23 @@
     }
   }
   function updateName(){
-    $('fileNamePreview').textContent = pdfFileName();
+    updateFooterDisplayName();
     updatePhotoUIGroups();
     // Update signature client name labels live.
     const sig1Client = $('sig1Client');
     const sig2Client = $('sig2Client');
     if(sig1Client) sig1Client.textContent = fieldText('clientName') || 'Client 1';
     if(sig2Client) sig2Client.textContent = fieldText('client2Name') || 'Client 2';
+  }
+  function updateFooterDisplayName(){
+    const el=$('fileNamePreview');
+    if(!el) return;
+    const clients=mergedClientNames() || 'New appointment';
+    const appointmentDate=formatDisplayDate(fieldText('date')) || 'Date not set';
+    const fullName=pdfFileName();
+    el.textContent=fullName;
+    el.dataset.compactLabel=`${clients} · ${appointmentDate}`;
+    el.title=fullName;
   }
   function updateVersionLabels(){
     document.querySelectorAll('[data-app-version-label]').forEach(el=>{ el.textContent = `Version ${APP_VERSION}`; });
@@ -1089,6 +1099,16 @@
     const statusEl = $('client2SummaryStatus');
     if (summary) summary.dataset.state = hasC2 ? 'active' : 'not-required';
     if (statusEl) statusEl.textContent = hasC2 ? 'Client 2 added' : 'Not required';
+  }
+
+  function setSummaryDisclosureExpanded(expanded){
+    const card=$('appointmentSummaryCard');
+    const button=$('summaryDisclosure');
+    if(!card || !button) return;
+    const isExpanded=!!expanded;
+    card.classList.toggle('summary-expanded',isExpanded);
+    button.setAttribute('aria-expanded',String(isExpanded));
+    button.textContent=isExpanded ? 'Hide details' : 'View details';
   }
 
   function updateSummaryCard(){
@@ -3220,6 +3240,9 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
+  if($('summaryDisclosure')) $('summaryDisclosure').addEventListener('click',()=>{
+    setSummaryDisclosureExpanded($('summaryDisclosure').getAttribute('aria-expanded') !== 'true');
+  });
 
   // =========================================================================
   // Landing Screen Logic

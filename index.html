@@ -189,7 +189,6 @@
             <button class="btn toolbar-btn" id="backToStart" title="Change Staff / Clients"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h11M7 3l-4 5 4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Change Staff / Clients</button>
             <button class="btn toolbar-btn" id="saveDraft" title="Save Draft"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 14V2a1 1 0 011-1h6l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v5h4M5 11h6M5 8h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Save Draft</button>
             <button class="btn toolbar-btn" id="loadDraft" title="Load Draft"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 12V4a1 1 0 011-1h3.5L8 4.5h4a1 1 0 011 1V12a1 1 0 01-1 1H3a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 8l2 2 2-2M7 6v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Load Draft</button>
-            <button class="btn toolbar-btn toolbar-btn-utility" id="loadTestData" title="Load Test Data"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 1h5M6 1v5.5L3 13a2 2 0 002 2h6a2 2 0 002-2l-3-6.5V1" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Load Test Data</button>
           </div>
 
           <div class="actionGroup actionGroup-output">
@@ -197,11 +196,16 @@
             <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
             <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
             <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="previewTop"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8a6 6 0 0111.2-3M14 8a6 6 0 01-11.2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 2v4h-4M2 14v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Refresh Preview</button>
           </div>
           
           <div class="actionGroup actionGroup-admin">
-            <button class="btn toolbar-btn toolbar-btn-utility" id="openSettings">Settings</button>
+            <div class="workspaceSecondaryActions" id="workspaceSecondaryActions">
+              <button type="button" class="btn toolbar-btn toolbar-btn-utility secondaryActionsTrigger" aria-haspopup="true">More actions</button>
+              <div class="secondaryActionMenu">
+                <button class="btn toolbar-btn toolbar-btn-utility" id="loadTestData" title="Load Test Data"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 1h5M6 1v5.5L3 13a2 2 0 002 2h6a2 2 0 002-2l-3-6.5V1" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Load Test Data</button>
+                <button class="btn toolbar-btn toolbar-btn-utility" id="openSettings">Settings</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="confidenceStrip" aria-label="Appointment save and output status">
@@ -212,13 +216,15 @@
     </header>
 
     <div class="grid">
-      <main>
-        <section class="card appointment-summary-card full" id="appointmentSummaryCard">
+      <section class="card appointment-summary-card full" id="appointmentSummaryCard">
           <div class="summary-card-header">
             <span>Appointment Summary</span>
-            <span id="appointmentStatus" class="appointment-status">6 items remaining</span>
+            <div class="summary-card-header-actions">
+              <span id="appointmentStatus" class="appointment-status">6 items remaining</span>
+              <button type="button" class="summary-disclosure" id="summaryDisclosure" aria-expanded="false" aria-controls="summaryDetails">View details</button>
+            </div>
           </div>
-          <div class="summary-card-body">
+          <div class="summary-card-body" id="summaryDetails">
             <div class="summary-card-col">
               <div class="summary-card-col-title">CLIENT 1</div>
               <span class="summary-card-item" data-target="clientName"><span class="summary-card-icon circle" id="indicator-clientName"></span>Name</span>
@@ -251,8 +257,10 @@
               <span class="summary-card-item" data-target="signaturesSection"><span id="label-signatures">0 / 2 Captured</span></span>
             </div>
           </div>
-        </section>
+      </section>
 
+      <div class="workspaceContent">
+        <main>
         <section class="card">
           <h2>1. Appointment & client information</h2>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
@@ -583,9 +591,12 @@
         </section>
       </main>
 
-      <aside class="previewWrap">
+        <aside class="previewWrap">
         <section class="card">
-          <h2>Output preview</h2>
+          <div class="previewHeading">
+            <h2>Output preview</h2>
+            <button class="btn small" id="previewTop"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8a6 6 0 0111.2-3M14 8a6 6 0 01-11.2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 2v4h-4M2 14v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Refresh Preview</button>
+          </div>
           <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.</p>
           <div class="toggleRow" style="justify-content:space-between;margin-bottom:10px">
             <button type="button" class="btn small" id="previewPrev">Previous</button>
@@ -626,7 +637,8 @@
           </div>
           <div class="paper" id="previewPaper" style="display:none">Click “Refresh Preview”</div>
         </section>
-      </aside>
+        </aside>
+      </div>
     </div>
   </div>
 

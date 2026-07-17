@@ -63,17 +63,93 @@ try {
   assert.equal(await landingPage.locator("#mainApp").isVisible(), true, "Start Appointment should open the workspace");
   await landingContext.close();
 
-  for (const [width, height] of [[1920, 1080], [768, 1024], [390, 844]]) {
+  const responsiveTargets = [
+    [1366, 1024, "split"],
+    [1024, 1366, "stacked"],
+    [1920, 1080, "split"],
+    [1366, 768, "split"],
+    [440, 956, "compact"],
+    [956, 440, "compact"],
+    [390, 844, "compact"],
+  ];
+  for (const [width, height, layout] of responsiveTargets) {
     const responsive = await openWorkspace(width, height);
-    const metrics = await responsive.page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      footerTargets: [...document.querySelectorAll(".footerButtons .btn")].map((button) => button.getBoundingClientRect().height),
-    }));
+    const metrics = await responsive.page.evaluate(() => {
+      const content = document.querySelector(".workspaceContent");
+      return {
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        workspaceContentCount: document.querySelectorAll(".workspaceContent").length,
+        workspaceColumns: content ? getComputedStyle(content).gridTemplateColumns.split(" ").length : 0,
+        summaryBeforeContent: document.querySelector("#appointmentSummaryCard")?.nextElementSibling?.classList.contains("workspaceContent"),
+        visibleTargets: [...document.querySelectorAll("button, summary, input:not([type=checkbox]):not([type=radio]), select, textarea")]
+          .filter((element) => element.getClientRects().length && getComputedStyle(element).visibility !== "hidden")
+          .map((element) => ({ id: element.id || element.textContent.trim(), height: element.getBoundingClientRect().height })),
+        visibleFooterActions: [...document.querySelectorAll(".footerButtons .btn")]
+          .filter((button) => button.getClientRects().length)
+          .map((button) => button.id),
+        disclosureVisible: !!document.querySelector("#summaryDisclosure")?.getClientRects().length,
+        disclosureExpanded: document.querySelector("#summaryDisclosure")?.getAttribute("aria-expanded"),
+        summaryDetailsVisible: !!document.querySelector("#summaryDetails")?.getClientRects().length,
+        preGenerationOutputVisibility: ["downloadTop", "downloadPackageTop", "shareTop"]
+          .map((id) => ({ id, visible: !!document.querySelector(`#${id}`)?.getClientRects().length })),
+      };
+    });
     assert.ok(metrics.scrollWidth <= metrics.clientWidth, `${width}x${height} must not have horizontal overflow`);
-    assert.ok(metrics.footerTargets.every((target) => target >= 44), `${width}x${height} footer targets must be at least 44px`);
+    assert.equal(metrics.workspaceContentCount, 1, `${width}x${height} must have one responsive workspace content grid`);
+    assert.equal(metrics.summaryBeforeContent, true, `${width}x${height} summary must span above form/preview content`);
+    const undersizedTargets = metrics.visibleTargets.filter((target) => target.height < 44);
+    assert.deepEqual(undersizedTargets, [], `${width}x${height} visible targets must be at least 44px`);
+    if (layout === "split") assert.equal(metrics.workspaceColumns, 2, `${width}x${height} should use the form/preview split`);
+    if (layout === "stacked") assert.equal(metrics.workspaceColumns, 1, `${width}x${height} should stack form then preview`);
+    if (layout === "compact") {
+      assert.deepEqual(metrics.visibleFooterActions, ["resetForm", "saveDraftBottom", "generateBottom"]);
+      assert.equal(metrics.disclosureVisible, true);
+      assert.equal(metrics.disclosureExpanded, "false");
+      assert.equal(metrics.summaryDetailsVisible, false);
+      assert.ok(metrics.preGenerationOutputVisibility.every((action) => !action.visible), `${width}x${height} unavailable output actions should be hidden`);
+    }
     await responsive.context.close();
   }
+
+  const compact = await openWorkspace(440, 956);
+  const compactDisclosure = compact.page.locator("#summaryDisclosure");
+  await compact.page.locator("body").click({ position: { x: 1, y: 1 } });
+  for (let index = 0; index < 24 && await compact.page.evaluate(() => document.activeElement?.id !== "summaryDisclosure"); index += 1) {
+    await compact.page.keyboard.press("Tab");
+  }
+  assert.equal(await compact.page.evaluate(() => document.activeElement?.id), "summaryDisclosure", "summary disclosure must be reachable by Tab");
+  assert.notEqual(await compactDisclosure.evaluate((element) => getComputedStyle(element).outlineStyle), "none", "summary disclosure must retain a visible focus indicator");
+  await compact.page.keyboard.press("Enter");
+  assert.equal(await compactDisclosure.getAttribute("aria-expanded"), "true", "Enter should expand the mobile summary");
+  assert.equal(await compact.page.locator("#summaryDetails").isVisible(), true, "expanded mobile summary details should be visible");
+  await compact.page.keyboard.press("Space");
+  assert.equal(await compactDisclosure.getAttribute("aria-expanded"), "false", "Space should collapse the mobile summary");
+
+  const desktopFilenameText = await compact.page.locator("#fileNamePreview").innerText();
+  const compactFooterLabel = await compact.page.locator("#fileNamePreview").getAttribute("data-compact-label");
+  const fullFilename = await compact.page.locator("#fileNamePreview").getAttribute("title");
+  assert.match(compactFooterLabel, /Taylor Morgan.+17\/07\/2026/, "compact footer should show the short client/date label");
+  assert.match(desktopFilenameText, /\.pdf$/i, "the underlying desktop footer text should retain the full filename");
+  assert.match(fullFilename, /\.pdf$/i, "full generated filename should remain available without changing filename logic");
+
+  await compact.page.click("#workspaceSecondaryActions > .secondaryActionsTrigger");
+  assert.equal(await compact.page.locator("#loadTestData").isVisible(), true, "Load Test Data must remain reachable from compact secondary actions");
+  await compact.page.click("#loadTestData");
+  await compact.page.evaluate(() => {
+    const imageCanvas = document.createElement("canvas");
+    imageCanvas.width = 10;
+    imageCanvas.height = 10;
+    window._testState.setPhotoImg(0, imageCanvas);
+    window._testState.setHasSignature(true);
+    window._testState.clearGenerated();
+  });
+  await compact.page.click("#generateTop");
+  await compact.page.waitForFunction(() => document.querySelector("#outputConfidenceStatus")?.textContent.includes("PDF ready"), null, { timeout: 30000 });
+  for (const id of ["downloadTop", "downloadPackageTop", "shareTop"]) {
+    assert.equal(await compact.page.locator(`#${id}`).isVisible(), true, `${id} must be exposed after compact PDF generation`);
+  }
+  await compact.context.close();
 
   const { context, page } = await openWorkspace();
 
@@ -108,6 +184,7 @@ try {
   await page.click("#loadDraft");
   assert.match(await page.locator("#draftConfidenceStatus").innerText(), /Draft loaded/i);
 
+  if (!await page.locator("#loadTestData").isVisible()) await page.click("#workspaceSecondaryActions > .secondaryActionsTrigger");
   await page.click("#loadTestData");
   await page.evaluate(() => {
     const imageCanvas = document.createElement("canvas");
