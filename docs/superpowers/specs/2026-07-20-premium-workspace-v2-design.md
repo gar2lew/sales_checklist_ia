@@ -37,4 +37,3 @@ No change to business rules, validation, storage keys or shapes, drafts, PDF/EOI
 ## Testing
 
 Test-first coverage will prove the native staff select uses configured options, selection enters both appointment modes, dark appearance retains the cream landing surface, workspace premium tokens render across approved viewports, IDs remain intact, and existing workflow/accessibility suites stay green. Visual evidence is generated outside Git and inspected manually.
-

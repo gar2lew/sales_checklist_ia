@@ -96,4 +96,3 @@
 - [ ] Confirm no black landing form, clipping, overflow, stale rotation width, or post-landing visual regression.
 - [ ] Stage only approved source, tests, specification, and plan files; confirm evidence and generated PDFs are excluded.
 - [ ] Commit locally and verify the worktree is clean. Do not push or deploy.
-
