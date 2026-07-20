@@ -78,8 +78,12 @@
                 <div class="landing-input-shell" id="landingStaffControl">
                   <span class="landing-input-icon" aria-hidden="true">⌄</span>
                   <select id="landingStaff" aria-label="Your Name">
-                    <option value="">Choose your name</option>
+                    <option value="" disabled selected>Choose your name</option>
                   </select>
+                </div>
+                <div class="landing-staff-configuration hidden" id="landingStaffConfiguration" role="status">
+                  <span>No staff members are configured on this device.</span>
+                  <button type="button" class="btn secondary" id="configureStaffFromLanding" aria-controls="settingsOverlay">Open Global Settings</button>
                 </div>
               </div>
               <div class="landing-field">
@@ -951,10 +955,10 @@
           <div class="fields">
             <div>
               <label for="staffMode">Staff Member field type</label>
-              <select id="staffMode">
-                <option value="text">Free-text input</option>
+              <select id="staffMode" disabled aria-describedby="staffModeHint">
                 <option value="select">Dropdown/select</option>
               </select>
+              <p class="hint" id="staffModeHint">Appointment staff must be selected from configured active staff members.</p>
               <div class="adminList" id="staffOptionsList"></div>
               <div class="adminActions">
                 <button type="button" class="btn small" id="addStaffOption">Add option</button>

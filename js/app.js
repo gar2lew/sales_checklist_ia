@@ -116,8 +116,11 @@
   let previewPageIndex = 0;
   let appointmentMode = 'inPerson'; // 'inPerson' | 'zoom'
   const adminSettingsKey = 'salesAppointmentAdminSettings';
+  // Authoritative production staff seed insertion point. Intentionally empty
+  // until approved names and metadata are supplied.
+  const DEFAULT_STAFF_OPTIONS = [];
   const defaultAdminSettings = {
-    staff: { mode: 'text', options: [''] },
+    staff: { mode: 'select', options: DEFAULT_STAFF_OPTIONS },
     branch: { options: ['Perth', 'Brisbane'] },
     solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing'] },
     eoiTemplates: { options: [
@@ -280,22 +283,26 @@
   // LANDING SCREEN HELPERS
   // =========================================================================
   function renderLandingStaffControl(){
-    const config = adminSettings.staff;
     const control = $('landingStaffControl');
     if(!control) return;
     const currentLandingVal = ($('landingStaff') && $('landingStaff').value) || '';
-    const options = config.options.filter(Boolean).map(function(v){ return '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; }).join('');
-    control.innerHTML = '<select id="landingStaff" aria-label="Your Name"><option value="">Choose your name</option>'+options+'</select>';
-    if(currentLandingVal && $('landingStaff')) $('landingStaff').value = currentLandingVal;
+    const staffOptions = staffOptionsForSelection(currentLandingVal);
+    const options = staffOptions.map(option => '<option value="'+htmlEscape(option.name)+'">'+htmlEscape(option.name)+'</option>').join('');
+    const disabled = staffOptions.length ? '' : ' disabled';
+    control.innerHTML = '<span class="landing-input-icon" aria-hidden="true">⌄</span><select id="landingStaff" aria-label="Your Name"'+disabled+'><option value="" disabled selected>Choose your name</option>'+options+'</select>';
+    if(currentLandingVal && staffRecordForValue(currentLandingVal)) $('landingStaff').value = staffRecordForValue(currentLandingVal).name;
     $('landingStaff').addEventListener('input', updateLandingContinue);
     $('landingStaff').addEventListener('change', updateLandingContinue);
+    const guidance = $('landingStaffConfiguration');
+    if(guidance) guidance.classList.toggle('hidden', staffOptions.length > 0);
     updateLandingContinue();
     updateLandingStaffFromStorage();
     checkForRecentDraft();
   }
   function updateLandingContinue(){
-    var staff = ($('landingStaff').value || '').trim();
-    $('landingContinue').disabled = !staff;
+    var select = $('landingStaff');
+    var staff = select ? (select.value || '').trim() : '';
+    $('landingContinue').disabled = !staff || !staffRecordForValue(staff);
   }
 
   function updateContinueButtonText(){
@@ -307,8 +314,9 @@
 
   function updateLandingStaffFromStorage(){
     var lastStaff = localStorage.getItem('salesAppointmentLastStaff');
-    if(lastStaff && $('landingStaff')){
-      $('landingStaff').value = lastStaff;
+    var record = staffRecordForValue(lastStaff);
+    if(record && record.active && $('landingStaff')){
+      $('landingStaff').value = record.name;
       var evt = new Event('input', {bubbles:true});
       $('landingStaff').dispatchEvent(evt);
     }
@@ -849,6 +857,62 @@
     });
     return merged;
   }
+  function staffIdFromName(name){
+    const source = String(name || '').trim().toLowerCase();
+    const id = source
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return id || (source ? `staff-${Array.from(source).map(char => char.codePointAt(0).toString(36)).join('-')}` : '');
+  }
+  function normalizeStaffOption(option){
+    if(typeof option === 'string'){
+      const name = option.trim();
+      return name ? {id:staffIdFromName(name), name, email:'', office:'', active:true} : null;
+    }
+    if(!option || typeof option !== 'object') return null;
+    const name = String(option.name || option.label || option.value || '').trim();
+    if(!name) return null;
+    return {
+      id: String(option.id || staffIdFromName(name)).trim(),
+      name,
+      email: String(option.email || '').trim(),
+      office: String(option.office || option.location || '').trim(),
+      active: option.active !== false
+    };
+  }
+  function normalizeStaffOptions(options, defaults=DEFAULT_STAFF_OPTIONS){
+    const normalized = [];
+    const ids = new Set();
+    const names = new Set();
+    [...(Array.isArray(options) ? options : []), ...defaults].forEach(option => {
+      const item = normalizeStaffOption(option);
+      if(!item) return;
+      const idKey = item.id.toLowerCase();
+      const nameKey = item.name.toLowerCase();
+      if((idKey && ids.has(idKey)) || names.has(nameKey)) return;
+      if(idKey) ids.add(idKey);
+      names.add(nameKey);
+      normalized.push(item);
+    });
+    return normalized;
+  }
+  function staffRecordForValue(value){
+    const key = String(value || '').trim().toLowerCase();
+    if(!key) return null;
+    return adminSettings.staff.options.find(option =>
+      option.id.toLowerCase() === key || option.name.toLowerCase() === key
+    ) || null;
+  }
+  function staffOptionsForSelection(currentValue=''){
+    const current = String(currentValue || '').trim().toLowerCase();
+    return adminSettings.staff.options.filter(option => option.name && (option.active || (
+      current && (option.id.toLowerCase() === current || option.name.toLowerCase() === current)
+    )));
+  }
+  function validEmail(value){
+    const email = String(value || '').trim();
+    return !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
   function templateValueFromLabel(label){
     const text = String(label || '').trim();
     const key = text.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -949,8 +1013,8 @@
     );
     return {
       staff: {
-        mode: saved?.staff?.mode === 'select' ? 'select' : 'text',
-        options: dedupeTextOptions(saved?.staff?.options, defaults.staff.options)
+        mode: 'select',
+        options: normalizeStaffOptions(saved?.staff?.options, defaults.staff.options)
       },
       branch: {
         options: dedupeTextOptions(saved?.branch?.options || saved?.branches?.options, defaults.branch.options)
@@ -1027,6 +1091,7 @@
   }
   function optionValuesFor(kind){
     if(kind === 'eoiTemplates') return adminSettings.eoiTemplates.options.map(o => ({value:o.value, label:o.label}));
+    if(kind === 'staff') return staffOptionsForSelection().map(option => ({value:option.name, label:option.name}));
     const options = adminSettings[kind] && Array.isArray(adminSettings[kind].options) ? adminSettings[kind].options : [];
     return options.filter(v=>String(v).trim()).map(v => ({value:v, label:v}));
   }
@@ -1044,7 +1109,13 @@
     const control = $(controlId);
     if(!control) return;
     const requiredMarkup = required ? ' <span class="required">*</span>' : '';
-    if(config.mode === 'select'){
+    if(kind === 'staff'){
+      const options = staffOptionsForSelection(current).map(option => ({value:option.name, label:option.name}));
+      const optionMarkup = `<option value="" disabled${current ? '' : ' selected'}>Choose your name</option>` + options.map(option => `<option value="${htmlEscape(option.value)}">${htmlEscape(option.label)}</option>`).join('');
+      const disabled = options.length ? '' : ' disabled';
+      control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}"${disabled}>${optionMarkup}</select>`;
+      if(current) $(fieldId).value = current;
+    } else if(config.mode === 'select'){
       const optionMarkup = selectOptionsMarkup(optionValuesFor(kind), 'Select', current);
       control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}">${optionMarkup}</select>`;
       if(current) $(fieldId).value = current;
@@ -1053,6 +1124,15 @@
       $(fieldId).value = current;
     }
     bindFieldEvents(fieldId);
+    if(fieldId === 'teamMember'){
+      $(fieldId).addEventListener('change',()=>{
+        const selected = fieldText('teamMember');
+        const landing = $('landingStaff');
+        if(landing && Array.from(landing.options).some(option => option.value === selected)) landing.value = selected;
+        if(selected) localStorage.setItem('salesAppointmentLastStaff', selected);
+        updateLandingContinue();
+      });
+    }
   }
   function renderDropdownControl(kind, controlId, fieldId, label, placeholder){
     const current = fieldText(fieldId) || (fieldId === 'eoiTemplate' ? 'standard' : '');
@@ -1072,6 +1152,10 @@
     };
     const list = $(listMap[kind]);
     if(!list) return;
+    if(kind === 'staff'){
+      renderStaffOptionList(list);
+      return;
+    }
     const config = adminSettings[kind];
     if(config.mode !== undefined) list.classList.toggle('hidden', config.mode !== 'select');
     list.innerHTML = '';
@@ -1100,6 +1184,81 @@
         renderAdminSettings();
         renderConfigurableFields();
         renderLandingStaffControl();
+        clearGenerated();
+      });
+      list.appendChild(row);
+    });
+  }
+  function staffReferencedByStoredDraft(name){
+    const key = String(name || '').trim().toLowerCase();
+    if(key && [fieldText('teamMember'), fieldText('eoiStaffMember')].some(value => String(value || '').trim().toLowerCase() === key)) return true;
+    try{
+      const draft = JSON.parse(localStorage.getItem('salesAppointmentDraft') || 'null');
+      return !!key && [draft?.teamMember, draft?.eoiStaffMember].some(value => String(value || '').trim().toLowerCase() === key);
+    }catch{
+      return false;
+    }
+  }
+  function renderStaffOptionList(list){
+    list.classList.remove('hidden');
+    list.innerHTML = '';
+    adminSettings.staff.options.forEach((staff, idx) => {
+      const row = document.createElement('div');
+      row.className = 'adminOption staffAdminOption';
+      row.innerHTML = `
+        <label>Name<input class="staff-option-name" type="text" value="${htmlEscape(staff.name)}" aria-label="Staff ${idx+1} name"></label>
+        <label>Email<input class="staff-option-email" type="email" value="${htmlEscape(staff.email)}" aria-label="Staff ${idx+1} email"></label>
+        <label>Office / location<input class="staff-option-office" type="text" value="${htmlEscape(staff.office)}" aria-label="Staff ${idx+1} office or location"></label>
+        <label class="staffActiveLabel"><input class="staff-option-active" type="checkbox"${staff.active ? ' checked' : ''}> Active</label>
+        <button type="button" class="btn small danger staff-option-remove">Remove</button>
+        <span class="fieldError hidden staff-option-error" role="status"></span>`;
+      const nameInput = row.querySelector('.staff-option-name');
+      const emailInput = row.querySelector('.staff-option-email');
+      const officeInput = row.querySelector('.staff-option-office');
+      const activeInput = row.querySelector('.staff-option-active');
+      const error = row.querySelector('.staff-option-error');
+      const saveRow = () => {
+        const previousName = staff.name;
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const duplicate = adminSettings.staff.options.some((option, optionIdx) => optionIdx !== idx && option.name.toLowerCase() === name.toLowerCase());
+        nameInput.setAttribute('aria-invalid', String(!name || duplicate));
+        emailInput.setAttribute('aria-invalid', String(!validEmail(email)));
+        if(!name || duplicate || !validEmail(email)){
+          error.textContent = duplicate ? 'Staff names must be unique.' : (!name ? 'Staff name is required.' : 'Enter a valid email address.');
+          error.classList.remove('hidden');
+          return;
+        }
+        error.classList.add('hidden');
+        staff.name = name;
+        if(!staff.id) staff.id = staffIdFromName(name);
+        staff.email = email;
+        staff.office = officeInput.value.trim();
+        staff.active = activeInput.checked;
+        const wasSelected = [fieldText('teamMember'), fieldText('eoiStaffMember')].some(value => String(value || '').trim().toLowerCase() === previousName.toLowerCase());
+        saveAdminSettings();
+        renderLandingStaffControl();
+        renderConfigurableFields();
+        if(wasSelected){
+          setControlValue('teamMember', name);
+          setControlValue('eoiStaffMember', name);
+          if($('landingStaff')) $('landingStaff').value = name;
+        }
+        clearGenerated();
+      };
+      [nameInput,emailInput,officeInput].forEach(input => input.addEventListener('input', saveRow));
+      activeInput.addEventListener('change', saveRow);
+      row.querySelector('.staff-option-remove').addEventListener('click',()=>{
+        if(staffReferencedByStoredDraft(staff.name)){
+          staff.active = false;
+          saveAdminSettings();
+          toast('Staff member is referenced by a saved draft and was deactivated instead.');
+        } else {
+          adminSettings.staff.options.splice(idx,1);
+          saveAdminSettings();
+        }
+        renderAdminSettings();
+        renderConfigurableFields();
         clearGenerated();
       });
       list.appendChild(row);
@@ -1272,6 +1431,13 @@
   function preserveDraftDropdownValue(kind, value){
     value = (value || '').trim();
     if(!value || !adminSettings[kind]) return;
+    if(kind === 'staff'){
+      if(!staffRecordForValue(value)){
+        adminSettings.staff.options.push({id:staffIdFromName(value), name:value, email:'', office:'', active:false});
+        saveAdminSettings();
+      }
+      return;
+    }
     if(kind === 'eoiTemplates'){
       if(!adminSettings.eoiTemplates.options.some(o => o.value === value)){
         adminSettings.eoiTemplates.options.push({value, label:templateLabelFromValue(value)});
@@ -1355,7 +1521,8 @@
     const el=$(id);
     if(!el) return;
     if(el.tagName === 'SELECT' && value && !Array.from(el.options).some(opt => opt.value === value)){
-      el.appendChild(new Option(templateLabelFromValue(value) || value, value));
+      const label = (id === 'teamMember' || id === 'eoiStaffMember') ? value : (templateLabelFromValue(value) || value);
+      el.appendChild(new Option(label, value));
     }
     if(el.type === 'checkbox') el.checked = !!value;
     else el.value = value || '';
@@ -1402,9 +1569,9 @@
   renderZoomFields();
   fields.forEach(bindFieldEvents);
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); updateSectionProgress(); updateTimelineProgress(); updateCollapseIndicators(); }));
-  $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode=$('staffMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
+  $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode='select'; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
   $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
-  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push(''); saveAdminSettings(); renderAdminSettings(); renderLandingStaffControl(); });
+  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push({id:'',name:'',email:'',office:'',active:true}); renderAdminSettings(); });
   $('addSolicitorOption').addEventListener('click',()=>{ adminSettings.solicitor.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addBranchOption').addEventListener('click',()=>{ adminSettings.branch.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addEoiTemplateOption').addEventListener('click',()=>{ adminSettings.eoiTemplates.options.push({value:'',label:''}); saveAdminSettings(); renderAdminSettings(); });
@@ -4571,6 +4738,15 @@
     // =========================================================================
   // SECTION O: SHARE & EMAIL
   // =========================================================================
+  function resolveShareCc(staffValue){
+    const primary = String(CONFIG.share.to || '').trim();
+    const record = staffRecordForValue(staffValue);
+    const selectedEmail = record && record.active && validEmail(record.email) ? record.email.trim() : '';
+    const fallback = validEmail(CONFIG.share.cc) ? String(CONFIG.share.cc || '').trim() : '';
+    const candidate = selectedEmail || fallback;
+    if(!candidate || candidate.toLowerCase() === primary.toLowerCase()) return '';
+    return candidate;
+  }
   function buildShareEmailContent(){
     const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
     const client1 = (fieldText('clientName') || '').trim();
@@ -4594,7 +4770,8 @@
     const body = `Hey Natalie,\n\nPlease see the attached appointment documents for:\n\n${clientNames}\n${property}\n${date}\n\nAttached is the complete appointment PDF together with a ZIP folder containing the separated documents for easier filing and processing.\n\nIf you need anything else, please let me know!\n\nRegards,\n\n${staffName}`;
     const fallbackBody = `Hey Natalie,\n\nPlease see the appointment documents for:\n\n${clientNames}\n${property}\n${date}\n\nThe PDF and ZIP have been downloaded to this device. Please attach the downloaded files to this email before sending.\n\nIf you need anything else, please let me know!\n\nRegards,\n\n${staffName}`;
     const fileName = lastPdfName || pdfFileName();
-    return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc:CONFIG.share.cc };
+    const cc = resolveShareCc(staffName);
+    return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc, ccDiagnostic:cc ? '' : 'No staff or fallback CC address is configured.' };
   }
 
   function hidePreparedEmailAction(){
@@ -4606,7 +4783,11 @@
     const link = $('openPreparedEmail');
     if(!prompt || !link) return;
     const body = hasZip ? email.fallbackBody : email.fallbackBody.replace('PDF and ZIP have', 'PDF has').replace('files to this email', 'file to this email');
-    link.href = `mailto:${encodeURIComponent(email.to)}?cc=${encodeURIComponent(email.cc)}&subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(body)}`;
+    const query = [];
+    if(email.cc) query.push(`cc=${encodeURIComponent(email.cc)}`);
+    query.push(`subject=${encodeURIComponent(email.subject)}`, `body=${encodeURIComponent(body)}`);
+    link.href = `mailto:${encodeURIComponent(email.to)}?${query.join('&')}`;
+    if(email.ccDiagnostic) console.warn(email.ccDiagnostic);
     prompt.classList.remove('hidden');
     link.focus({preventScroll:true});
   }
@@ -4677,7 +4858,7 @@
       const msg = zipFile
         ? 'PDF and ZIP downloaded. Tap “Open prepared email”, then attach both files before sending.'
         : 'PDF downloaded. Tap “Open prepared email”, then attach the PDF before sending.';
-      status(msg);
+      status(msg + (email.cc ? '' : ' No CC recipient is configured.'));
     }catch(err){
       if(err && err.name === 'AbortError') return;
       if(!err || !err.isValidation) console.error(err);
@@ -4780,7 +4961,9 @@
       if(!el || data[id]===undefined)return;
       if(el.type==='checkbox') el.checked=!!data[id];
       else {
-        if(id==='eoiNextApptDate'){
+        if(id==='teamMember' || id==='eoiStaffMember'){
+          setControlValue(id, data[id]);
+        } else if(id==='eoiNextApptDate'){
           el.value = formatISODate(data[id]) || '';
         } else if(id==='date' || id==='iaDate' || id==='eoiDate'){
           el.value = formatDisplayDate(data[id]);
@@ -5062,6 +5245,7 @@
   $('loadDraft').addEventListener('click',loadDraft);
   if($('loadTestData')) $('loadTestData').addEventListener('click',loadTestData);
   $('openSettings').addEventListener('click',openSettings);
+  if($('configureStaffFromLanding')) $('configureStaffFromLanding').addEventListener('click',openSettings);
   $('closeSettings').addEventListener('click',e=>{ e.preventDefault(); closeSettings(); });
   $('settingsOverlay').addEventListener('click',e=>{ if(e.target===$('settingsOverlay') || (e.target.closest && e.target.closest('#closeSettings'))) closeSettings(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });

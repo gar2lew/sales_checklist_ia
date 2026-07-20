@@ -125,6 +125,14 @@
     .adminList{display:grid;gap:8px;margin-top:10px}
     .adminOption{display:flex;gap:8px;align-items:center}
     .adminOption input{flex:1}
+    .staffAdminOption{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(180px,1.4fr) minmax(140px,1fr) auto auto;align-items:end;padding:12px;border:1px solid var(--asg-border,#d8d3c8);border-radius:12px}
+    .staffAdminOption label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--asg-navy,#071426)}
+    .staffAdminOption .staffActiveLabel{display:flex;align-items:center;gap:8px;min-height:44px;white-space:nowrap}
+    .staffAdminOption .staff-option-active{flex:0 0 auto;width:20px;height:20px}
+    .staffAdminOption .staff-option-error{grid-column:1/-1;margin:0}
+    .landing-staff-configuration{display:grid;gap:8px;margin-top:10px;padding:12px;border:1px solid rgba(185,146,70,.35);border-radius:12px;background:rgba(185,146,70,.08);color:#493b20;font-size:13px;line-height:1.4}
+    .landing-staff-configuration .btn{min-height:44px;width:100%}
+    @media (max-width:760px){.staffAdminOption{grid-template-columns:1fr}.staffAdminOption .staff-option-error{grid-column:1}}
     .contactOption{display:grid;grid-template-columns:1fr;gap:8px;border:1px solid var(--line);background:#fbfbff;border-radius:12px;padding:10px}
     @media (min-width:720px){.contactOption{grid-template-columns:1.2fr 1fr .7fr auto;align-items:end}}
     .adminActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
@@ -139,7 +147,7 @@
     .settingsSection{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
     .settingsSection:first-of-type{border-top:0;padding-top:0;margin-top:0}
     .settingsSection h3{margin:0 0 10px;color:var(--navy);font-size:15px}
-    .settingsOverlay{position:fixed;inset:0;background:rgba(16,24,40,.48);z-index:1200;padding:18px;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+.settingsOverlay{position:fixed;inset:0;background:rgba(16,24,40,.48);z-index:10000;padding:18px;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
     .settingsOverlay.hidden{display:none!important}
     .settingsPanel{width:min(760px,100%);margin:28px auto}
     .settingsHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}

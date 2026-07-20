@@ -17,16 +17,19 @@ s.listen(0, async () => {
   let ok = 0, fail = 0;
   function chk(n, o) { if (o) { ok++; console.log('  \u2705 ' + n); } else { fail++; console.log('  \u274C ' + n); } }
 
+  async function newConfiguredPage() {
+    const page = await b.newPage();
+    await page.addInitScript(() => localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify({
+      staff:{ mode:'select', options:[
+        { id:'t', name:'T', email:'', office:'Perth', active:true },
+        { id:'sarah', name:'Sarah', email:'', office:'Brisbane', active:true }
+      ] }
+    })));
+    return page;
+  }
+
   async function selectLandingStaff(p) {
-    await p.evaluate(() => {
-      const si = document.querySelector('#landingStaff');
-      if (si) {
-        if (![...si.options].some(option => option.value === 'T')) si.add(new Option('T','T'));
-        si.value = 'T';
-        si.dispatchEvent(new Event('input', {bubbles:true}));
-        si.dispatchEvent(new Event('change', {bubbles:true}));
-      }
-    });
+    await p.selectOption('#landingStaff', 'T');
   }
   async function enZ(p) {
     await selectLandingStaff(p);
@@ -62,7 +65,7 @@ s.listen(0, async () => {
 
   // 1. Brisbane FC + CR + all outputs
   console.log('\n--- Brisbane First Consult + Client Review ---');
-  const p1 = await b.newPage();
+  const p1 = await newConfiguredPage();
   p1.on("console", msg => console.log("CONSOLE:", msg.type(), msg.text()));
   p1.on("pageerror", err => console.log("PAGE ERROR:", err.message));
   await p1.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
@@ -70,7 +73,7 @@ s.listen(0, async () => {
   await p1.fill('#clientName','Alice'); await p1.fill('#client2Name','Bob');
   await p1.fill('#clientPhone','0400'); await p1.fill('#clientEmail','a@b.com');
   await p1.fill('#clientAddress','123 St'); await p1.fill('#date','15/07/2026');
-  await p1.fill('#teamMember','Sarah'); await p1.fill('#propertySaleAddress','456 Ave');
+  await p1.selectOption('#teamMember','Sarah'); await p1.fill('#propertySaleAddress','456 Ave');
   await p1.evaluate(() => { const g = document.querySelector('input[name="firstConsultGoalType"][value="investment"]'); if (g) g.checked = true; });
   await p1.fill('#firstConsultNotes','Notes about client goals for investment.');
   await p1.fill('#clientReviewStrategy','Buy and hold strategy.');
@@ -124,7 +127,7 @@ s.listen(0, async () => {
   chk('No inline errors on fully valid form', noErrs);
 
   /* Inline validation: missing fields on Generate */
-  const p1b = await b.newPage();
+  const p1b = await newConfiguredPage();
   await p1b.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p1b.waitForTimeout(500); await enZ(p1b);
   /* Click Generate with empty fields */
@@ -161,7 +164,7 @@ s.listen(0, async () => {
   chk('Timeline Ready step shows missing count', tlAria.indexOf('remaining') >= 0);
 
   /* Re-validate: fill remaining required fields, check PDF still generates */
-  await p1b.fill('#teamMember','Sarah'); await p1b.fill('#clientName','Alice');
+  await p1b.selectOption('#teamMember','Sarah'); await p1b.fill('#clientName','Alice');
   await p1b.waitForTimeout(500);
   await p1b.evaluate(() => {
     document.getElementById('zoomIncludeStandardEOI').checked = true;
@@ -317,7 +320,7 @@ s.listen(0, async () => {
 
   // 5. Single client
   console.log('\n--- Single client ---');
-  const p2 = await b.newPage();
+  const p2 = await newConfiguredPage();
   await p2.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p2.waitForTimeout(1000); await enZ(p2);
   await p2.fill('#clientName','Single'); await p2.fill('#date','01/01/2026');
@@ -332,7 +335,7 @@ s.listen(0, async () => {
 
   // 6. Long text values
   console.log('\n--- Long text values ---');
-  const p3 = await b.newPage();
+  const p3 = await newConfiguredPage();
   await p3.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p3.waitForTimeout(1000); await enZ(p3);
   await p3.fill('#clientName','Maximiliana von Brandenburg-Schwerin');
@@ -363,7 +366,7 @@ s.listen(0, async () => {
 
   // 7b. Recent draft card on landing
   console.log('\n--- Draft card UI ---');
-  const pd = await b.newPage();
+  const pd = await newConfiguredPage();
   await pd.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await pd.waitForTimeout(500);
   // Inject draft into this page's localStorage
@@ -393,7 +396,7 @@ s.listen(0, async () => {
 
   // 7d. Delete Draft
   console.log('\n--- Draft card delete ---');
-  const px = await b.newPage();
+  const px = await newConfiguredPage();
   await px.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await px.waitForTimeout(500);
   await px.evaluate((s) => { localStorage.setItem('salesAppointmentDraft', s); }, JSON.stringify(dr));
@@ -413,7 +416,7 @@ s.listen(0, async () => {
 
   // 7e. Old draft without draftSavedAt still loads
   console.log('\n--- Draft without savedAt ---');
-  const py = await b.newPage();
+  const py = await newConfiguredPage();
   await py.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await py.waitForTimeout(500);
   var oldDraft = JSON.parse(JSON.stringify(dr));
@@ -424,7 +427,7 @@ s.listen(0, async () => {
   chk('Old draft: card visible', await py.evaluate(() => { var c = document.getElementById('recentDraftCard'); return !c.classList.contains('hidden'); }));
   chk('Old draft: savedAt shows Unknown', await py.evaluate(() => document.getElementById('draftSavedAt').textContent === 'Unknown'));
 
-  const p4 = await b.newPage();
+  const p4 = await newConfiguredPage();
   await p4.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p4.waitForTimeout(1000); await enZ(p4);
   // In Playwright, each newPage() creates an isolated browser context,
@@ -446,7 +449,7 @@ s.listen(0, async () => {
 
   // 8. In-person
   console.log('\n--- In-person ---');
-  const p5 = await b.newPage();
+  const p5 = await newConfiguredPage();
   await p5.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p5.waitForTimeout(1000);
   await selectLandingStaff(p5); await p5.click('#landingContinue'); await p5.waitForTimeout(300);

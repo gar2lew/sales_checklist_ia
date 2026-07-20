@@ -25,12 +25,13 @@ const browser = await chromium.launch({ headless: true });
 
 async function openApp(settings) {
   const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 390, height: 844 } });
-  if (settings) await context.addInitScript(value => localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify(value)), settings);
+  const configuredSettings = settings || { staff:{ mode:'select', options:[{ id:'test-user', name:'Test User', email:'', office:'Perth', active:true }] } };
+  await context.addInitScript(value => localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify(value)), configuredSettings);
   const page = await context.newPage();
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
   const staff = await page.locator('#landingStaff option').evaluateAll(options => options.map(option => option.value).find(Boolean));
   if (staff) await page.selectOption('#landingStaff', staff);
-  else await page.evaluate(() => { const select = document.querySelector('#landingStaff'); select.add(new Option('Test User', 'Test User')); select.value = 'Test User'; select.dispatchEvent(new Event('change', { bubbles:true })); });
+  else throw new Error('Test fixture requires an explicitly configured staff member.');
   await page.click('#landingContinue');
   return { context, page };
 }
