@@ -28,7 +28,10 @@ vm.runInNewContext(instrumented, context, { filename: 'app-configuration-prefix.
 const actual = JSON.parse(JSON.stringify(context.__configurationContracts));
 
 const expectedAdminSettings = {
-  staff: { mode: 'select', options: [] },
+  staff: { mode: 'select', options: [
+    { id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true },
+    { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true }
+  ] },
   branch: { options: ['Perth', 'Brisbane'] },
   solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing'] },
   eoiTemplates: { options: [
@@ -82,6 +85,8 @@ assert.deepEqual(actual.config.defaults, {
 assert.equal(actual.config.toastDurationMs, 3200);
 assert.equal(actual.config.branding.footerPrefix, 'Sales Appointment Capture');
 assert.equal(actual.canonical.ui.autosaveDelayMs, 15000, 'autosave timing must remain 15000ms');
+assert.deepEqual(actual.canonical.staff.officeAssignments, ['Perth', 'Brisbane', 'Both'], 'staff assignments must remain separate from appointment offices');
+assert.deepEqual(actual.canonical.organisation.offices, ['Perth', 'Brisbane'], 'appointment office values must not gain Both');
 assert.match(source, /const adminSettingsKey = 'salesAppointmentAdminSettings';/, 'admin settings storage key must remain unchanged');
 
 assert.ok(context.__configurationContracts.canonical, 'DEFAULT_APP_CONFIGURATION must be introduced');

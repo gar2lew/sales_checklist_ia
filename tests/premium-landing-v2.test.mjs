@@ -86,7 +86,7 @@ try {
     const page = await context.newPage();
     await page.goto(url,{waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('#landingStaff').evaluate(element => element.tagName),'SELECT','configured staff is presented as a native select');
-    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(),['Choose your name',...configuredStaff],'landing options come from the existing admin settings path');
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(),['Choose your name',...configuredStaff,'Garry Lewis','Natalie Simmich'],'landing options include saved staff followed by authoritative defaults');
     await page.selectOption('#landingStaff','Alex Morgan');
     await page.click(`.mode-card[data-mode="${mode}"]`);
     assert.equal(await page.locator('#landingContinue').isEnabled(),true,'staff entry enables current v2 Continue control');

@@ -28,7 +28,11 @@
     },
     staff: {
       mode: 'select',
-      options: []
+      officeAssignments: ['Perth', 'Brisbane', 'Both'],
+      options: [
+        { id: 'garry-lewis', name: 'Garry Lewis', email: 'Garry@sjssolutionscorp.com.au', office: 'Both', role: 'Super Admin', active: true },
+        { id: 'nat-simmich', name: 'Natalie Simmich', email: 'Natalie@sjssolutionscorp.com.au', office: 'Both', role: 'Admin', active: true }
+      ]
     },
     solicitors: {
       mode: 'select',
@@ -933,7 +937,7 @@
   function normalizeStaffOption(option){
     if(typeof option === 'string'){
       const name = option.trim();
-      return name ? {id:staffIdFromName(name), name, email:'', office:'', active:true} : null;
+      return name ? {id:staffIdFromName(name), name, email:'', office:'', role:'', active:true} : null;
     }
     if(!option || typeof option !== 'object') return null;
     const name = String(option.name || option.label || option.value || '').trim();
@@ -943,6 +947,7 @@
       name,
       email: String(option.email || '').trim(),
       office: String(option.office || option.location || '').trim(),
+      role: String(option.role || '').trim(),
       active: option.active !== false
     };
   }
@@ -1275,12 +1280,14 @@
         <label>Name<input class="staff-option-name" type="text" value="${htmlEscape(staff.name)}" aria-label="Staff ${idx+1} name"></label>
         <label>Email<input class="staff-option-email" type="email" value="${htmlEscape(staff.email)}" aria-label="Staff ${idx+1} email"></label>
         <label>Office / location<input class="staff-option-office" type="text" value="${htmlEscape(staff.office)}" aria-label="Staff ${idx+1} office or location"></label>
+        <label>Role<input class="staff-option-role" type="text" value="${htmlEscape(staff.role)}" aria-label="Staff ${idx+1} role"></label>
         <label class="staffActiveLabel"><input class="staff-option-active" type="checkbox"${staff.active ? ' checked' : ''}> Active</label>
         <button type="button" class="btn small danger staff-option-remove">Remove</button>
         <span class="fieldError hidden staff-option-error" role="status"></span>`;
       const nameInput = row.querySelector('.staff-option-name');
       const emailInput = row.querySelector('.staff-option-email');
       const officeInput = row.querySelector('.staff-option-office');
+      const roleInput = row.querySelector('.staff-option-role');
       const activeInput = row.querySelector('.staff-option-active');
       const error = row.querySelector('.staff-option-error');
       const saveRow = () => {
@@ -1300,6 +1307,7 @@
         if(!staff.id) staff.id = staffIdFromName(name);
         staff.email = email;
         staff.office = officeInput.value.trim();
+        staff.role = roleInput.value.trim();
         staff.active = activeInput.checked;
         const wasSelected = [fieldText('teamMember'), fieldText('eoiStaffMember')].some(value => String(value || '').trim().toLowerCase() === previousName.toLowerCase());
         saveAdminSettings();
@@ -1312,7 +1320,7 @@
         }
         clearGenerated();
       };
-      [nameInput,emailInput,officeInput].forEach(input => input.addEventListener('input', saveRow));
+      [nameInput,emailInput,officeInput,roleInput].forEach(input => input.addEventListener('input', saveRow));
       activeInput.addEventListener('change', saveRow);
       row.querySelector('.staff-option-remove').addEventListener('click',()=>{
         if(staffReferencedByStoredDraft(staff.name)){
@@ -1499,7 +1507,7 @@
     if(!value || !adminSettings[kind]) return;
     if(kind === 'staff'){
       if(!staffRecordForValue(value)){
-        adminSettings.staff.options.push({id:staffIdFromName(value), name:value, email:'', office:'', active:false});
+        adminSettings.staff.options.push({id:staffIdFromName(value), name:value, email:'', office:'', role:'', active:false});
         saveAdminSettings();
       }
       return;
@@ -1637,7 +1645,7 @@
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); updateSectionProgress(); updateTimelineProgress(); updateCollapseIndicators(); }));
   $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode='select'; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
   $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
-  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push({id:'',name:'',email:'',office:'',active:true}); renderAdminSettings(); });
+  $('addStaffOption').addEventListener('click',()=>{ adminSettings.staff.options.push({id:'',name:'',email:'',office:'',role:'',active:true}); renderAdminSettings(); });
   $('addSolicitorOption').addEventListener('click',()=>{ adminSettings.solicitor.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addBranchOption').addEventListener('click',()=>{ adminSettings.branch.options.push(''); saveAdminSettings(); renderAdminSettings(); });
   $('addEoiTemplateOption').addEventListener('click',()=>{ adminSettings.eoiTemplates.options.push({value:'',label:''}); saveAdminSettings(); renderAdminSettings(); });

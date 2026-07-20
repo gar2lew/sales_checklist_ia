@@ -18,6 +18,16 @@ const server = createServer((request, response) => {
 await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
 const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless:true });
+const seededNames = ['Garry Lewis', 'Natalie Simmich'];
+const seededRecords = [
+  { id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true },
+  { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true }
+];
+assert.equal(new Set(seededRecords.map(record => record.id.toLowerCase())).size, seededRecords.length, 'seed IDs are unique case-insensitively');
+assert.equal(new Set(seededRecords.map(record => record.name.toLowerCase())).size, seededRecords.length, 'seed names are unique case-insensitively');
+assert.ok(seededRecords.every(record => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(record.email)), 'seed emails are valid');
+assert.ok(seededRecords.every(record => ['Perth','Brisbane','Both'].includes(record.office)), 'seed office assignments are approved');
+assert.ok(seededRecords.every(record => typeof record.active === 'boolean'), 'seed active states are explicit booleans');
 
 async function openApp({ settings, draft, lastStaff } = {}) {
   const context = await browser.newContext({ viewport:{ width:390, height:844 }, serviceWorkers:'block' });
@@ -41,11 +51,11 @@ try {
     const { context, page } = await openApp();
     assert.equal(await page.locator('#landingStaff').evaluate(element => element.tagName), 'SELECT');
     assert.equal(await page.locator('#teamMember').evaluate(element => element.tagName), 'SELECT');
-    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name'], 'fresh profiles must not invent staff');
-    assert.equal(await page.locator('#landingStaff option').getAttribute('disabled'), '', 'placeholder must be disabled');
-    assert.equal(await page.locator('#landingStaff').isDisabled(), true, 'empty staff configuration disables selection');
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name', ...seededNames], 'fresh profiles expose the approved seed in exact order');
+    assert.equal(await page.locator('#landingStaff option').first().getAttribute('disabled'), '', 'placeholder must be disabled');
+    assert.equal(await page.locator('#landingStaff').isDisabled(), false, 'approved seed enables staff selection');
     assert.equal(await page.locator('#landingContinue').isDisabled(), true, 'empty staff configuration blocks Continue');
-    assert.equal(await page.locator('#landingStaffConfiguration').isVisible(), true, 'empty configuration guidance is visible');
+    assert.equal(await page.locator('#landingStaffConfiguration').isVisible(), false, 'valid seed hides configuration guidance');
     assert.equal(await page.locator('#configureStaffFromLanding').getAttribute('aria-controls'), 'settingsOverlay');
     assert.ok(await page.locator('#landingStaff').evaluate(element => element.getBoundingClientRect().height >= 44));
     await context.close();
@@ -53,7 +63,7 @@ try {
 
   {
     const { context, page } = await openApp({ settings:{ staff:{ mode:'text', options:['', 'Legacy Staff', 'legacy staff', 'Second Staff'] } } });
-    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name','Legacy Staff','Second Staff'], 'legacy strings migrate and deduplicate by name');
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name','Legacy Staff','Second Staff', ...seededNames], 'legacy strings migrate and retain seeded defaults');
     assert.equal(await page.locator('#teamMember').evaluate(element => element.tagName), 'SELECT', 'legacy text mode cannot create free-text appointment fields');
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentAdminSettings')));
     assert.deepEqual(stored.staff.options, ['', 'Legacy Staff', 'legacy staff', 'Second Staff'], 'migration is not persisted merely by loading');
@@ -69,7 +79,7 @@ try {
       { id:'duplicate-alex', name:'alex morgan', email:'other@example.com', office:'Perth', active:true }
     ];
     const { context, page } = await openApp({ settings:metadataSettings(options) });
-    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name','Alex Morgan','Partial User','Legacy User']);
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name','Alex Morgan','Partial User','Legacy User', ...seededNames]);
     await page.selectOption('#landingStaff', 'Alex Morgan');
     await page.click('#landingContinue');
     assert.equal(await page.inputValue('#teamMember'), 'Alex Morgan', 'landing selection synchronises to workspace');
@@ -91,23 +101,50 @@ try {
 
   {
     const { context, page } = await openApp();
-    await page.click('#configureStaffFromLanding');
+    await page.evaluate(() => document.querySelector('#configureStaffFromLanding').click());
     await page.fill('#settingsPin', '1234');
     await page.click('#unlockSettings');
     await page.click('#addStaffOption');
     const row = page.locator('#staffOptionsList .adminOption');
-    assert.equal(await row.count(), 1);
-    await row.locator('.staff-option-name').fill('Configured User');
-    await row.locator('.staff-option-email').fill('configured@example.com');
-    await row.locator('.staff-option-office').fill('Perth');
-    await row.locator('.staff-option-active').uncheck();
+    assert.equal(await row.count(), 3);
+    const configuredRow = row.last();
+    await configuredRow.locator('.staff-option-name').fill('Configured User');
+    await configuredRow.locator('.staff-option-email').fill('configured@example.com');
+    await configuredRow.locator('.staff-option-office').fill('Perth');
+    await configuredRow.locator('.staff-option-role').fill('');
+    await configuredRow.locator('.staff-option-active').uncheck();
     let stored = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentAdminSettings')));
     assert.deepEqual(stored.staff.options[0], {
-      id:'configured-user', name:'Configured User', email:'configured@example.com', office:'Perth', active:false
+      id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true
     });
-    await row.locator('.staff-option-active').check();
+    assert.deepEqual(stored.staff.options[2], {
+      id:'configured-user', name:'Configured User', email:'configured@example.com', office:'Perth', role:'', active:false
+    });
+    await configuredRow.locator('.staff-option-active').check();
     await page.click('#closeSettings');
-    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name','Configured User'], 'settings changes repopulate landing select');
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(), ['Choose your name', ...seededNames, 'Configured User'], 'settings changes repopulate landing select');
+    await context.close();
+  }
+
+  {
+    const { context, page } = await openApp();
+    await page.evaluate(() => document.querySelector('#configureStaffFromLanding').click());
+    await page.fill('#settingsPin', '1234');
+    await page.click('#unlockSettings');
+    const rows = page.locator('#staffOptionsList .adminOption');
+    assert.equal(await rows.count(), 2, 'Global Settings renders each seeded record once');
+    for(let index=0; index<seededRecords.length; index += 1){
+      const row = rows.nth(index);
+      const expected = seededRecords[index];
+      assert.equal(await row.locator('.staff-option-name').inputValue(), expected.name);
+      assert.equal(await row.locator('.staff-option-email').inputValue(), expected.email);
+      assert.equal(await row.locator('.staff-option-office').inputValue(), expected.office);
+      assert.equal(await row.locator('.staff-option-role').inputValue(), expected.role);
+      assert.equal(await row.locator('.staff-option-active').isChecked(), expected.active);
+    }
+    await rows.nth(1).locator('.staff-option-role').fill('Updated Role');
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentAdminSettings')));
+    assert.equal(stored.staff.options[1].role, 'Updated Role', 'role edits persist without affecting behavior');
     await context.close();
   }
 
@@ -139,6 +176,17 @@ try {
     await preparedEmailFor({ id:'duplicate-recipient', name:'Duplicate Recipient', email:'Natalie@sjssolutionscorp.com.au', office:'Perth', active:true }),
     /[?&]cc=/,
     'primary recipient is never duplicated as CC'
+  );
+
+  assert.match(
+    await preparedEmailFor(seededRecords[0]),
+    /^mailto:Natalie%40sjssolutionscorp\.com\.au\?cc=Garry%40sjssolutionscorp\.com\.au&/,
+    'Garry selection uses the approved staff email as CC'
+  );
+  assert.doesNotMatch(
+    await preparedEmailFor(seededRecords[1]),
+    /[?&]cc=/,
+    'Natalie selection does not duplicate the primary recipient as CC'
   );
 
   console.log('PASS staff dropdown metadata migration and selection contracts');
