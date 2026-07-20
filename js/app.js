@@ -7,7 +7,88 @@
 'use strict';
   const $ = id => document.getElementById(id);
   const APP_VERSION = '2.7.0-alpha.1';
-  const ADMIN_PIN = '1234';
+  function deepFreeze(value){
+    if(!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+    Object.getOwnPropertyNames(value).forEach(function(key){ deepFreeze(value[key]); });
+    return Object.freeze(value);
+  }
+  function cloneConfigurationValue(value){
+    return JSON.parse(JSON.stringify(value));
+  }
+  const DEFAULT_APP_CONFIGURATION = deepFreeze({
+    admin: {
+      pin: '1234'
+    },
+    organisation: {
+      offices: ['Perth', 'Brisbane'],
+      labels: {
+        fallbackStaffName: 'ASG Team',
+        footerPrefix: 'Sales Appointment Capture'
+      }
+    },
+    staff: {
+      mode: 'select',
+      options: []
+    },
+    solicitors: {
+      mode: 'select',
+      options: ['B.O.S.S Conveyancing']
+    },
+    share: {
+      to: 'Natalie@sjssolutionscorp.com.au',
+      fallbackCc: 'Garry@sjssolutionscorp.com.au'
+    },
+    appointments: {
+      defaults: {
+        branch: 'Perth',
+        financePercent: '',
+        iaForm: 'perth'
+      },
+      zoom: {
+        builders: ['Metricon','Carlisle Homes','Burbank','Celebration Homes','Jandson','Eichmann','Backyard','Blueprint','Smart Home','Designer Homes'],
+        developers: ['ASG','Oliver Hume','RPV Projects','SJD Homes','LandCorp'],
+        timeline: ['1-3 months','3-6 months','6-12 months','12+ months','TBC']
+      }
+    },
+    pdf: {
+      defaults: {
+        authorityAmount: '$10,000',
+        compressPhotos: true,
+        iaApplySignature1: true,
+        iaApplySignature2: true
+      }
+    },
+    templates: {
+      eoi: {
+        defaultValue: 'standard',
+        options: [
+          { value: 'standard', label: 'Standard' },
+          { value: 'laVidaHomes', label: 'La Vida Homes' }
+        ]
+      },
+      additionalDocuments: {
+        options: ['Medicare Card', 'Passport', 'Driver Licence', 'Utility Bill', 'Bank Statement', 'Rates Notice', 'Other']
+      },
+      laVida: {
+        financeBrokers: { options: [
+          { id: 'cooperSachrHeartOfLending', name: 'COOPER SACHR - HEART OF LENDING', email: 'cooper@heartoflending.com.au', phone: '0404353333' }
+        ] },
+        conveyancers: { options: [
+          { id: 'hgpConveyancingRodyPapas', name: 'HGP Conveyancing Pty Ltd / Rody Papas', email: 'rody@hgpconveyancing.com.au', phone: '(08) 8231 2884' }
+        ] },
+        defaults: {
+          financeBrokerId: 'cooperSachrHeartOfLending',
+          conveyancerId: 'hgpConveyancingRodyPapas'
+        }
+      }
+    },
+    ui: {
+      autosaveDelayMs: 15000,
+      nativeShareTimeoutMs: 2500,
+      toastDurationMs: 3200
+    }
+  });
+  const ADMIN_PIN = DEFAULT_APP_CONFIGURATION.admin.pin;
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
     'date','teamMember','clientName','clientPhone','clientEmail','clientAddress','propertySaleAddress',
@@ -116,44 +197,29 @@
   let previewPageIndex = 0;
   let appointmentMode = 'inPerson'; // 'inPerson' | 'zoom'
   const adminSettingsKey = 'salesAppointmentAdminSettings';
-  // Authoritative production staff seed insertion point. Intentionally empty
-  // until approved names and metadata are supplied.
-  const DEFAULT_STAFF_OPTIONS = [];
-  const defaultAdminSettings = {
-    staff: { mode: 'select', options: DEFAULT_STAFF_OPTIONS },
-    branch: { options: ['Perth', 'Brisbane'] },
-    solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing'] },
-    eoiTemplates: { options: [
-      { value: 'standard', label: 'Standard' },
-      { value: 'laVidaHomes', label: 'La Vida Homes' }
-    ] },
+  const DEFAULT_STAFF_OPTIONS = cloneConfigurationValue(DEFAULT_APP_CONFIGURATION.staff.options);
+  const defaultAdminSettings = cloneConfigurationValue({
+    staff: { mode: DEFAULT_APP_CONFIGURATION.staff.mode, options: DEFAULT_STAFF_OPTIONS },
+    branch: { options: DEFAULT_APP_CONFIGURATION.organisation.offices },
+    solicitor: {
+      mode: DEFAULT_APP_CONFIGURATION.solicitors.mode,
+      options: DEFAULT_APP_CONFIGURATION.solicitors.options
+    },
+    eoiTemplates: { options: DEFAULT_APP_CONFIGURATION.templates.eoi.options },
     pdfDefaults: {
-      authorityAmount: '$10,000',
-      financePercent: '',
-      branch: 'Perth',
-      compressPhotos: true,
-      iaApplySignature1: true,
-      iaApplySignature2: true
+      authorityAmount: DEFAULT_APP_CONFIGURATION.pdf.defaults.authorityAmount,
+      financePercent: DEFAULT_APP_CONFIGURATION.appointments.defaults.financePercent,
+      branch: DEFAULT_APP_CONFIGURATION.appointments.defaults.branch,
+      compressPhotos: DEFAULT_APP_CONFIGURATION.pdf.defaults.compressPhotos,
+      iaApplySignature1: DEFAULT_APP_CONFIGURATION.pdf.defaults.iaApplySignature1,
+      iaApplySignature2: DEFAULT_APP_CONFIGURATION.pdf.defaults.iaApplySignature2
     },
-    laVidaFinanceBrokers: { options: [
-      { id: 'cooperSachrHeartOfLending', name: 'COOPER SACHR - HEART OF LENDING', email: 'cooper@heartoflending.com.au', phone: '0404353333' }
-    ] },
-    laVidaConveyancers: { options: [
-      { id: 'hgpConveyancingRodyPapas', name: 'HGP Conveyancing Pty Ltd / Rody Papas', email: 'rody@hgpconveyancing.com.au', phone: '(08) 8231 2884' }
-    ] },
-    laVidaDefaults: {
-      financeBrokerId: 'cooperSachrHeartOfLending',
-      conveyancerId: 'hgpConveyancingRodyPapas'
-    },
-    additionalDocTypes: {
-      options: ['Medicare Card', 'Passport', 'Driver Licence', 'Utility Bill', 'Bank Statement', 'Rates Notice', 'Other']
-    }
-  };
-  const zoomDefaults = {
-    builders: ['Metricon','Carlisle Homes','Burbank','Celebration Homes','Jandson','Eichmann','Backyard','Blueprint','Smart Home','Designer Homes'],
-    developers: ['ASG','Oliver Hume','RPV Projects','SJD Homes','LandCorp'],
-    timeline: ['1-3 months','3-6 months','6-12 months','12+ months','TBC']
-  };
+    laVidaFinanceBrokers: DEFAULT_APP_CONFIGURATION.templates.laVida.financeBrokers,
+    laVidaConveyancers: DEFAULT_APP_CONFIGURATION.templates.laVida.conveyancers,
+    laVidaDefaults: DEFAULT_APP_CONFIGURATION.templates.laVida.defaults,
+    additionalDocTypes: DEFAULT_APP_CONFIGURATION.templates.additionalDocuments
+  });
+  const zoomDefaults = cloneConfigurationValue(DEFAULT_APP_CONFIGURATION.appointments.zoom);
   let adminSettings = loadAdminSettings();
 
   // =========================================================================
@@ -174,22 +240,22 @@
       compressScale: 2, fullScale: 3,
       compressQuality: 0.78, fullQuality: 0.92,
     },
-    share: {
-      to: 'Natalie@sjssolutionscorp.com.au',
-      cc: 'Garry@sjssolutionscorp.com.au',
-      fallbackStaffName: 'ASG Team',
-      nativeShareTimeoutMs: 2500,
-    },
+    share: Object.freeze({
+      to: DEFAULT_APP_CONFIGURATION.share.to,
+      cc: DEFAULT_APP_CONFIGURATION.share.fallbackCc,
+      fallbackStaffName: DEFAULT_APP_CONFIGURATION.organisation.labels.fallbackStaffName,
+      nativeShareTimeoutMs: DEFAULT_APP_CONFIGURATION.ui.nativeShareTimeoutMs,
+    }),
     branding: {
       logoPath: 'icons/asg_logo.png',
-      footerPrefix: 'Sales Appointment Capture',
+      footerPrefix: DEFAULT_APP_CONFIGURATION.organisation.labels.footerPrefix,
     },
     defaults: {
-      iaAmount: '$10,000',
-      iaForm: 'perth',
-      eoiTemplate: 'standard',
+      iaAmount: DEFAULT_APP_CONFIGURATION.pdf.defaults.authorityAmount,
+      iaForm: DEFAULT_APP_CONFIGURATION.appointments.defaults.iaForm,
+      eoiTemplate: DEFAULT_APP_CONFIGURATION.templates.eoi.defaultValue,
     },
-    toastDurationMs: 3200,
+    toastDurationMs: DEFAULT_APP_CONFIGURATION.ui.toastDurationMs,
     filenamePartsMaxLen: 80,
     clientNameMergeThreshold: 40,
   };
@@ -5116,7 +5182,7 @@
   }
 
   /* Autosave — debounced after field changes */
-  var AUTOSAVE_DELAY = 15000;
+  var AUTOSAVE_DELAY = DEFAULT_APP_CONFIGURATION.ui.autosaveDelayMs;
   var autosaveTimer = null;
   var autosaveHasData = false;
 
