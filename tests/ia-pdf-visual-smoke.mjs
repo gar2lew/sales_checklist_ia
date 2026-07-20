@@ -48,10 +48,11 @@ page.on('console', message => { if (message.type() === 'error') browserErrors.pu
 page.on('requestfailed', request => failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
 
 const cases = [
-  { amount: '$1,000', slug: '1-thousand' },
-  { amount: '$10,000', slug: '10-thousand' },
-  { amount: '$100,000', slug: '100-thousand' },
-  { amount: '$1,000,000', slug: '1-million' }
+  { city:'perth', amount: '$1,000', slug: '1-thousand' },
+  { city:'perth', amount: '$10,000', slug: '10-thousand' },
+  { city:'perth', amount: '$100,000', slug: '100-thousand' },
+  { city:'perth', amount: '$1,000,000', slug: '1-million' },
+  { city:'brisbane', amount: '$10,000', slug: '10-thousand-brisbane' }
 ];
 const results = [];
 
@@ -73,11 +74,12 @@ try {
   await page.fill('#propertySaleAddress', 'Lot 1234, 456 Very Long Proposed Property Address, South Guildford WA 6055');
   await page.check('#includeIA');
   await page.selectOption('#iaForm', 'perth');
-  await page.fill('#iaSolicitor', 'The Very Long Named Solicitor and Conveyancing Partnership Pty Ltd');
+  await page.selectOption('#iaSolicitor', 'B.O.S.S Conveyancing');
 
   for (const testCase of cases) {
     const caseDir = join(artifactRoot, testCase.slug);
     mkdirSync(caseDir, { recursive: true });
+    await page.selectOption('#iaForm', testCase.city);
     await page.fill('#iaAmount', testCase.amount);
     await page.click('#generateBottom');
     await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout: 20000 });
@@ -113,6 +115,7 @@ try {
     assert.equal(compiledBytes.subarray(0, 5).toString(), '%PDF-');
     assert.equal(standaloneBytes.subarray(0, 5).toString(), '%PDF-');
     results.push({
+      city: testCase.city,
       amount: testCase.amount,
       compiledBytes: compiledBytes.length,
       standaloneBytes: standaloneBytes.length,

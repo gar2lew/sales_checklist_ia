@@ -1,0 +1,178 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { extname, normalize, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const evidenceRoot = resolve(root, 'tmp', 'mobile-rc-defects-v2');
+mkdirSync(evidenceRoot, { recursive:true });
+const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.jpg':'image/jpeg', '.png':'image/png', '.svg':'image/svg+xml' };
+const server = createServer((request, response) => {
+  const pathname = new URL(request.url, 'http://127.0.0.1').pathname;
+  const relative = pathname === '/' ? 'index.html' : decodeURIComponent(pathname.slice(1));
+  const file = resolve(root, normalize(relative));
+  if (!file.startsWith(root)) return response.writeHead(403).end();
+  try { response.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' }).end(readFileSync(file)); }
+  catch { response.writeHead(404).end(); }
+});
+await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
+const { port } = server.address();
+const browser = await chromium.launch({ headless: true });
+
+async function openApp(settings) {
+  const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 390, height: 844 } });
+  if (settings) await context.addInitScript(value => localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify(value)), settings);
+  const page = await context.newPage();
+  await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
+  const staff = await page.locator('#landingStaff option').evaluateAll(options => options.map(option => option.value).find(Boolean));
+  if (staff) await page.selectOption('#landingStaff', staff);
+  else await page.evaluate(() => { const select = document.querySelector('#landingStaff'); select.add(new Option('Test User', 'Test User')); select.value = 'Test User'; select.dispatchEvent(new Event('change', { bubbles:true })); });
+  await page.click('#landingContinue');
+  return { context, page };
+}
+
+async function setValue(page, selector, value) {
+  const tagName = await page.locator(selector).evaluate(element => element.tagName);
+  if (tagName === 'SELECT') await page.selectOption(selector, value);
+  else await page.locator(selector).fill(value);
+  await page.locator(selector).dispatchEvent('change');
+}
+
+try {
+  const { context, page } = await openApp({ staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] } });
+  await setValue(page, '#date', '20/07/2026');
+  await setValue(page, '#teamMember', 'Test User');
+  await setValue(page, '#clientName', 'Test Client');
+  await setValue(page, '#propertySaleAddress', '1 Test Street, Perth WA 6000');
+
+  assert.ok(await page.locator('#timelineInPerson [data-tl-target="eoiDetailsCard"]').evaluate(el => el.closest('.timeline-step').classList.contains('tl-not-required')), 'EOI disabled must be not required');
+
+  await page.check('#includeEOI');
+  await page.selectOption('#eoiTemplate', 'standard');
+  assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'Standard EOI with applicable inherited fields must be complete');
+
+  await page.check('input[name="eoiOwnership"][value="sole"]');
+  assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'Sole Owner must not require percentage shares');
+  await page.check('input[name="eoiOwnership"][value="joint"]');
+  assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'Joint Tenants must not require percentage shares');
+  await page.check('input[name="eoiOwnership"][value="common"]');
+  assert.equal(await page.textContent('#eoiBadge'), '⚠ Incomplete', 'Tenants in Common must require shares');
+  assert.match(await page.textContent('#sumEOI'), /Incomplete EOI details/, 'Appointment Summary must agree with incomplete EOI state');
+  await setValue(page, '#eoiCommonShares', 'Client 1 60%, Client 2 40%');
+  assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'Tenants in Common with valid shares must be complete');
+  assert.doesNotMatch(await page.textContent('#sumEOI'), /Incomplete/, 'Appointment Summary must agree with complete EOI state');
+
+  await page.check('#showEoiOverrides');
+  assert.equal(await page.textContent('#eoiBadge'), '⚠ Incomplete', 'manual entry must require its applicable fields');
+  await setValue(page, '#eoiClient1Name', 'Manual Client');
+  await setValue(page, '#eoiSaleAddress', '2 Manual Street, Perth WA 6000');
+  await setValue(page, '#eoiDate', '20/07/2026');
+  await setValue(page, '#eoiStaffMember', 'Test User');
+  assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'complete manual entry must be complete');
+  assert.ok(await page.locator('#timelineInPerson [data-tl-target="eoiDetailsCard"]').evaluate(el => el.closest('.timeline-step').classList.contains('tl-complete')), 'step indicator and summary badge must agree');
+  await page.evaluate(() => document.querySelector('#generateTop').click());
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  assert.ok(await page.locator('#timelineInPerson .timeline-step:last-child').evaluate(element => element.classList.contains('tl-complete')), 'PDF readiness must agree with the EOI step and summary');
+  await page.screenshot({ path:resolve(evidenceRoot, 'eoi-section-complete-390x844.png'), fullPage:true });
+  await context.close();
+
+  const defaults = await openApp();
+  assert.equal(await defaults.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'SELECT', 'IA solicitor must be a native select');
+  assert.equal(await defaults.page.inputValue('#iaSolicitor'), 'B.O.S.S Conveyancing', 'B.O.S.S Conveyancing must be the initial selection');
+  assert.ok(await defaults.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('B.O.S.S Conveyancing')));
+  await defaults.context.close();
+
+  const configured = await openApp({
+    staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] },
+    solicitor:{ mode:'select', options:['Example Legal', 'B.O.S.S Conveyancing'] }
+  });
+  assert.ok(await configured.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('Example Legal')), 'additional configured solicitor must remain selectable');
+  await configured.page.check('#includeIA');
+  assert.ok(await configured.page.locator('#iaSolicitor').evaluate(element => element.getBoundingClientRect().height >= 44), 'solicitor select must retain a 44px touch target');
+  await configured.page.selectOption('#iaSolicitor', 'Example Legal');
+  await configured.page.click('#saveDraft');
+  await configured.page.selectOption('#iaSolicitor', 'B.O.S.S Conveyancing');
+  await configured.page.click('#loadDraft');
+  assert.equal(await configured.page.inputValue('#iaSolicitor'), 'Example Legal', 'draft load must restore configured solicitor');
+  await configured.context.close();
+
+  const legacy = await openApp({ staff:{ mode:'text', options:['Legacy Staff'] }, solicitor:{ mode:'text', value:'Legacy Conveyancing', options:[] } });
+  assert.equal(await legacy.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'SELECT');
+  assert.ok(await legacy.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('Legacy Conveyancing')), 'legacy free-text setting must be preserved as an option');
+  await legacy.context.close();
+
+  assert.match(html, /id="shareEmailFallback"/);
+  assert.match(html, /id="openPreparedEmail"/);
+  assert.match(source, /CONFIG\.share\.to/);
+  assert.match(source, /CONFIG\.share\.cc/);
+  assert.doesNotMatch(source.slice(source.indexOf('async function sharePdf'), source.indexOf('async function downloadPackage')), /window\.open\(mailto/);
+  assert.match(source, /downloaded[\s\S]*attach/i, 'fallback copy must explain manual attachment');
+
+  const fallback = await openApp({ staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] } });
+  fallback.page.once('dialog', dialog => dialog.accept());
+  await fallback.page.evaluate(() => document.querySelector('#loadTestData').click());
+  const downloads = [];
+  fallback.page.on('download', download => downloads.push(download.suggestedFilename()));
+  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
+  await fallback.page.screenshot({ path:resolve(evidenceRoot, 'share-email-fallback-390x844.png') });
+  const fallbackLayout = await fallback.page.evaluate(() => {
+    const prompt = document.querySelector('#shareEmailFallback').getBoundingClientRect();
+    const footer = document.querySelector('.footerBar').getBoundingClientRect();
+    return {
+      openHeight:document.querySelector('#openPreparedEmail').getBoundingClientRect().height,
+      dismissHeight:document.querySelector('#dismissPreparedEmail').getBoundingClientRect().height,
+      clearsFooter:prompt.bottom <= footer.top,
+      noOverflow:document.documentElement.scrollWidth <= window.innerWidth
+    };
+  });
+  assert.ok(fallbackLayout.openHeight >= 44 && fallbackLayout.dismissHeight >= 44, 'fallback actions must retain 44px touch targets');
+  assert.ok(fallbackLayout.clearsFooter, 'fallback prompt must remain above the sticky footer');
+  assert.ok(fallbackLayout.noOverflow, 'fallback prompt must not create horizontal overflow');
+  await fallback.page.waitForFunction(() => window.__downloadWait === undefined, null, { timeout:1000 }).catch(() => {});
+  assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.pdf')).length, 1, 'HTTP fallback must download one compiled PDF');
+  assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.zip')).length, 1, 'HTTP fallback must download one ZIP');
+  const mailto = await fallback.page.getAttribute('#openPreparedEmail', 'href');
+  assert.ok(mailto.startsWith('mailto:Natalie%40sjssolutionscorp.com.au?cc=Garry%40sjssolutionscorp.com.au'), 'prepared email must resolve configured recipient and CC');
+  assert.match(decodeURIComponent(mailto), /Test User - Sales Appointment/);
+  assert.match(decodeURIComponent(mailto), /downloaded[\s\S]*attach/i);
+  await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
+  await fallback.page.click('#openPreparedEmail');
+  assert.match(await fallback.page.textContent('#status'), /Prepared email opened/);
+
+  await fallback.page.evaluate(() => {
+    window.__nativeShareCalls = [];
+    Object.defineProperty(navigator, 'canShare', { configurable:true, value:payload => Array.isArray(payload.files) && payload.files.length > 0 });
+    Object.defineProperty(navigator, 'share', { configurable:true, value:payload => { window.__nativeShareCalls.push(payload); return Promise.resolve(); } });
+  });
+  const downloadsBeforeNative = downloads.length;
+  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.waitForFunction(() => window.__nativeShareCalls.length === 1, null, { timeout:30000 });
+  assert.equal(await fallback.page.evaluate(() => window.__nativeShareCalls[0].files.length), 2, 'native multi-file share must receive PDF and ZIP');
+  assert.equal(downloads.length, downloadsBeforeNative, 'successful native share must not duplicate downloads');
+  assert.ok(await fallback.page.locator('#shareEmailFallback').evaluate(element => element.classList.contains('hidden')));
+
+  await fallback.page.evaluate(() => {
+    Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new DOMException('cancelled', 'AbortError')) });
+  });
+  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.waitForTimeout(500);
+  assert.equal(downloads.length, downloadsBeforeNative, 'cancelled native share must not trigger fallback downloads');
+
+  await fallback.page.evaluate(() => {
+    Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new Error('native share rejected')) });
+  });
+  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
+  assert.equal(downloads.length, downloadsBeforeNative + 2, 'rejected native share must fall back to one PDF and one ZIP download');
+  await fallback.context.close();
+
+  console.log('PASS mobile RC defect regression contracts');
+} finally {
+  await browser.close();
+  server.close();
+}

@@ -975,7 +975,6 @@
             <div>
               <label for="solicitorMode">Solicitor / Conveyancer field type</label>
               <select id="solicitorMode">
-                <option value="text">Free-text input</option>
                 <option value="select">Dropdown/select</option>
               </select>
               <div class="adminList" id="solicitorOptionsList"></div>
@@ -1040,6 +1039,15 @@
       </div>
     </section>
   </div>
+
+  <section class="shareEmailFallback hidden" id="shareEmailFallback" role="status" aria-live="polite" aria-labelledby="shareEmailFallbackTitle">
+    <div>
+      <strong id="shareEmailFallbackTitle">Files downloaded</strong>
+      <p>The prepared email cannot include attachments automatically. Open it, then attach the downloaded PDF and ZIP before sending.</p>
+    </div>
+    <a class="btn primary" id="openPreparedEmail" href="#">Open prepared email</a>
+    <button class="btn" type="button" id="dismissPreparedEmail">Dismiss</button>
+  </section>
 
   <div class="footerBar">
     <div class="footerInner">

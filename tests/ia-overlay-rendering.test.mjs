@@ -13,20 +13,18 @@ const fieldRendering = drawIaPage.slice(fieldRenderStart, fieldRenderEnd);
 
 assert.ok(drawIaPage, 'drawIAPage must remain available');
 assert.ok(fieldRenderStart >= 0 && fieldRenderEnd > fieldRenderStart, 'IA field-rendering block must remain identifiable');
-assert.match(fieldRendering, /whiteOut\(315, 312, 850, 32\)/, 'target client-name whiteout must remain bounded');
-assert.match(fieldRendering, /whiteOut\(245, 360, 900, 32\)/, 'target address whiteout must remain bounded');
-assert.match(fieldRendering, /whiteOut\(300, 405, 850, 26\)/, 'property whiteout must stay above the authority banner');
-assert.match(fieldRendering, /whiteOut\(630, 535, 885, 45\)/, 'solicitor whiteout must retain the printed label');
-assert.match(fieldRendering, /whiteOut\(758, 752, 152, 44\)/, 'amount whiteout must remain bounded');
-assert.match(fieldRendering, /whiteOut\(225, 1206, 401, 36\)/, 'date whiteout must remain bounded');
-assert.doesNotMatch(fieldRendering, /globalCompositeOperation|clip\(|ctx\.rect\(/, 'IA rendering must not add clipping or compositing side effects');
+assert.doesNotMatch(
+  fieldRendering,
+  /whiteOut|fillRect|clearRect|strokeRect|globalCompositeOperation|clip\(|ctx\.rect\(|drawImage\(/,
+  'IA appended fields must use the approved transparent overlays'
+);
 
 const expectedFields = [
   /drawTemplateLineValue\(iaClientNames, 315, 330, 850,/,
   /drawTemplateLineValue\(iaAddress, 245, 378, 900,/,
   /drawTemplateLineValue\(iaProperty, 300, 420, 850,/,
-  /overlayFitText\(fieldText\('iaSolicitor'\), 640, 564, 875,/,
-  /overlayText\(iaAmount, 763, 783, 140, '800 13px Arial', 15, 1\)/,
+  /overlayFitText\(fieldText\('iaSolicitor'\), 640, 564, 510,/,
+  /overlayFitText\(iaAmount, 770, 783, 96, '800', 13, 7\.5\)/,
   /overlayText\(formattedDateForIA\(\), 235, 1225, 391,/
 ];
 for (const fieldPattern of expectedFields) assert.match(fieldRendering, fieldPattern);
@@ -42,6 +40,9 @@ const fieldBounds = {
 for (const [field, bounds] of Object.entries(fieldBounds)) {
   assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= templateWidth, `${field} must stay inside the IA page`);
 }
+
+assert.match(source, /perth:\s*'templates\/ia-perth-clean\.jpg'/, 'Perth must use the approved clean IA template');
+assert.match(source, /brisbane:\s*'templates\/ia-brisbane-clean\.jpg'/, 'Brisbane must use the approved clean IA template');
 
 
 assert.match(drawIaPage, /const p1 = map\(130, 1364\);[\s\S]*const p2 = map\(570, 1458\);/, 'signature 1 area must remain unchanged');
