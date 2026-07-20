@@ -25,6 +25,16 @@ const server = http.createServer(async (request,response) => {
 await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
 const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({headless:true});
+const configuredStaff = ['Alex Morgan','Jordan Lee'];
+
+async function seedConfiguredStaff(context) {
+  await context.addInitScript(options => {
+    localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify({
+      staff:{ mode:'text', options },
+      branch:{ options:['Perth','Brisbane'] }
+    }));
+  }, configuredStaff);
+}
 
 async function inspectViewport(width,height,expectedLayout) {
   const context = await browser.newContext({viewport:{width,height},serviceWorkers:'block'});
@@ -72,9 +82,12 @@ try {
 
   for (const mode of ['inPerson','zoom']) {
     const context = await browser.newContext({viewport:{width:1366,height:768},serviceWorkers:'block'});
+    await seedConfiguredStaff(context);
     const page = await context.newPage();
     await page.goto(url,{waitUntil:'domcontentloaded'});
-    await page.fill('#landingStaff','Premium Test User');
+    assert.equal(await page.locator('#landingStaff').evaluate(element => element.tagName),'SELECT','configured staff is presented as a native select');
+    assert.deepEqual(await page.locator('#landingStaff option').allTextContents(),['Choose your name',...configuredStaff],'landing options come from the existing admin settings path');
+    await page.selectOption('#landingStaff','Alex Morgan');
     await page.click(`.mode-card[data-mode="${mode}"]`);
     assert.equal(await page.locator('#landingContinue').isEnabled(),true,'staff entry enables current v2 Continue control');
     await page.click('#landingContinue');

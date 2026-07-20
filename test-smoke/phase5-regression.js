@@ -17,10 +17,20 @@ s.listen(0, async () => {
   let ok = 0, fail = 0;
   function chk(n, o) { if (o) { ok++; console.log('  \u2705 ' + n); } else { fail++; console.log('  \u274C ' + n); } }
 
-  async function enZ(p) {
+  async function selectLandingStaff(p) {
     await p.evaluate(() => {
       const si = document.querySelector('#landingStaff');
-      if (si) { si.value = 'T'; si.dispatchEvent(new Event('input', {bubbles:true})); si.dispatchEvent(new Event('change', {bubbles:true})); }
+      if (si) {
+        if (![...si.options].some(option => option.value === 'T')) si.add(new Option('T','T'));
+        si.value = 'T';
+        si.dispatchEvent(new Event('input', {bubbles:true}));
+        si.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+    });
+  }
+  async function enZ(p) {
+    await selectLandingStaff(p);
+    await p.evaluate(() => {
       document.querySelectorAll('.mode-card')[1].classList.add('active');
       document.querySelectorAll('.mode-card')[0].classList.remove('active');
     });
@@ -439,7 +449,7 @@ s.listen(0, async () => {
   const p5 = await b.newPage();
   await p5.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p5.waitForTimeout(1000);
-  await p5.fill('#landingStaff','T'); await p5.click('#landingContinue'); await p5.waitForTimeout(300);
+  await selectLandingStaff(p5); await p5.click('#landingContinue'); await p5.waitForTimeout(300);
 
   /* Timeline: in-person renders 7 steps */
   const tlIp1 = await p5.evaluate(() => {

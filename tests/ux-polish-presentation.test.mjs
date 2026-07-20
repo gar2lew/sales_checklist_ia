@@ -21,22 +21,31 @@ const server = http.createServer(async (request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless:true });
+const testStaff = ['Responsive Test User','Keyboard User'];
+
+async function seedStaff(context) {
+  await context.addInitScript(options => localStorage.setItem('salesAppointmentAdminSettings',JSON.stringify({
+    staff:{mode:'text',options},branch:{options:['Perth','Brisbane']}
+  })),testStaff);
+}
 
 async function openWorkspace(width, height) {
   const context = await browser.newContext({ viewport:{ width, height }, serviceWorkers:'block' });
+  await seedStaff(context);
   const page = await context.newPage();
   await page.goto(baseUrl, { waitUntil:'domcontentloaded' });
-  await page.fill('#landingStaff', 'Responsive Test User');
+  await page.selectOption('#landingStaff', 'Responsive Test User');
   await page.click('#landingContinue');
   return { context, page };
 }
 
 try {
   const landingContext = await browser.newContext({ viewport:{ width:1366, height:768 }, serviceWorkers:'block' });
+  await seedStaff(landingContext);
   const landing = await landingContext.newPage();
   await landing.goto(baseUrl, { waitUntil:'domcontentloaded' });
   assert.equal(await landing.locator('#landingContinue').isDisabled(), true, 'Continue starts disabled');
-  await landing.fill('#landingStaff', 'Keyboard User');
+  await landing.selectOption('#landingStaff', 'Keyboard User');
   assert.equal(await landing.locator('#landingContinue').isEnabled(), true, 'staff selection enables Continue');
   await landing.locator('#landingContinue').focus();
   assert.equal(await landing.evaluate(() => document.activeElement?.id), 'landingContinue', 'landing Continue remains keyboard focusable');

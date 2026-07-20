@@ -280,12 +280,8 @@
     const control = $('landingStaffControl');
     if(!control) return;
     const currentLandingVal = ($('landingStaff') && $('landingStaff').value) || '';
-    if(config.mode === 'select'){
-      const options = config.options.filter(Boolean).map(function(v){ return '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; }).join('');
-      control.innerHTML = '<select id="landingStaff"><option value="">Select staff member</option>'+options+'</select>';
-    } else {
-      control.innerHTML = '<input id="landingStaff" type="text" placeholder="Enter your name" autocomplete="off">';
-    }
+    const options = config.options.filter(Boolean).map(function(v){ return '<option value="'+htmlEscape(v)+'">'+htmlEscape(v)+'</option>'; }).join('');
+    control.innerHTML = '<select id="landingStaff" aria-label="Your Name"><option value="">Choose your name</option>'+options+'</select>';
     if(currentLandingVal && $('landingStaff')) $('landingStaff').value = currentLandingVal;
     $('landingStaff').addEventListener('input', updateLandingContinue);
     $('landingStaff').addEventListener('change', updateLandingContinue);

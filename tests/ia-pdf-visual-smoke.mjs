@@ -36,6 +36,9 @@ const { port } = server.address();
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1440, height: 1000 } });
+await context.addInitScript(() => localStorage.setItem('salesAppointmentAdminSettings', JSON.stringify({
+  staff:{mode:'text',options:['Test User']},branch:{options:['Perth','Brisbane']}
+})));
 await context.route('https://fonts.googleapis.com/**', route => route.fulfill({ status: 200, contentType: 'text/css', body: '' }));
 const page = await context.newPage();
 const browserErrors = [];
@@ -60,7 +63,7 @@ async function waitForDownloadCount(downloads, count) {
 
 try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
-  await page.fill('#landingStaff', 'Test User');
+  await page.selectOption('#landingStaff', 'Test User');
   await page.click('#landingContinue');
 
   await page.fill('#date', '16/07/2026');
