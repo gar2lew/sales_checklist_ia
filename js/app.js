@@ -574,8 +574,19 @@
     }
   }
   function safePart(s, fallback){
-    s = (s || '').trim() || fallback;
-    return s.replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').slice(0,80);
+    const fallbackValue = String(fallback || '').trim();
+    const value = String(s || '').trim() || fallbackValue;
+    const sanitized = value
+      .replace(/[\\/:*?"<>|]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\.+$/g, '')
+      .trim()
+      .slice(0, 80)
+      .trim()
+      .replace(/\.+$/g, '')
+      .trim();
+    return sanitized || fallbackValue;
   }
   function pdfFileName(){
     if(appointmentMode === 'zoom') return zoomPdfFileName();
@@ -603,16 +614,10 @@
     return c1 || 'Client';
   }
   function zipFileName(){
-    if(appointmentMode === 'zoom'){
-      const clientNames = clientNamesForFilename();
-      const dateVal = $('date') ? $('date').value : '';
-      const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
-      return clientNames + ' - Zoom Appointment Documents - ' + date + '.zip';
-    }
     const clientNames = clientNamesForFilename();
     const dateVal = $('date') ? $('date').value : '';
     const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
-    return `${clientNames} - Separated Appointment Documents - ${date}.zip`;
+    return `${date} - ${clientNames} - Sales Appointment Documents.zip`;
   }
   function individualEoiFilename(){
     const clientNames = clientNamesForFilename();
@@ -678,14 +683,20 @@
   }
 
   function individualPhotoFilename(photo, idx){
-    const ID_FRONT_BACK = ['Client 1 - ID Front', 'Client 1 - ID Back', 'Client 2 - ID Front', 'Client 2 - ID Back'];
+    const ID_DESCRIPTIONS = ['ID Front', 'ID Back', 'ID Front', 'ID Back'];
     if (idx < 4) {
-      return `${ID_FRONT_BACK[idx]}.pdf`;
+      const clientNumber = idx < 2 ? 1 : 2;
+      return `${clientNameForFilename(clientNumber)} - ${ID_DESCRIPTIONS[idx]}.pdf`;
     }
     // Additional document: {Client} - {Description}.pdf
-    const client = safePart(photo.client || 'Client 1', 'Client');
+    const clientNumber = photo.client === 'Client 2' ? 2 : (photo.client === 'Client 1' ? 1 : 0);
+    const client = clientNumber ? clientNameForFilename(clientNumber) : safePart(photo.client, 'Client');
     const desc = safePart(photo.description || 'Additional Document', 'Document');
     return `${client} - ${desc}.pdf`;
+  }
+  function clientNameForFilename(clientNumber){
+    const fieldId = clientNumber === 2 ? 'client2Name' : 'clientName';
+    return safePart(fieldText(fieldId), `Client ${clientNumber}`);
   }
   function updatePhotoUIGroups(){
     const group2 = $('photoGroupClient2');
@@ -1191,6 +1202,13 @@
       const disabled = options.length ? '' : ' disabled';
       control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}"${disabled}>${optionMarkup}</select>`;
       if(current) $(fieldId).value = current;
+    } else if(kind === 'solicitor'){
+      const listId = `${fieldId}Options`;
+      const optionMarkup = optionValuesFor(kind)
+        .map(option => `<option value="${htmlEscape(option.value)}"></option>`)
+        .join('');
+      control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><input id="${fieldId}" type="text" list="${listId}" placeholder="${htmlEscape(placeholder)}"><datalist id="${listId}">${optionMarkup}</datalist>`;
+      $(fieldId).value = current;
     } else if(config.mode === 'select'){
       const optionMarkup = selectOptionsMarkup(optionValuesFor(kind), 'Select', current);
       control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}">${optionMarkup}</select>`;
@@ -4826,6 +4844,34 @@
     if(!candidate || candidate.toLowerCase() === primary.toLowerCase()) return '';
     return candidate;
   }
+  function formatEmailTime(value){
+    const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+    if(!match) return String(value || '').trim();
+    const hours = Number(match[1]);
+    if(hours > 23) return String(value || '').trim();
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${match[2]} ${suffix}`;
+  }
+  function formatContractIssued(value){
+    const date = value instanceof Date ? value : new Date(value);
+    if(isNaN(date.getTime())) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const time = formatEmailTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+    return `${dd}/${mm}/${yyyy} ${time}`;
+  }
+  function emailNextAppointment(){
+    if(appointmentMode === 'zoom'){
+      const date = (fieldText('crNextAppointmentDate') || '').trim();
+      return date ? formatDisplayDate(date) : '';
+    }
+    const date = (fieldText('eoiNextApptDate') || '').trim();
+    if(!date) return '';
+    const time = formatEmailTime(fieldText('eoiNextApptTime'));
+    return `${formatDisplayDate(date)}${time ? ` ${time}` : ''}`;
+  }
   function buildShareEmailContent(){
     const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
     const client1 = (fieldText('clientName') || '').trim();
@@ -4836,18 +4882,12 @@
     const property = (fieldText('propertySaleAddress') || '').trim() || 'Property';
     const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
 
-    // Determine which forms are included.
-    const eoiIncluded = isChecked('includeEOI');
-    const iaIncluded = isChecked('includeIA');
-    let formsIncluded;
-    if (eoiIncluded && iaIncluded) formsIncluded = 'EOI+IA';
-    else if (eoiIncluded) formsIncluded = 'EOI';
-    else if (iaIncluded) formsIncluded = 'IA';
-    else formsIncluded = 'PDF';
-
-    const subject = `${staffName} - Sales Appointment - ${formsIncluded} Forms - ${clientNames} - ${property} - ${date}`;
-    const body = `Hey Natalie,\n\nPlease see the attached appointment documents for:\n\n${clientNames}\n${property}\n${date}\n\nAttached is the complete appointment PDF together with a ZIP folder containing the separated documents for easier filing and processing.\n\nIf you need anything else, please let me know!\n\nRegards,\n\n${staffName}`;
-    const fallbackBody = `Hey Natalie,\n\nPlease see the appointment documents for:\n\n${clientNames}\n${property}\n${date}\n\nThe PDF and ZIP have been downloaded to this device. Please attach the downloaded files to this email before sending.\n\nIf you need anything else, please let me know!\n\nRegards,\n\n${staffName}`;
+    const nextAppointment = emailNextAppointment();
+    const contractIssued = formatContractIssued(new Date());
+    const nextAppointmentBlock = nextAppointment ? `\n\nNext Appointment:\n${nextAppointment}` : '';
+    const subject = `Sales Appointment Documents | ${clientNames} | ${date}`;
+    const body = `Hi Natalie,\n\nPlease find the completed sales appointment documents for the following clients:\n\nClients:\n${clientNames}\n\nProperty:\n${property}\n\nAppointment Date:\n${date}${nextAppointmentBlock}\n\nContract Issued:\n${contractIssued}\n\nThe appointment PDF and supporting ZIP package have been downloaded to this device.\n\nPlease attach both files to this email before sending.\n\nKind regards,\n\n${staffName}`;
+    const fallbackBody = body;
     const fileName = lastPdfName || pdfFileName();
     const cc = resolveShareCc(staffName);
     return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc, ccDiagnostic:cc ? '' : 'No staff or fallback CC address is configured.' };

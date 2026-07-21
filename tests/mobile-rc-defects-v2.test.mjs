@@ -82,28 +82,29 @@ try {
   await context.close();
 
   const defaults = await openApp();
-  assert.equal(await defaults.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'SELECT', 'IA solicitor must be a native select');
+  assert.equal(await defaults.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'INPUT', 'IA solicitor must be an editable native input/list combobox');
   assert.equal(await defaults.page.inputValue('#iaSolicitor'), 'B.O.S.S Conveyancing', 'B.O.S.S Conveyancing must be the initial selection');
-  assert.ok(await defaults.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('B.O.S.S Conveyancing')));
+  assert.equal(await defaults.page.getAttribute('#iaSolicitor', 'list'), 'iaSolicitorOptions');
+  assert.ok(await defaults.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('B.O.S.S Conveyancing')));
   await defaults.context.close();
 
   const configured = await openApp({
     staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] },
     solicitor:{ mode:'select', options:['Example Legal', 'B.O.S.S Conveyancing'] }
   });
-  assert.ok(await configured.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('Example Legal')), 'additional configured solicitor must remain selectable');
+  assert.ok(await configured.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('Example Legal')), 'additional configured solicitor must remain selectable');
   await configured.page.check('#includeIA');
-  assert.ok(await configured.page.locator('#iaSolicitor').evaluate(element => element.getBoundingClientRect().height >= 44), 'solicitor select must retain a 44px touch target');
-  await configured.page.selectOption('#iaSolicitor', 'Example Legal');
+  assert.ok(await configured.page.locator('#iaSolicitor').evaluate(element => element.getBoundingClientRect().height >= 44), 'solicitor combobox must retain a 44px touch target');
+  await configured.page.fill('#iaSolicitor', 'Custom & Co Conveyancing');
   await configured.page.click('#saveDraft');
-  await configured.page.selectOption('#iaSolicitor', 'B.O.S.S Conveyancing');
+  await configured.page.fill('#iaSolicitor', 'B.O.S.S Conveyancing');
   await configured.page.click('#loadDraft');
-  assert.equal(await configured.page.inputValue('#iaSolicitor'), 'Example Legal', 'draft load must restore configured solicitor');
+  assert.equal(await configured.page.inputValue('#iaSolicitor'), 'Custom & Co Conveyancing', 'draft load must restore custom solicitor text');
   await configured.context.close();
 
   const legacy = await openApp({ staff:{ mode:'text', options:['Legacy Staff'] }, solicitor:{ mode:'text', value:'Legacy Conveyancing', options:[] } });
-  assert.equal(await legacy.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'SELECT');
-  assert.ok(await legacy.page.locator('#iaSolicitor option').allTextContents().then(values => values.includes('Legacy Conveyancing')), 'legacy free-text setting must be preserved as an option');
+  assert.equal(await legacy.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'INPUT');
+  assert.ok(await legacy.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('Legacy Conveyancing')), 'legacy free-text setting must be preserved as an option');
   await legacy.context.close();
 
   assert.match(html, /id="shareEmailFallback"/);
@@ -139,7 +140,7 @@ try {
   assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.zip')).length, 1, 'HTTP fallback must download one ZIP');
   const mailto = await fallback.page.getAttribute('#openPreparedEmail', 'href');
   assert.ok(mailto.startsWith('mailto:Natalie%40sjssolutionscorp.com.au?cc=Garry%40sjssolutionscorp.com.au'), 'prepared email must resolve configured recipient and CC');
-  assert.match(decodeURIComponent(mailto), /Test User - Sales Appointment/);
+  assert.match(decodeURIComponent(mailto), /Sales Appointment Documents \| John Smith \| 21\/07\/2026/);
   assert.match(decodeURIComponent(mailto), /downloaded[\s\S]*attach/i);
   await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
   await fallback.page.click('#openPreparedEmail');

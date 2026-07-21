@@ -74,7 +74,7 @@ try {
   await page.fill('#propertySaleAddress', 'Lot 1234, 456 Very Long Proposed Property Address, South Guildford WA 6055');
   await page.check('#includeIA');
   await page.selectOption('#iaForm', 'perth');
-  await page.selectOption('#iaSolicitor', 'B.O.S.S Conveyancing');
+  await page.fill('#iaSolicitor', 'Custom Test Conveyancing');
 
   for (const testCase of cases) {
     const caseDir = join(artifactRoot, testCase.slug);
