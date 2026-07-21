@@ -29,8 +29,13 @@ const actual = JSON.parse(JSON.stringify(context.__configurationContracts));
 
 const expectedAdminSettings = {
   staff: { mode: 'select', options: [
+    { id:'blake-duffield', name:'Blake Duffield', email:'Blake@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
+    { id:'joe-villiers-dunn', name:'Joe Villiers-Dunn', email:'Joe@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
+    { id:'josh-robinson', name:'Josh Robinson', email:'Josh@amplifysolutionsgroup.com.au', office:'Both', role:'Business Development Manager', active:true },
+    { id:'mike-enderby', name:'Mike Enderby', email:'Mike@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
     { id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true },
-    { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true }
+    { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true },
+    { id:'sam-roberts', name:'Sam Roberts', email:'Sam@amplifysolutionsgroup.com.au', office:'Both', role:'Owner/CEO', active:true }
   ] },
   branch: { options: ['Perth', 'Brisbane'] },
   solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing'] },

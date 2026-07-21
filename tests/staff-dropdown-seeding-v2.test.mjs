@@ -18,10 +18,15 @@ const server = createServer((request, response) => {
 await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
 const url = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless:true });
-const seededNames = ['Garry Lewis', 'Natalie Simmich'];
+const seededNames = ['Blake Duffield', 'Joe Villiers-Dunn', 'Josh Robinson', 'Mike Enderby', 'Garry Lewis', 'Natalie Simmich', 'Sam Roberts'];
 const seededRecords = [
+  { id:'blake-duffield', name:'Blake Duffield', email:'Blake@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
+  { id:'joe-villiers-dunn', name:'Joe Villiers-Dunn', email:'Joe@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
+  { id:'josh-robinson', name:'Josh Robinson', email:'Josh@amplifysolutionsgroup.com.au', office:'Both', role:'Business Development Manager', active:true },
+  { id:'mike-enderby', name:'Mike Enderby', email:'Mike@amplifysolutionsgroup.com.au', office:'Both', role:'SMSF & Property Liaison', active:true },
   { id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true },
-  { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true }
+  { id:'nat-simmich', name:'Natalie Simmich', email:'Natalie@sjssolutionscorp.com.au', office:'Both', role:'Admin', active:true },
+  { id:'sam-roberts', name:'Sam Roberts', email:'Sam@amplifysolutionsgroup.com.au', office:'Both', role:'Owner/CEO', active:true }
 ];
 assert.equal(new Set(seededRecords.map(record => record.id.toLowerCase())).size, seededRecords.length, 'seed IDs are unique case-insensitively');
 assert.equal(new Set(seededRecords.map(record => record.name.toLowerCase())).size, seededRecords.length, 'seed names are unique case-insensitively');
@@ -106,7 +111,7 @@ try {
     await page.click('#unlockSettings');
     await page.click('#addStaffOption');
     const row = page.locator('#staffOptionsList .adminOption');
-    assert.equal(await row.count(), 3);
+    assert.equal(await row.count(), 8);
     const configuredRow = row.last();
     await configuredRow.locator('.staff-option-name').fill('Configured User');
     await configuredRow.locator('.staff-option-email').fill('configured@example.com');
@@ -114,10 +119,8 @@ try {
     await configuredRow.locator('.staff-option-role').fill('');
     await configuredRow.locator('.staff-option-active').uncheck();
     let stored = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentAdminSettings')));
-    assert.deepEqual(stored.staff.options[0], {
-      id:'garry-lewis', name:'Garry Lewis', email:'Garry@sjssolutionscorp.com.au', office:'Both', role:'Super Admin', active:true
-    });
-    assert.deepEqual(stored.staff.options[2], {
+    assert.deepEqual(stored.staff.options[0], seededRecords[0]);
+    assert.deepEqual(stored.staff.options[7], {
       id:'configured-user', name:'Configured User', email:'configured@example.com', office:'Perth', role:'', active:false
     });
     await configuredRow.locator('.staff-option-active').check();
@@ -132,7 +135,7 @@ try {
     await page.fill('#settingsPin', '1234');
     await page.click('#unlockSettings');
     const rows = page.locator('#staffOptionsList .adminOption');
-    assert.equal(await rows.count(), 2, 'Global Settings renders each seeded record once');
+    assert.equal(await rows.count(), seededRecords.length, 'Global Settings renders each seeded record once');
     for(let index=0; index<seededRecords.length; index += 1){
       const row = rows.nth(index);
       const expected = seededRecords[index];
@@ -142,9 +145,9 @@ try {
       assert.equal(await row.locator('.staff-option-role').inputValue(), expected.role);
       assert.equal(await row.locator('.staff-option-active').isChecked(), expected.active);
     }
-    await rows.nth(1).locator('.staff-option-role').fill('Updated Role');
+    await rows.nth(5).locator('.staff-option-role').fill('Updated Role');
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentAdminSettings')));
-    assert.equal(stored.staff.options[1].role, 'Updated Role', 'role edits persist without affecting behavior');
+    assert.equal(stored.staff.options[5].role, 'Updated Role', 'role edits persist without affecting behavior');
     await context.close();
   }
 
@@ -179,12 +182,12 @@ try {
   );
 
   assert.match(
-    await preparedEmailFor(seededRecords[0]),
+    await preparedEmailFor(seededRecords.find(record => record.id === 'garry-lewis')),
     /^mailto:Natalie%40sjssolutionscorp\.com\.au\?cc=Garry%40sjssolutionscorp\.com\.au&/,
     'Garry selection uses the approved staff email as CC'
   );
   assert.doesNotMatch(
-    await preparedEmailFor(seededRecords[1]),
+    await preparedEmailFor(seededRecords.find(record => record.id === 'nat-simmich')),
     /[?&]cc=/,
     'Natalie selection does not duplicate the primary recipient as CC'
   );
