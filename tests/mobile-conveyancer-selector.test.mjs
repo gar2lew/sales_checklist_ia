@@ -126,7 +126,7 @@ try {
   assert.equal(await page.locator('#contractDueDateTbc').count(), 1);
   assert.deepEqual(await page.evaluate(() => window._testState.resolveContractDueDate()), { valid:false, value:'' });
   assert.match(appSource, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
-assert.match(swSource, /const CACHE_VERSION = 'v2\.7\.0-alpha\.17';/);
+assert.match(swSource, /const CACHE_VERSION = 'v2\.7\.0-alpha\.18';/);
   assert.match(appSource, /overlayFitText\(fieldText\('iaSolicitor'\)/, 'IA PDF continues consuming the resolved field');
 
   console.log(JSON.stringify({

@@ -280,12 +280,6 @@
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
             <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
-            <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
-              <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
-              <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
-              <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
-              <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
-            </div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientAddress">Client Current Address</label><input id="clientAddress" type="text" placeholder="Client current address"></div>
           </div>
@@ -670,7 +664,14 @@
                   </select>
                 </div>
                 <div class="fields two" style="gap:12px; margin: 0; padding: 0">
-                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off"></div>
+                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off">
+                    <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
+                      <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
+                      <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
+                      <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
+                      <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
+                    </div>
+                  </div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
                     <select id="eoiNextApptTime">

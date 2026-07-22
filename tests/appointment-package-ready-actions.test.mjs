@@ -26,7 +26,7 @@ assert.ok(html.indexOf('id="savePackageZip"') < html.indexOf('id="preparePackage
 assert.match(styles, /\.package-ready-actions[\s\S]*grid/);
 assert.match(styles, /min-height:\s*44px/);
 assert.match(styles, /overflow-wrap:\s*anywhere/);
-assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.17';/);
+assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.18';/);
 assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
 
 const mime = { '.css':'text/css', '.html':'text/html', '.js':'text/javascript', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml' };

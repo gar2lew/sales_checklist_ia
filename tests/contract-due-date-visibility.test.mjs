@@ -28,17 +28,22 @@ try {
       {width:393,height:852},
       {width:414,height:896},
       {width:844,height:390},
-      {width:1280,height:800}
+      {width:1024,height:768},
+      {width:1280,height:800},
+      {width:1440,height:900},
+      {width:1920,height:1080}
     ]){
       const page = await browser.newPage({ viewport });
       await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil:'networkidle' });
       await page.click(`.mode-card[data-mode="${mode}"]`);
       await page.selectOption('#landingStaff','Garry Lewis');
       await page.click('#landingContinue');
+      if(mode === 'inPerson') await page.check('#includeEOI');
 
       const field = page.locator('#contractDueDateField');
       const date = page.locator('#contractDueDate');
       const tbc = page.locator('label[for="contractDueDateTbc"]');
+      const nextAppointmentId = mode === 'zoom' ? 'crNextAppointmentDate' : 'eoiNextApptDate';
       assert.equal(await field.count(),1,`${mode} has one due-date section at ${viewport.width}px`);
       assert.equal(await field.isVisible(),true,`${mode} due-date section is visible at ${viewport.width}px`);
       assert.equal(await date.isVisible(),true,`${mode} date input is visible at ${viewport.width}px`);
@@ -46,6 +51,16 @@ try {
       assert.ok((await date.boundingBox()).height >= 44,`date input retains 44px at ${viewport.width}px`);
       assert.ok((await tbc.boundingBox()).height >= 44,`TBC label retains 44px at ${viewport.width}px`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,`${viewport.width}px has no horizontal overflow`);
+      assert.equal(await page.locator('#contractDueDateField').evaluate((group,id) => {
+        const nextDate=document.getElementById(id);
+        return group.parentElement === nextDate?.parentElement && group.previousElementSibling === nextDate;
+      },nextAppointmentId),true,`${mode} due-date group follows its Next Appointment Date at ${viewport.width}px`);
+      assert.equal(await page.locator('#appointmentInfoSection #contractDueDateField').count(),0,'due-date group is absent from the beginning of the form');
+      assert.deepEqual(await page.evaluate(id => {
+        const focusable=Array.from(document.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href]'));
+        const start=focusable.indexOf(document.getElementById(id));
+        return focusable.slice(start,start+3).map(el=>el.id);
+      },nextAppointmentId),[nextAppointmentId,'contractDueDate','contractDueDateTbc'],`${mode} keyboard order follows the requested placement`);
       observations.push({ mode, viewport, field:await field.boundingBox(), date:await date.boundingBox(), tbc:await tbc.boundingBox() });
       await page.close();
     }
@@ -56,6 +71,8 @@ try {
   await page.click('.mode-card[data-mode="inPerson"]');
   await page.selectOption('#landingStaff','Garry Lewis');
   await page.click('#landingContinue');
+  assert.equal(await page.locator('#contractDueDateField').isVisible(),true,'due-date group remains visible when optional EOI details are hidden');
+  assert.equal(await page.locator('#contractDueDateField').evaluate(group => group.previousElementSibling?.id),'eoiFormContent','hidden EOI content leaves due-date group in a visible fallback position');
   assert.equal(await page.locator('#contractDueDateField').getAttribute('role'),'group','due-date controls require an explicit accessible group');
   assert.equal(await page.locator('#contractDueDateField').getAttribute('aria-labelledby'),'contractDueDateLabel');
   assert.equal(await page.locator('#contractDueDateLabel').textContent(),'Contract Due Date');

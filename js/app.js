@@ -479,10 +479,26 @@
     if(card) card.classList.add('hidden');
     updateContinueButtonText();
   }
+  function placeContractDueDateField(){
+    var field = $('contractDueDateField');
+    if(!field) return;
+    if(appointmentMode !== 'zoom' && !isChecked('includeEOI')){
+      var hiddenEoiContent = $('eoiFormContent');
+      if(hiddenEoiContent && field.previousElementSibling !== hiddenEoiContent){
+        hiddenEoiContent.insertAdjacentElement('afterend',field);
+      }
+      return;
+    }
+    var target = $(appointmentMode === 'zoom' ? 'crNextAppointmentDate' : 'eoiNextApptDate');
+    if(target && target.parentElement && field.previousElementSibling !== target){
+      target.insertAdjacentElement('afterend',field);
+    }
+  }
   function applyAppointmentMode(){
     var app = document.querySelector('.app');
     app.classList.remove('show-in-person', 'show-zoom');
     app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
+    placeContractDueDateField();
     updateSummaryCard();
     updatePackagePreview();
     updateTimeline();
@@ -916,6 +932,7 @@
     if(card) card.style.borderColor = included ? 'rgba(209,171,111,.75)' : '';
     const content = $('eoiFormContent');
     if(content) content.style.display = included ? 'block' : 'none';
+    if(appointmentMode !== 'zoom') placeContractDueDateField();
     updateEoiOverrides();
   }
   function eoiOwnership(){

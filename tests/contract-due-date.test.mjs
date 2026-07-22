@@ -46,7 +46,8 @@ try {
   assert.deepEqual(await page.evaluate(() => window._testState.resolveContractDueDate()), { valid:false, value:'' });
   assert.equal(await page.locator('label[for="contractDueDate"]').textContent(), 'Contract Due Date');
   assert.equal((await page.locator('label[for="contractDueDateTbc"]').textContent()).trim(), 'To Be Confirmed');
-  assert.ok(await page.locator('#contractDueDateField').evaluate(field => field.previousElementSibling?.querySelector('#date') !== null), 'due-date field follows Appointment Date');
+  assert.equal(await page.locator('#appointmentInfoSection #contractDueDateField').count(),0,'due-date field no longer appears at the beginning of the form');
+  assert.equal(await page.locator('#contractDueDateField').isVisible(),true,'due-date field remains visible when optional EOI details are hidden');
   assert.ok(await page.locator('#contractDueDateTbc').evaluate(el => el.getBoundingClientRect().height >= 44 || el.closest('label').getBoundingClientRect().height >= 44));
 
   await page.fill('#contractDueDate', '2026-08-15');
