@@ -203,6 +203,14 @@
   let lastIndividualPdfs = null;  // [{ blob, name }] — cached individual PDFs
   let lastZipBlob = null;         // Blob — cached ZIP
   let lastZipName = '';           // string — cached ZIP filename
+  let lastAppointmentPackage = null;
+  let documentRevision = 0;
+  let lastPdfRevision = -1;
+  let lastPdfGeneratedAt = null;
+  let lastIndividualPdfsRevision = -1;
+  let packageBuildPromise = null;
+  let packageBuildRevision = -1;
+  const packageGenerationCounts = { combinedPdf:0, zip:0 };
   let previewPageIndex = 0;
   let appointmentMode = 'inPerson'; // 'inPerson' | 'zoom'
   const adminSettingsKey = 'salesAppointmentAdminSettings';
@@ -464,8 +472,11 @@
     var staff = ($('landingStaff').value || '').trim();
     if(!staff) return;
     var activeBtn = document.querySelector('.mode-card.active');
-    appointmentMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
+    appointmentMode = selectedMode;
     setControlValue('teamMember', staff);
+    if(generatedOutputChanged) clearGenerated();
     preserveDraftDropdownValue('staff', staff);
     localStorage.setItem("salesAppointmentLastStaff", staff);
     $('landingScreen').classList.add('hidden');
@@ -597,18 +608,21 @@
     }
   }
   function safePart(s, fallback){
-    const fallbackValue = String(fallback || '').trim();
-    const value = String(s || '').trim() || fallbackValue;
-    const sanitized = value
-      .replace(/[\\/:*?"<>|]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\.+$/g, '')
-      .trim()
-      .slice(0, 80)
-      .trim()
-      .replace(/\.+$/g, '')
-      .trim();
+    function sanitize(value){
+      return String(value || '')
+        .replace(/\.\.+/g, ' ')
+        .replace(/[\\/:*?"<>|]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^[.\s_-]+|[.\s_-]+$/g, '')
+        .trim()
+        .slice(0, 80)
+        .trim()
+        .replace(/^[.\s_-]+|[.\s_-]+$/g, '')
+        .trim();
+    }
+    const fallbackValue = sanitize(fallback);
+    const sanitized = sanitize(s) || fallbackValue;
     return sanitized || fallbackValue;
   }
   function pdfFileName(){
@@ -1760,11 +1774,16 @@
   // SECTION E: SUMMARY CARD & PROGRESS INDICATORS
   // =========================================================================
   function clearGenerated(){
+    documentRevision++;
     lastPdfBlob=null;
     lastPdfName='';
+    lastPdfRevision=-1;
+    lastPdfGeneratedAt=null;
     lastIndividualPdfs=null;
+    lastIndividualPdfsRevision=-1;
     lastZipBlob=null;
     lastZipName='';
+    lastAppointmentPackage=null;
     previewPageIndex=0;
     updateActionButtons();
     updateSectionProgress();
@@ -4699,19 +4718,76 @@
     return new Blob(parts,{type:'application/pdf'});
   }
 
-  async function buildPdf(){
+  async function blobHasSignature(blob, signature){
+    if(!(blob instanceof Blob) || blob.size < signature.length) return false;
+    const bytes = new Uint8Array(await blob.slice(0, signature.length).arrayBuffer());
+    return signature.every((value,index)=>bytes[index] === value);
+  }
+  async function validPdfBlob(blob){
+    return !!blob && blob.type === 'application/pdf' && blob.size > 0 &&
+      await blobHasSignature(blob,[0x25,0x50,0x44,0x46,0x2D]);
+  }
+  async function validZipBlob(blob){
+    return !!blob && blob.type === 'application/zip' && blob.size > 0 &&
+      await blobHasSignature(blob,[0x50,0x4B,0x03,0x04]);
+  }
+  function uniquePackageEntryNames(pdfs){
+    const seen = new Map();
+    return pdfs.map(pdf=>{
+      const originalName = String(pdf.name || 'Document.pdf');
+      const base = originalName.replace(/\.pdf$/i,'');
+      const key = base.toLowerCase();
+      const count = (seen.get(key) || 0) + 1;
+      seen.set(key,count);
+      return { ...pdf, name:count === 1 ? `${base}.pdf` : `${base} (${count}).pdf` };
+    });
+  }
+  async function validIndividualPdfs(pdfs){
+    if(!Array.isArray(pdfs) || pdfs.length === 0) return false;
+    const names = new Set();
+    for(const pdf of pdfs){
+      if(!pdf || typeof pdf.name !== 'string' || !pdf.name.toLowerCase().endsWith('.pdf')) return false;
+      if(/[\\/:*?"<>|]/.test(pdf.name) || /\.\./.test(pdf.name) || /^\./.test(pdf.name)) return false;
+      if(names.has(pdf.name)) return false;
+      names.add(pdf.name);
+      if(!await validPdfBlob(pdf.blob)) return false;
+    }
+    return true;
+  }
+  async function isValidAppointmentPackage(result){
+    if(!result || result.revision !== documentRevision) return false;
+    if(!(result.generatedAt instanceof Date) || isNaN(result.generatedAt.getTime())) return false;
+    if(!result.filenames || typeof result.filenames.combinedPdf !== 'string' || typeof result.filenames.zip !== 'string') return false;
+    if(!Array.isArray(result.filenames.entries) || result.filenames.entries.length === 0) return false;
+    if(new Set(result.filenames.entries).size !== result.filenames.entries.length) return false;
+    if(!await validPdfBlob(result.combinedPdfBlob) || !await validZipBlob(result.zipBlob)) return false;
+    if(typeof File === 'undefined' || !(result.combinedPdfFile instanceof File) || !(result.zipFile instanceof File)) return false;
+    if(result.combinedPdfFile.size !== result.combinedPdfBlob.size || result.combinedPdfFile.type !== 'application/pdf') return false;
+    if(result.zipFile.size !== result.zipBlob.size || result.zipFile.type !== 'application/zip') return false;
+    if(result.combinedPdfFile.name !== result.filenames.combinedPdf || result.zipFile.name !== result.filenames.zip) return false;
+    if(!await validIndividualPdfs(result.individualPdfs)) return false;
+    const entryNames = result.individualPdfs.map(pdf=>pdf.name);
+    if(entryNames.length !== result.filenames.entries.length || entryNames.some((name,index)=>name !== result.filenames.entries[index])) return false;
+    return true;
+  }
+
+  async function buildPdf(generatedAt,expectedRevision=documentRevision){
     status('Generating clean output PDF...');
     const scale = $('compressPhotos').checked ? 2 : 3;
     const canvases=[];
     const plan = outputPlan();
     validateBeforePdf(plan);
-    currentGeneratedAt = new Date();
+    currentGeneratedAt = generatedAt instanceof Date ? generatedAt : new Date();
     for(let i=0;i<plan.totalPages;i++){
       canvases.push(await drawOutputPage(i, plan.totalPages, scale));
     }
     const quality = $('compressPhotos').checked ? 0.78 : 0.92;
     const blob=makePDF(canvases, quality);
+    if(expectedRevision !== documentRevision) throw new Error('Appointment changed during generation. Please try again.');
     lastPdfBlob=blob; lastPdfName=pdfFileName();
+    lastPdfRevision=expectedRevision;
+    lastPdfGeneratedAt=currentGeneratedAt;
+    packageGenerationCounts.combinedPdf++;
         const zoomSuffix = appointmentMode === 'zoom' ? ' Zoom booklet ready.' : ' Clean PDF includes selected forms/images only.';
     status('Generated ' + lastPdfName + ' (' + (blob.size/1024/1024).toFixed(2) + ' MB).' + zoomSuffix);
     updateActionButtons();
@@ -4729,14 +4805,14 @@
       return;
     }
     try{
-      await buildPdf();
+      await buildAppointmentPackage();
       await refreshPreview();
       // Re-assert the generated status after refreshPreview overwrites it.
       const _name = lastPdfName || pdfFileName();
       const _size = lastPdfBlob ? (lastPdfBlob.size/1024/1024).toFixed(2) : '0.00';
       status(`PDF ready: ${_name} (${_size} MB). Use Download PDF or Share PDF.`);
       toast('PDF generated. Use Download PDF or Share PDF.');
-    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
+    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
   }
   async function downloadPdf(){
     /* Pre-validation only when generating new PDF */
@@ -4749,13 +4825,13 @@
       }
     }
     try{
-      if(!lastPdfBlob) await buildPdf();
-      downloadBlob(lastPdfBlob,lastPdfName || pdfFileName());
+      const appointmentPackage = await buildAppointmentPackage();
+      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
       toast('PDF download started.');
-    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
+    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
-  async function buildIndividualPdfs(){
-    if (lastIndividualPdfs) return lastIndividualPdfs;
+  async function buildIndividualPdfs(expectedRevision=documentRevision){
+    if (lastIndividualPdfsRevision === expectedRevision && await validIndividualPdfs(lastIndividualPdfs)) return lastIndividualPdfs;
     const plan = outputPlan();
     if (!plan.totalPages || !plan.groups.length) return [];
     const scale = $('compressPhotos').checked ? 2 : 3;
@@ -4770,8 +4846,10 @@
       const name = group.getFilename();
       pdfs.push({ blob, name });
     }
-    lastIndividualPdfs = pdfs;
-    return pdfs;
+    if(expectedRevision !== documentRevision) throw new Error('Appointment changed during generation. Please try again.');
+    lastIndividualPdfs = uniquePackageEntryNames(pdfs);
+    lastIndividualPdfsRevision = expectedRevision;
+    return lastIndividualPdfs;
   }
   async function buildZip(individualPdfs, zipName){
     // Build a minimal uncompressed (Store) ZIP file.
@@ -4890,7 +4968,65 @@
       result.set(p, off);
       off += p.length;
     }
+    packageGenerationCounts.zip++;
     return new Blob([result], { type: 'application/zip' });
+  }
+
+  async function buildAppointmentPackageForRevision(revision){
+    const canReusePdf = lastPdfRevision === revision && await validPdfBlob(lastPdfBlob);
+    const generatedAt = canReusePdf && lastPdfGeneratedAt instanceof Date
+      ? lastPdfGeneratedAt
+      : new Date();
+    currentGeneratedAt = generatedAt;
+
+    if(!canReusePdf) await buildPdf(generatedAt,revision);
+    if(revision !== documentRevision || !await validPdfBlob(lastPdfBlob)) throw new Error('Combined PDF generation failed.');
+
+    const individualPdfs = await buildIndividualPdfs(revision);
+    if(revision !== documentRevision || !await validIndividualPdfs(individualPdfs)) throw new Error('Individual document generation failed.');
+
+    const combinedPdfName = lastPdfName || pdfFileName();
+    const zipName = zipFileName();
+    const zipBlob = await buildZip(individualPdfs,zipName);
+    if(revision !== documentRevision || !await validZipBlob(zipBlob)) throw new Error('ZIP package generation failed.');
+
+    const result = {
+      combinedPdfBlob:lastPdfBlob,
+      combinedPdfFile:new File([lastPdfBlob],combinedPdfName,{type:'application/pdf',lastModified:generatedAt.getTime()}),
+      zipBlob,
+      zipFile:new File([zipBlob],zipName,{type:'application/zip',lastModified:generatedAt.getTime()}),
+      individualPdfs,
+      generatedAt,
+      filenames:{ combinedPdf:combinedPdfName, zip:zipName, entries:individualPdfs.map(pdf=>pdf.name) },
+      revision
+    };
+    if(!await isValidAppointmentPackage(result)) throw new Error('Appointment package validation failed.');
+
+    lastZipBlob=zipBlob;
+    lastZipName=zipName;
+    lastAppointmentPackage=result;
+    updateActionButtons();
+    return result;
+  }
+  async function buildAppointmentPackage(){
+    if(await isValidAppointmentPackage(lastAppointmentPackage)) return lastAppointmentPackage;
+    if(packageBuildPromise){
+      if(packageBuildRevision === documentRevision) return packageBuildPromise;
+      try{ await packageBuildPromise; }catch{}
+      return buildAppointmentPackage();
+    }
+    const revision = documentRevision;
+    packageBuildRevision = revision;
+    const pending = buildAppointmentPackageForRevision(revision);
+    packageBuildPromise = pending;
+    try{
+      return await pending;
+    }finally{
+      if(packageBuildPromise === pending){
+        packageBuildPromise = null;
+        packageBuildRevision = -1;
+      }
+    }
   }
   // Build the email subject/body used by both Web Share and mailto fallback.
     // =========================================================================
@@ -4967,32 +5103,16 @@
   async function sharePdf(){
     try{
       hidePreparedEmailAction();
-      if(!lastPdfBlob) await buildPdf();
-      if(!lastPdfBlob){ toast('Could not generate PDF.'); status('PDF share failed.'); return; }
-
-      const pdfFile = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
+      const appointmentPackage = await buildAppointmentPackage();
+      const pdfFile = appointmentPackage.combinedPdfFile;
+      const zipFile = appointmentPackage.zipFile;
       const email = buildShareEmailContent();
       const { subject, body } = email;
 
-      // Build individual PDFs and ZIP for the package
       status('Building Office Package...');
-      let zipFile = null;
-      let zipName = zipFileName();
-      try {
-        const individualPdfs = await buildIndividualPdfs();
-        if (individualPdfs.length > 0) {
-          const zipBlob = await buildZip(individualPdfs, zipName);
-          zipFile = new File([zipBlob], zipName, {type:'application/zip'});
-          lastZipBlob = zipBlob;
-          lastZipName = zipName;
-        }
-      } catch (zipErr) {
-        console.error('ZIP build failed:', zipErr);
-        // Continue without ZIP — fall back to PDF-only share
-      }
 
       // Try native Web Share with both files (no mailto pre-open)
-      const canMultiShare = zipFile && navigator.share && navigator.canShare &&
+      const canMultiShare = navigator.share && navigator.canShare &&
         (() => { try { return navigator.canShare({ files: [pdfFile, zipFile] }); } catch { return false; } })();
 
       if (canMultiShare) {
@@ -5024,47 +5144,30 @@
       // opening mailto. Safari may discard the original user gesture after the
       // asynchronous package build and downloads, so automatic navigation here
       // is unreliable.
-      downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
-      if (zipFile) downloadBlob(lastZipBlob, lastZipName || zipName);
-      showPreparedEmailAction(email, !!zipFile);
-      const msg = zipFile
-        ? 'PDF and ZIP downloaded. Tap “Open prepared email”, then attach both files before sending.'
-        : 'PDF downloaded. Tap “Open prepared email”, then attach the PDF before sending.';
+      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
+      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+      showPreparedEmailAction(email,true);
+      const msg = 'PDF and ZIP downloaded. Tap “Open prepared email”, then attach both files before sending.';
       status(msg + (email.cc ? '' : ' No CC recipient is configured.'));
     }catch(err){
       if(err && err.name === 'AbortError') return;
       if(!err || !err.isValidation) console.error(err);
-      toast(err && err.message ? err.message : 'Could not share PDF.');
+      toast(err && err.isValidation && err.message ? err.message : 'Could not share PDF.');
       if(err && err.isValidation) status('Please fix the highlighted fields.');
     }
   }
 
   async function downloadPackage(){
     try{
-      if(!lastPdfBlob) await buildPdf();
-      if(!lastPdfBlob){ toast('Could not generate PDF.'); status('Package download failed.'); return; }
-
       status('Building Office Package...');
-      // Download the compiled PDF
-      downloadBlob(lastPdfBlob, lastPdfName || pdfFileName());
-
-      // Build individual PDFs and ZIP
-      const individualPdfs = await buildIndividualPdfs();
-      if (individualPdfs.length > 0) {
-        const zipName = zipFileName();
-        const zipBlob = await buildZip(individualPdfs, zipName);
-        lastZipBlob = zipBlob;
-        lastZipName = zipName;
-        downloadBlob(zipBlob, zipName);
-        toast('Package downloaded (PDF + ZIP).');
-        status('Package downloaded (PDF + ZIP).');
-      } else {
-        toast('Package downloaded (PDF only — no individual documents available).');
-        status('Package downloaded (PDF only).');
-      }
+      const appointmentPackage = await buildAppointmentPackage();
+      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
+      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+      toast('Package downloaded (PDF + ZIP).');
+      status('Package downloaded (PDF + ZIP).');
     }catch(err){
       if(!err || !err.isValidation) console.error(err);
-      toast(err && err.message ? err.message : 'Could not download package.');
+      toast(err && err.isValidation && err.message ? err.message : 'Could not download package.');
       if(err && err.isValidation) status('Please fix the highlighted fields.');
     }
   }
@@ -5512,6 +5615,24 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     setHasSignature2: (val) => { hasSignature2 = val; },
     clearGenerated: clearGenerated,
     getZoomOutputPlan: () => appointmentMode === 'zoom' ? zoomOutputPlan() : null,
+    buildAppointmentPackage: () => buildAppointmentPackage(),
+    getAppointmentPackage: () => lastAppointmentPackage,
+    setAppointmentPackageForTest: result => {
+      lastAppointmentPackage=result;
+      lastPdfBlob=result && result.combinedPdfBlob || null;
+      lastPdfName=result && result.filenames && result.filenames.combinedPdf || '';
+      lastPdfRevision=lastPdfBlob ? documentRevision : -1;
+      lastPdfGeneratedAt=lastPdfBlob && result.generatedAt instanceof Date ? result.generatedAt : null;
+      lastIndividualPdfs=result && result.individualPdfs || null;
+      lastIndividualPdfsRevision=lastIndividualPdfs ? documentRevision : -1;
+      lastZipBlob=result && result.zipBlob || null;
+      lastZipName=result && result.filenames && result.filenames.zip || '';
+    },
+    isValidAppointmentPackage: result => isValidAppointmentPackage(result),
+    getPackageGenerationCounts: () => ({...packageGenerationCounts}),
+    isPackageBuildInFlight: () => packageBuildPromise !== null,
+    safeFilenamePart: (value,fallback) => safePart(value,fallback),
+    uniquePackageEntryNames: pdfs => uniquePackageEntryNames(pdfs),
     buildIndividualPdfs: () => buildIndividualPdfs(),
     buildZip: (pdfs, name) => buildZip(pdfs, name),
     getZoomPdfName: () => zoomPdfFileName(),
