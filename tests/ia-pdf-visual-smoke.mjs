@@ -72,6 +72,7 @@ try {
   await page.fill('#client2Name', 'Benjamin Theodore Fitzwilliam-Smythe');
   await page.fill('#clientAddress', 'Apartment 1204, 987 Extremely Long Residential Boulevard, North Fremantle WA 6159');
   await page.fill('#propertySaleAddress', 'Lot 1234, 456 Very Long Proposed Property Address, South Guildford WA 6055');
+  await page.check('#contractDueDateTbc');
   await page.check('#includeIA');
   await page.selectOption('#iaForm', 'perth');
   await page.fill('#iaSolicitor', 'Custom Test Conveyancing');

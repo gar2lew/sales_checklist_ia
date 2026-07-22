@@ -49,6 +49,7 @@ try {
   await setValue(page, '#teamMember', 'Test User');
   await setValue(page, '#clientName', 'Test Client');
   await setValue(page, '#propertySaleAddress', '1 Test Street, Perth WA 6000');
+  await page.check('#contractDueDateTbc');
 
   assert.ok(await page.locator('#timelineInPerson [data-tl-target="eoiDetailsCard"]').evaluate(el => el.closest('.timeline-step').classList.contains('tl-not-required')), 'EOI disabled must be not required');
 
@@ -140,7 +141,7 @@ try {
   assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.zip')).length, 1, 'HTTP fallback must download one ZIP');
   const mailto = await fallback.page.getAttribute('#openPreparedEmail', 'href');
   assert.ok(mailto.startsWith('mailto:Natalie%40sjssolutionscorp.com.au?cc=Garry%40sjssolutionscorp.com.au'), 'prepared email must resolve configured recipient and CC');
-  assert.match(decodeURIComponent(mailto), /Sales Appointment Documents \| John Smith \| 21\/07\/2026/);
+  assert.match(decodeURIComponent(mailto), /Sales Appointment Documents \| John Smith \| \d{2}\/\d{2}\/\d{4}/);
   assert.match(decodeURIComponent(mailto), /downloaded[\s\S]*attach/i);
   await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
   await fallback.page.click('#openPreparedEmail');

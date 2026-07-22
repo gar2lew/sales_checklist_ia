@@ -100,7 +100,7 @@
   const ADMIN_PIN = DEFAULT_APP_CONFIGURATION.admin.pin;
   const ADMIN_UNLOCK_KEY = 'salesAppointmentAdminUnlocked';
   const fields = [
-    'date','teamMember','clientName','clientPhone','clientEmail','clientAddress','propertySaleAddress',
+    'date','contractDueDate','contractDueDateTbc','teamMember','clientName','clientPhone','clientEmail','clientAddress','propertySaleAddress',
     'client2Name','client2Phone','client2Email',
     'includeIA','iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature1','iaApplySignature2','showIaOverrides',
     'includeEOI','eoiTemplate','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
@@ -320,6 +320,7 @@
 
   // Call this after any major form state change to refresh all UI panels.
   function refreshAllUI(){
+    syncContractDueDateState();
     updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails();
     updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview();
   }
@@ -507,6 +508,26 @@
     const value = fieldText(id);
     if(value && !formatISODate(value)) errors.push({id,message});
   }
+  function syncContractDueDateState(){
+    const date=$('contractDueDate');
+    const tbc=$('contractDueDateTbc');
+    if(!date || !tbc) return;
+    if(tbc.checked) date.value='';
+    date.disabled=!!tbc.checked;
+  }
+  function resolveContractDueDate(){
+    const date=fieldText('contractDueDate');
+    const tbc=isChecked('contractDueDateTbc');
+    if((date && tbc) || (!date && !tbc)) return {valid:false,value:''};
+    if(tbc) return {valid:true,value:'To Be Confirmed'};
+    const iso=formatISODate(date);
+    return iso ? {valid:true,value:formatDisplayDate(iso)} : {valid:false,value:''};
+  }
+  function requireContractDueDate(errors){
+    if(!resolveContractDueDate().valid){
+      errors.push({id:'contractDueDate',message:'Select a Contract Due Date or choose To Be Confirmed.'});
+    }
+  }
   function validateBeforePdf(plan){
     clearValidation();
 
@@ -519,6 +540,7 @@
       requireField(zoomErrors,'date','Enter the appointment date.');
       requireField(zoomErrors,'teamMember','Enter the staff member.');
       requireField(zoomErrors,'clientName','Enter the client name.');
+      requireContractDueDate(zoomErrors);
       zoomErrors.filter(function(e){return e.id;}).forEach(function(e){setFieldError(e.id,e.message);});
       if(zoomErrors.length){
         var f=zoomErrors[0];
@@ -536,6 +558,7 @@
     requireValidDate(errors,'date','Enter the appointment date as DD/MM/YYYY.');
     requireField(errors,'teamMember','Enter the staff member.');
     requireField(errors,'clientName','Enter the client name.');
+    requireContractDueDate(errors);
 
     if (plan.includeEOI) {
       eoiReadiness().items.filter(item => !['date','teamMember','clientName'].includes(item.id)).forEach(item => {
@@ -1665,6 +1688,12 @@
   applyPdfDefaults(true);
   renderZoomFields();
   fields.forEach(bindFieldEvents);
+  if($('contractDueDate')) $('contractDueDate').addEventListener('change',()=>{
+    if(fieldText('contractDueDate')) $('contractDueDateTbc').checked=false;
+    syncContractDueDateState();
+  });
+  if($('contractDueDateTbc')) $('contractDueDateTbc').addEventListener('change',syncContractDueDateState);
+  syncContractDueDateState();
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); updateSectionProgress(); updateTimelineProgress(); updateCollapseIndicators(); }));
   $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode='select'; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
   $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
@@ -1969,6 +1998,7 @@
       if(!fieldText('date')) items.push({id:'date', message:'Enter the appointment date.'});
       if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
       if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
+      if(!resolveContractDueDate().valid) items.push({id:'contractDueDate', message:'Select a Contract Due Date or choose To Be Confirmed.'});
       return { ready: items.length === 0, missingCount: items.length, items: items };
     }
     /* In-person */
@@ -1977,6 +2007,7 @@
     if(!fieldText('date')) items.push({id:'date', message:'Enter the appointment date.'});
     if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
     if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
+    if(!resolveContractDueDate().valid) items.push({id:'contractDueDate', message:'Select a Contract Due Date or choose To Be Confirmed.'});
     if(plan2 && plan2.includeEOI){
       eoiReadiness().items.forEach(function(item){
         if(!items.some(function(existing){ return existing.id === item.id; })) items.push(item);
@@ -5075,6 +5106,8 @@
     preserveZoomDraftValue('clientReviewTimeline', data.clientReviewTimeline);
     renderAdminSettings();
     renderConfigurableFields();
+    if(data.contractDueDate === undefined && $('contractDueDate')) $('contractDueDate').value='';
+    if(data.contractDueDateTbc === undefined && $('contractDueDateTbc')) $('contractDueDateTbc').checked=false;
     fields.forEach(id=>{
       const el=$(id);
       if(!el || data[id]===undefined)return;
@@ -5091,6 +5124,7 @@
         }
       }
     });
+    syncContractDueDateState();
     if ((data.eoiNextApptDate === undefined || !String(data.eoiNextApptDate).trim()) && data.eoiNextAppointment) {
       const val = String(data.eoiNextAppointment).trim();
       const dateMatch = val.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
@@ -5302,6 +5336,8 @@
     setControlValue('clientEmail', 'client1@gmail.com');
     setControlValue('clientAddress', '123 Test Street, Fremantle');
     setControlValue('propertySaleAddress', 'Test Unit, Footscray VIC');
+    if($('contractDueDateTbc')) $('contractDueDateTbc').checked=true;
+    syncContractDueDateState();
     const includeEOIEl = $('includeEOI');
     if(includeEOIEl && !includeEOIEl.checked){ includeEOIEl.checked = true; updateEoiDetails(); updateEoiOverrides(); }
     const includeIAEl = $('includeIA');
@@ -5456,6 +5492,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     buildZip: (pdfs, name) => buildZip(pdfs, name),
     getZoomPdfName: () => zoomPdfFileName(),
     getOutputPlan: () => outputPlan(),
+    resolveContractDueDate: () => resolveContractDueDate(),
     loadDraft: () => loadDraft(),
     setDraft: (data) => setDraft(data),
     getFieldsOnCurrentPage: () => getFieldsOnCurrentPage(),

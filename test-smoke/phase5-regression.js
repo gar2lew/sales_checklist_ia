@@ -31,6 +31,14 @@ s.listen(0, async () => {
   async function selectLandingStaff(p) {
     await p.selectOption('#landingStaff', 'T');
   }
+  async function setContractTbc(p) {
+    await p.evaluate(() => {
+      const input = document.getElementById('contractDueDateTbc');
+      input.checked = true;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+      input.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+  }
   async function enZ(p) {
     await selectLandingStaff(p);
     await p.evaluate(() => {
@@ -56,6 +64,7 @@ s.listen(0, async () => {
     console.log('After click state:', appState);
     await p.waitForFunction(() => { const app = document.querySelector('.app'); return app && app.classList.contains('show-zoom'); }, { timeout: 5000 });
     await p.waitForSelector('#firstConsultSection', { state: 'visible', timeout: 5000 });
+    await setContractTbc(p);
   }
   async function gen(p) {
     await p.evaluate(() => document.getElementById('generateTop').click());
@@ -453,6 +462,7 @@ s.listen(0, async () => {
   await p5.goto('http://localhost:' + port, {waitUntil:'networkidle', timeout:15000});
   await p5.waitForTimeout(1000);
   await selectLandingStaff(p5); await p5.click('#landingContinue'); await p5.waitForTimeout(300);
+  await setContractTbc(p5);
 
   /* Timeline: in-person renders 7 steps */
   const tlIp1 = await p5.evaluate(() => {
