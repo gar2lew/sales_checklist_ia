@@ -68,7 +68,7 @@ s.listen(0, async () => {
   }
   async function gen(p) {
     await p.evaluate(() => document.getElementById('generateTop').click());
-    for (let i = 0; i < 16; i++) { await p.waitForTimeout(500); const st = await p.evaluate(() => document.getElementById('status').textContent); if (st.indexOf('PDF ready') >= 0) return true; }
+  for (let i = 0; i < 16; i++) { await p.waitForTimeout(500); const st = await p.evaluate(() => document.getElementById('status').textContent); if (st.indexOf('Appointment package ready') >= 0) return true; }
     return false;
   }
 

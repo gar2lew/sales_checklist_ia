@@ -115,7 +115,7 @@ try {
 
   await setTbc(true);
   await page.click('#generateTop');
-  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
 
   assert.match(emailBefore, /Contract Due Date:/, 'Prompt 3 integrates the resolved due date into the email');
   assert.doesNotMatch(emailBefore, /Contract Issued:|downloaded to this device|attach both files/i);

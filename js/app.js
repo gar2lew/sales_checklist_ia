@@ -210,6 +210,8 @@
   let lastIndividualPdfsRevision = -1;
   let packageBuildPromise = null;
   let packageBuildRevision = -1;
+  let packageReadyHasBeenShown = false;
+  let packageGenerationInProgress = false;
   const packageGenerationCounts = { combinedPdf:0, zip:0 };
   let previewPageIndex = 0;
   let appointmentMode = 'inPerson'; // 'inPerson' | 'zoom'
@@ -979,6 +981,39 @@
       merged.push(text);
     });
     return merged;
+  }
+
+  function setPackageActionDisabled(disabled){
+    ['sharePackage','saveCombinedPdf','savePackageZip','preparePackageEmail'].forEach(id=>{
+      const button=$(id);
+      if(button) button.disabled=disabled;
+    });
+  }
+  function setPackageGenerationDisabled(disabled){
+    ['generateTop','generateBottom'].forEach(id=>{
+      const button=$(id);
+      if(button) button.disabled=disabled;
+    });
+  }
+  function renderPackageReady(state='idle'){
+    const panel=$('appointmentPackageReady');
+    if(!panel) return;
+    const ready=state === 'ready' && !!lastAppointmentPackage;
+    const stale=state === 'stale';
+    panel.classList.toggle('hidden',state === 'idle');
+    panel.classList.toggle('is-stale',stale);
+    const pdfName=$('packageReadyPdfName');
+    const zipName=$('packageReadyZipName');
+    const notice=$('packageReadyNotice');
+    const title=$('appointmentPackageReadyTitle');
+    const description=$('appointmentPackageReadyDescription');
+    if(title) title.textContent=stale ? 'Appointment Package Needs Regeneration' : 'Appointment Package Ready';
+    if(description) description.textContent=stale ? 'The appointment has changed since this package was generated.' : 'Your combined PDF and document ZIP are ready.';
+    if(ready && pdfName) pdfName.textContent=lastAppointmentPackage.filenames.combinedPdf;
+    if(ready && zipName) zipName.textContent=lastAppointmentPackage.filenames.zip;
+    if(notice) notice.textContent=stale ? 'Appointment details changed. Generate a new package to continue.' : '';
+    setPackageActionDisabled(!ready || packageGenerationInProgress);
+    if(ready) packageReadyHasBeenShown=true;
   }
   function staffIdFromName(name){
     const source = String(name || '').trim().toLowerCase();
@@ -1774,6 +1809,7 @@
   // SECTION E: SUMMARY CARD & PROGRESS INDICATORS
   // =========================================================================
   function clearGenerated(){
+    const showStale=packageReadyHasBeenShown;
     documentRevision++;
     lastPdfBlob=null;
     lastPdfName='';
@@ -1794,6 +1830,7 @@
     updateCollapseIndicators();
     updateTimeline();
     scheduleAutosave();
+    renderPackageReady(showStale ? 'stale' : 'idle');
   }
 
   function updateIndicator(indicatorId, isCompleted) {
@@ -4797,6 +4834,7 @@
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
   }
   async function generatePdfOnly(){
+    if(packageGenerationInProgress) return;
     /* Pre-validation gate */
     var check = structuredReadinessCheck();
     if(!check.ready){
@@ -4804,15 +4842,23 @@
       status('Complete ' + check.missingCount + ' required item' + (check.missingCount !== 1 ? 's' : '') + ' before generating.');
       return;
     }
+    packageGenerationInProgress=true;
+    setPackageGenerationDisabled(true);
+    setPackageActionDisabled(true);
+    status('Generating appointment package…');
     try{
-      await buildAppointmentPackage();
+      const appointmentPackage=await buildAppointmentPackage();
       await refreshPreview();
-      // Re-assert the generated status after refreshPreview overwrites it.
-      const _name = lastPdfName || pdfFileName();
-      const _size = lastPdfBlob ? (lastPdfBlob.size/1024/1024).toFixed(2) : '0.00';
-      status(`PDF ready: ${_name} (${_size} MB). Use Download PDF or Share PDF.`);
-      toast('PDF generated. Use Download PDF or Share PDF.');
+      if(!await isValidAppointmentPackage(appointmentPackage)) throw new Error('Appointment package validation failed.');
+      renderPackageReady('ready');
+      status('Appointment package ready.');
+      toast('Appointment package ready.');
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
+    finally{
+      packageGenerationInProgress=false;
+      setPackageGenerationDisabled(false);
+      if(lastAppointmentPackage) renderPackageReady('ready');
+    }
   }
   async function downloadPdf(){
     /* Pre-validation only when generating new PDF */
@@ -5098,6 +5144,71 @@
     if(email.ccDiagnostic) console.warn(email.ccDiagnostic);
     prompt.classList.remove('hidden');
     link.focus({preventScroll:true});
+  }
+
+  async function currentReadyPackage(){
+    if(packageGenerationInProgress || !await isValidAppointmentPackage(lastAppointmentPackage)){
+      renderPackageReady(packageReadyHasBeenShown ? 'stale' : 'idle');
+      status('Generate a current appointment package first.');
+      return null;
+    }
+    return lastAppointmentPackage;
+  }
+
+  function preparedEmailHref(email){
+    const query=[];
+    if(email.cc) query.push(`cc=${encodeURIComponent(email.cc)}`);
+    query.push(`subject=${encodeURIComponent(email.subject)}`,`body=${encodeURIComponent(email.fallbackBody)}`);
+    return `mailto:${encodeURIComponent(email.to)}?${query.join('&')}`;
+  }
+
+  async function shareAppointmentPackage(){
+    const appointmentPackage=await currentReadyPackage();
+    if(!appointmentPackage) return;
+    const email=buildShareEmailContent();
+    if(!email){ status('Please fix the highlighted fields.'); return; }
+    const bothFiles=[appointmentPackage.combinedPdfFile,appointmentPackage.zipFile];
+    const pdfOnly=[appointmentPackage.combinedPdfFile];
+    const canShare=files=>navigator.share && navigator.canShare && (()=>{ try{return navigator.canShare({files});}catch{return false;} })();
+    const files=canShare(bothFiles) ? bothFiles : (canShare(pdfOnly) ? pdfOnly : null);
+    if(!files){
+      status('File sharing is not available in this browser. You can save the PDF and ZIP separately.');
+      return;
+    }
+    try{
+      await navigator.share({title:email.subject,text:email.body,files});
+      status(files.length === 2 ? 'Appointment package shared.' : 'The combined PDF was shared. The ZIP remains available to save separately.');
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      console.error(err);
+      status('The appointment package could not be shared. Try again or save the files separately.');
+    }
+  }
+
+  async function saveReadyPdf(){
+    const appointmentPackage=await currentReadyPackage();
+    if(!appointmentPackage) return;
+    downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
+    status('Combined PDF save started.');
+  }
+
+  async function saveReadyZip(){
+    const appointmentPackage=await currentReadyPackage();
+    if(!appointmentPackage) return;
+    downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+    status('ZIP save started.');
+  }
+
+  async function prepareReadyEmail(){
+    const appointmentPackage=await currentReadyPackage();
+    if(!appointmentPackage) return;
+    const email=buildShareEmailContent();
+    if(!email){ status('Please fix the highlighted fields.'); return; }
+    const link=$('openPreparedEmail');
+    if(!link) return;
+    link.href=preparedEmailHref(email);
+    link.click();
+    status('Prepared email opened.');
   }
 
   async function sharePdf(){
@@ -5500,6 +5611,8 @@
     photos.length = 4;
     renderAdditionalDocsUI();
 	    photos.forEach((_,i)=>removePhoto(i)); clearSig(); clearSig2(); refreshAllUI(); if(typeof wbReset !== 'undefined') wbReset(); cancelAutosave(); updateSaveStatus('idle'); toast('Form reset.');
+    packageReadyHasBeenShown=false;
+    renderPackageReady('idle');
     returnToLanding();
   }
 
@@ -5514,6 +5627,10 @@
   if($('downloadPackageBottom')) $('downloadPackageBottom').addEventListener('click',downloadPackage);
   $('shareTop').addEventListener('click',sharePdf);
   $('shareBottom').addEventListener('click',sharePdf);
+  if($('sharePackage')) $('sharePackage').addEventListener('click',shareAppointmentPackage);
+  if($('saveCombinedPdf')) $('saveCombinedPdf').addEventListener('click',saveReadyPdf);
+  if($('savePackageZip')) $('savePackageZip').addEventListener('click',saveReadyZip);
+  if($('preparePackageEmail')) $('preparePackageEmail').addEventListener('click',prepareReadyEmail);
   if($('dismissPreparedEmail')) $('dismissPreparedEmail').addEventListener('click',hidePreparedEmailAction);
   if($('openPreparedEmail')) $('openPreparedEmail').addEventListener('click',()=>{
     hidePreparedEmailAction();
@@ -5617,6 +5734,8 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     getZoomOutputPlan: () => appointmentMode === 'zoom' ? zoomOutputPlan() : null,
     buildAppointmentPackage: () => buildAppointmentPackage(),
     getAppointmentPackage: () => lastAppointmentPackage,
+    getDocumentRevision: () => documentRevision,
+    renderPackageReady: state => renderPackageReady(state),
     setAppointmentPackageForTest: result => {
       lastAppointmentPackage=result;
       lastPdfBlob=result && result.combinedPdfBlob || null;

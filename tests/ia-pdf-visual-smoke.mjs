@@ -84,7 +84,7 @@ try {
     await page.selectOption('#iaForm', testCase.city);
     await page.fill('#iaAmount', testCase.amount);
     await page.click('#generateBottom');
-    await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout: 20000 });
 
     assert.equal(await page.textContent('#previewPageLabel'), 'Page 1 of 1');
     await page.locator('#previewPaper canvas:not(#previewOverlay)').screenshot({ path: join(caseDir, 'ia-preview.png') });
@@ -98,7 +98,8 @@ try {
     const packageDownloads = [];
     const capturePackage = download => packageDownloads.push(download);
     page.on('download', capturePackage);
-    await page.click('#downloadPackageBottom');
+  await page.click('#saveCombinedPdf');
+  await page.click('#savePackageZip');
     await waitForDownloadCount(packageDownloads, 2);
     page.off('download', capturePackage);
     const zipDownload = packageDownloads.find(download => download.suggestedFilename().toLowerCase().endsWith('.zip'));

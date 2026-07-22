@@ -1656,3 +1656,35 @@ html,body { background-color:#f3eee5; background-image:linear-gradient(180deg,#f
   .workspaceContent .card,.previewWrap .card { padding:16px; }
   .footerBar { box-shadow:0 -5px 18px rgba(7,26,51,.09); }
 }
+
+/* Appointment package handover */
+.legacy-output-action { display:none !important; }
+.appointment-package-ready {
+  width:min(1120px,calc(100% - (2 * var(--workspace-gutter))));
+  margin:20px auto calc(112px + env(safe-area-inset-bottom));
+  padding:clamp(18px,2.2vw,28px);
+  border:1px solid #d7c9af;
+  border-left:4px solid var(--gold);
+  border-radius:18px;
+  background:#fffdf8;
+  box-shadow:0 12px 32px rgba(7,26,51,.1);
+}
+.appointment-package-ready.hidden { display:none; }
+.package-ready-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.package-ready-heading h2 { margin:0; color:#071a33; font-size:clamp(20px,2vw,26px); }
+.package-ready-heading p { margin:6px 0 0; color:#546174; }
+.package-ready-notice { font-weight:700; text-align:right; }
+.appointment-package-ready.is-stale .package-ready-notice { color:#986512; }
+.package-ready-files { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:20px 0; }
+.package-ready-files > div { min-width:0; padding:12px 14px; border:1px solid #e2d9ca; border-radius:12px; background:#fffaf2; }
+.package-ready-files dt { color:#546174; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.package-ready-files dd { margin:5px 0 0; color:#071a33; font-size:14px; font-weight:600; overflow-wrap:anywhere; word-break:break-word; }
+.package-ready-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.package-ready-actions .btn { min-height:44px; width:100%; justify-content:center; }
+@media (max-width:700px) {
+  .appointment-package-ready { width:calc(100% - 24px); margin-top:14px; margin-bottom:calc(124px + env(safe-area-inset-bottom)); padding:16px; }
+  .package-ready-heading { display:block; }
+  .package-ready-notice { text-align:left; }
+  .package-ready-files,.package-ready-actions { grid-template-columns:1fr; }
+  .package-ready-files { gap:8px; margin:16px 0; }
+}

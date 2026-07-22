@@ -79,19 +79,20 @@ try {
 
   await setConveyancer('Natalie to Confirm');
   await page.click('#generateBottom');
-  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
   const standardRenderedText = await page.evaluate(() => window.__renderedPdfText);
   assert.ok(standardRenderedText.includes('Natalie to Confirm'), 'standard conveyancer option must be rendered into the generated IA PDF canvas');
 
   await page.evaluate(() => { window.__renderedPdfText = []; });
   await setConveyancer('Example Legal & Conveyancing');
   await page.click('#generateBottom');
-  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
   const renderedText = await page.evaluate(() => window.__renderedPdfText);
   assert.ok(renderedText.includes('Example Legal & Conveyancing'), 'custom conveyancer must be rendered into the generated IA PDF canvas');
 
   const beforePackage = downloads.length;
-  await page.click('#downloadPackageBottom');
+  await page.click('#saveCombinedPdf');
+  await page.click('#savePackageZip');
   await page.waitForFunction(expected => window.document.readyState === 'complete' && expected >= 0, beforePackage);
   const packageDeadline = Date.now() + 30000;
   while(downloads.length < beforePackage + 2 && Date.now() < packageDeadline) await page.waitForTimeout(100);
@@ -110,10 +111,9 @@ try {
   ]) assert.ok(zipInternalListing.includes(expected), `${expected} must be present in the ZIP`);
 
   const beforeShare = downloads.length;
-  await page.click('#shareTop');
-  await page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
-  const shareDeadline = Date.now() + 30000;
-  while(downloads.length < beforeShare + 2 && Date.now() < shareDeadline) await page.waitForTimeout(100);
+  await page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
+  await page.click('#preparePackageEmail');
+  await page.waitForFunction(() => document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
   const mailto = await page.getAttribute('#openPreparedEmail', 'href');
   const url = new URL(mailto);
   const primaryRecipient = decodeURIComponent(url.pathname);

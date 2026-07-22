@@ -146,10 +146,10 @@
           </div>
 
           <div class="actionGroup actionGroup-output">
-            <button class="btn toolbar-btn primary" id="generateTop">Generate PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
-            <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
+            <button class="btn toolbar-btn primary" id="generateTop">Generate Appointment Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadTop" disabled>Download PDF</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadPackageTop" disabled>Download Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="shareTop" disabled>Share PDF</button>
           </div>
           
           <div class="actionGroup actionGroup-admin">
@@ -1050,6 +1050,26 @@
     </section>
   </div>
 
+  <section class="appointment-package-ready hidden" id="appointmentPackageReady" aria-labelledby="appointmentPackageReadyTitle">
+    <div class="package-ready-heading">
+      <div>
+        <h2 id="appointmentPackageReadyTitle">Appointment Package Ready</h2>
+        <p id="appointmentPackageReadyDescription">Your combined PDF and document ZIP are ready.</p>
+      </div>
+      <p class="package-ready-notice" id="packageReadyNotice" role="status" aria-live="polite"></p>
+    </div>
+    <dl class="package-ready-files">
+      <div><dt>Combined PDF</dt><dd id="packageReadyPdfName"></dd></div>
+      <div><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
+    </dl>
+    <div class="package-ready-actions">
+      <button type="button" class="btn primary" id="sharePackage" disabled>Share Package</button>
+      <button type="button" class="btn" id="saveCombinedPdf" disabled>Save Combined PDF</button>
+      <button type="button" class="btn" id="savePackageZip" disabled>Save ZIP</button>
+      <button type="button" class="btn" id="preparePackageEmail" disabled>Prepare Email</button>
+    </div>
+  </section>
+
   <section class="shareEmailFallback hidden" id="shareEmailFallback" role="status" aria-live="polite" aria-labelledby="shareEmailFallbackTitle">
     <div>
       <strong id="shareEmailFallbackTitle">Files downloaded</strong>
@@ -1069,16 +1089,16 @@
         <button class="btn" id="saveDraftBottom" title="Save Draft">
           <span class="btn-icon">💾</span><span class="btn-text">Save Draft</span>
         </button>
-        <button class="btn dark" id="generateBottom" title="Generate PDF">
-          <span class="btn-icon">⚡</span><span class="btn-text">Generate PDF</span>
+        <button class="btn dark" id="generateBottom" title="Generate Appointment Package">
+          <span class="btn-icon">⚡</span><span class="btn-text">Generate Appointment Package</span>
         </button>
-        <button class="btn" id="downloadBottom" disabled title="Download PDF">
+        <button class="btn legacy-output-action" id="downloadBottom" disabled title="Download PDF">
           <span class="btn-icon">📥</span><span class="btn-text">Download PDF</span>
         </button>
-        <button class="btn" id="downloadPackageBottom" disabled title="Download Package">
+        <button class="btn legacy-output-action" id="downloadPackageBottom" disabled title="Download Package">
           <span class="btn-icon">📦</span><span class="btn-text">Download Package</span>
         </button>
-        <button class="btn" id="shareBottom" disabled title="Share PDF">
+        <button class="btn legacy-output-action" id="shareBottom" disabled title="Share PDF">
           <span class="btn-icon">📤</span><span class="btn-text">Share PDF</span>
         </button>
       </div>

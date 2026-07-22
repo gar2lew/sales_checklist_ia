@@ -203,7 +203,8 @@ try {
     Object.defineProperty(navigator, 'canShare', { configurable:true, value:({ files }) => files?.length === 2 });
     Object.defineProperty(navigator, 'share', { configurable:true, value:async payload => { window.__sharedFiles = payload.files.map(file => ({ name:file.name, type:file.type, size:file.size })); } });
   });
-  await page.click('#shareTop');
+  await page.evaluate(() => window._testState.renderPackageReady('ready'));
+  await page.click('#sharePackage');
   await page.waitForFunction(() => Array.isArray(window.__sharedFiles));
   const shared = await page.evaluate(() => ({ files:window.__sharedFiles, counts:window._testState.getPackageGenerationCounts() }));
   assert.equal(shared.files.length, 2);
@@ -211,8 +212,9 @@ try {
   assert.deepEqual(shared.counts, regenerated.counts, 'native Share reuses the complete package');
 
   const beforePackageDownloads = downloads.length;
-  await page.click('#downloadPackageBottom');
-  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Package downloaded'));
+  await page.click('#saveCombinedPdf');
+  await page.click('#savePackageZip');
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('ZIP save started'));
   const deadline = Date.now() + 10000;
   while(downloads.length < beforePackageDownloads + 2 && Date.now() < deadline) await page.waitForTimeout(50);
   assert.deepEqual(downloads.slice(beforePackageDownloads).sort(), [
@@ -285,7 +287,7 @@ try {
   const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../service-worker.js', import.meta.url), 'utf8');
   assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
-  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.14';/);
+  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.15';/);
 
   console.log(JSON.stringify({
     packageResult:{

@@ -77,7 +77,7 @@ try {
   assert.equal(await page.textContent('#eoiBadge'), '✓ Complete', 'complete manual entry must be complete');
   assert.ok(await page.locator('#timelineInPerson [data-tl-target="eoiDetailsCard"]').evaluate(el => el.closest('.timeline-step').classList.contains('tl-complete')), 'step indicator and summary badge must agree');
   await page.evaluate(() => document.querySelector('#generateTop').click());
-  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
   assert.ok(await page.locator('#timelineInPerson .timeline-step:last-child').evaluate(element => element.classList.contains('tl-complete')), 'PDF readiness must agree with the EOI step and summary');
   await page.screenshot({ path:resolve(evidenceRoot, 'eoi-section-complete-390x844.png'), fullPage:true });
   await context.close();
@@ -109,8 +109,8 @@ try {
   assert.equal(await legacy.page.inputValue('#iaSolicitorOption'), 'B.O.S.S Conveyancing', 'legacy admin settings do not replace the approved fresh default');
   await legacy.context.close();
 
-  assert.match(html, /id="shareEmailFallback"/);
-  assert.match(html, /id="openPreparedEmail"/);
+  assert.match(html, /id="appointmentPackageReady"/);
+  assert.match(html, /id="preparePackageEmail"/);
   assert.match(source, /CONFIG\.share\.to/);
   assert.match(source, /CONFIG\.share\.cc/);
   assert.doesNotMatch(source.slice(source.indexOf('async function sharePdf'), source.indexOf('async function downloadPackage')), /window\.open\(mailto/);
@@ -124,32 +124,32 @@ try {
   await fallback.page.evaluate(() => document.querySelector('#loadTestData').click());
   const downloads = [];
   fallback.page.on('download', download => downloads.push(download.suggestedFilename()));
-  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
-  await fallback.page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
-  await fallback.page.screenshot({ path:resolve(evidenceRoot, 'share-email-fallback-390x844.png') });
+  await fallback.page.click('#generateTop');
+  await fallback.page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
+  await fallback.page.screenshot({ path:resolve(evidenceRoot, 'appointment-package-ready-390x844.png') });
   const fallbackLayout = await fallback.page.evaluate(() => {
-    const prompt = document.querySelector('#shareEmailFallback').getBoundingClientRect();
-    const footer = document.querySelector('.footerBar').getBoundingClientRect();
+    const panel = document.querySelector('#appointmentPackageReady').getBoundingClientRect();
+    const actions = Array.from(document.querySelectorAll('.package-ready-actions button'));
     return {
-      openHeight:document.querySelector('#openPreparedEmail').getBoundingClientRect().height,
-      dismissHeight:document.querySelector('#dismissPreparedEmail').getBoundingClientRect().height,
-      clearsFooter:prompt.bottom <= footer.top,
+      allTouchTargets:actions.every(button => button.getBoundingClientRect().height >= 44),
+      panelWidth:panel.width,
       noOverflow:document.documentElement.scrollWidth <= window.innerWidth
     };
   });
-  assert.ok(fallbackLayout.openHeight >= 44 && fallbackLayout.dismissHeight >= 44, 'fallback actions must retain 44px touch targets');
-  assert.ok(fallbackLayout.clearsFooter, 'fallback prompt must remain above the sticky footer');
-  assert.ok(fallbackLayout.noOverflow, 'fallback prompt must not create horizontal overflow');
-  await fallback.page.waitForFunction(() => window.__downloadWait === undefined, null, { timeout:1000 }).catch(() => {});
-  assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.pdf')).length, 1, 'HTTP fallback must download one compiled PDF');
-  assert.equal(downloads.filter(name => name.toLowerCase().endsWith('.zip')).length, 1, 'HTTP fallback must download one ZIP');
+  assert.ok(fallbackLayout.allTouchTargets, 'ready actions must retain 44px touch targets');
+  assert.ok(fallbackLayout.noOverflow, 'ready panel must not create horizontal overflow');
+  await fallback.page.evaluate(() => Object.defineProperty(navigator, 'canShare', { configurable:true, value:() => false }));
+  await fallback.page.click('#sharePackage');
+  await fallback.page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('File sharing is not available'));
+  assert.equal(downloads.length, 0, 'unavailable file sharing must not download files');
+  await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
+  await fallback.page.click('#preparePackageEmail');
+  await fallback.page.waitForFunction(() => document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
   const mailto = await fallback.page.getAttribute('#openPreparedEmail', 'href');
   assert.ok(mailto.startsWith('mailto:Natalie%40sjssolutionscorp.com.au?cc=Garry%40sjssolutionscorp.com.au'), 'prepared email must resolve configured recipient and CC');
   assert.match(decodeURIComponent(mailto), /Sales Appointment Documents \| John Smith \| \d{2}\/\d{2}\/\d{4}/);
   assert.match(decodeURIComponent(mailto), /Contract Due Date:\nTo Be Confirmed/);
   assert.doesNotMatch(decodeURIComponent(mailto), /Contract Issued:|downloaded|attach/i);
-  await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
-  await fallback.page.click('#openPreparedEmail');
   assert.match(await fallback.page.textContent('#status'), /Prepared email opened/);
 
   await fallback.page.evaluate(() => {
@@ -158,25 +158,26 @@ try {
     Object.defineProperty(navigator, 'share', { configurable:true, value:payload => { window.__nativeShareCalls.push(payload); return Promise.resolve(); } });
   });
   const downloadsBeforeNative = downloads.length;
-  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.click('#sharePackage');
   await fallback.page.waitForFunction(() => window.__nativeShareCalls.length === 1, null, { timeout:30000 });
   assert.equal(await fallback.page.evaluate(() => window.__nativeShareCalls[0].files.length), 2, 'native multi-file share must receive PDF and ZIP');
   assert.equal(downloads.length, downloadsBeforeNative, 'successful native share must not duplicate downloads');
-  assert.ok(await fallback.page.locator('#shareEmailFallback').evaluate(element => element.classList.contains('hidden')));
+  assert.ok(await fallback.page.locator('#appointmentPackageReady').isVisible());
 
   await fallback.page.evaluate(() => {
     Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new DOMException('cancelled', 'AbortError')) });
   });
-  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
+  await fallback.page.click('#sharePackage');
   await fallback.page.waitForTimeout(500);
   assert.equal(downloads.length, downloadsBeforeNative, 'cancelled native share must not trigger fallback downloads');
 
   await fallback.page.evaluate(() => {
     Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new Error('native share rejected')) });
   });
-  await fallback.page.evaluate(() => document.querySelector('#shareTop').click());
-  await fallback.page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
-  assert.equal(downloads.length, downloadsBeforeNative + 2, 'rejected native share must fall back to one PDF and one ZIP download');
+  await fallback.page.click('#sharePackage');
+  await fallback.page.waitForFunction(() => document.querySelector('#status').textContent.includes('could not be shared'));
+  assert.equal(downloads.length, downloadsBeforeNative, 'rejected native share must not trigger unrelated downloads');
+  assert.ok(await fallback.page.locator('#appointmentPackageReady').isVisible(), 'share failure retains ready state');
   await fallback.context.close();
 
   console.log('PASS mobile RC defect regression contracts');
