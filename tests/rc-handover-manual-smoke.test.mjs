@@ -125,8 +125,9 @@ try {
   assert.equal(ccRecipient, 'Garry@sjssolutionscorp.com.au');
   assert.notEqual(primaryRecipient.toLowerCase(), ccRecipient.toLowerCase());
   assert.equal(generatedEmailSubject, 'Sales Appointment Documents | John Smith & Jenny Smith | 21/07/2026');
-  assert.match(generatedEmailBody, /^Hi Natalie,\n\nPlease find the completed sales appointment documents/);
-  assert.doesNotMatch(generatedEmailBody, /already attached|files are attached|attachments? (?:is|are) included/i);
+  assert.match(generatedEmailBody, /^Hi Natalie,\n\nPlease find the completed sales appointment documents for the following appointment\./);
+  assert.match(generatedEmailBody, /Contract Due Date:\nTo Be Confirmed/);
+  assert.doesNotMatch(generatedEmailBody, /Contract Issued:|downloaded|attach/i);
 
   console.log(JSON.stringify({
     generatedEmailSubject, generatedEmailBody, primaryRecipient, ccRecipient,

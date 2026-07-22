@@ -114,7 +114,10 @@ try {
   assert.match(source, /CONFIG\.share\.to/);
   assert.match(source, /CONFIG\.share\.cc/);
   assert.doesNotMatch(source.slice(source.indexOf('async function sharePdf'), source.indexOf('async function downloadPackage')), /window\.open\(mailto/);
-  assert.match(source, /downloaded[\s\S]*attach/i, 'fallback copy must explain manual attachment');
+  assert.match(source, /completed sales appointment documents for the following appointment/);
+  assert.match(source, /Contract Due Date:/);
+  assert.doesNotMatch(source, /supporting ZIP package have been downloaded to this device/i, 'retired download copy must remain absent');
+  assert.doesNotMatch(source, /Please attach both files to this email before sending/i, 'retired attachment copy must remain absent');
 
   const fallback = await openApp({ staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] } });
   fallback.page.once('dialog', dialog => dialog.accept());
@@ -143,7 +146,8 @@ try {
   const mailto = await fallback.page.getAttribute('#openPreparedEmail', 'href');
   assert.ok(mailto.startsWith('mailto:Natalie%40sjssolutionscorp.com.au?cc=Garry%40sjssolutionscorp.com.au'), 'prepared email must resolve configured recipient and CC');
   assert.match(decodeURIComponent(mailto), /Sales Appointment Documents \| John Smith \| \d{2}\/\d{2}\/\d{4}/);
-  assert.match(decodeURIComponent(mailto), /downloaded[\s\S]*attach/i);
+  assert.match(decodeURIComponent(mailto), /Contract Due Date:\nTo Be Confirmed/);
+  assert.doesNotMatch(decodeURIComponent(mailto), /Contract Issued:|downloaded|attach/i);
   await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
   await fallback.page.click('#openPreparedEmail');
   assert.match(await fallback.page.textContent('#status'), /Prepared email opened/);

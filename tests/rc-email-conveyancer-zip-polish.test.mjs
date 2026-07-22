@@ -18,31 +18,27 @@ function functionSource(name) {
 
 const emailFunctions = [
   'formatEmailTime',
-  'formatContractIssued',
   'emailNextAppointment',
   'resolveShareCc',
   'buildShareEmailContent'
 ].map(functionSource).join('\n');
 
-function buildEmail({ mode='inperson', values={}, staffRecord, share={ to:'Natalie@sjssolutionscorp.com.au', cc:'Garry@sjssolutionscorp.com.au' } }) {
+function buildEmail({ mode='inperson', values={}, staffRecord, due={ valid:true, value:'15/08/2026' }, share={ to:'Natalie@sjssolutionscorp.com.au', cc:'Garry@sjssolutionscorp.com.au' } }) {
   const fields = {
     teamMember:'Blake Duffield', clientName:'Alex / Smith', client2Name:'Jenny: Jones',
     propertySaleAddress:'1 Test Street, Perth WA 6000', date:'2026-07-21',
     eoiNextApptDate:'2026-08-02', eoiNextApptTime:'14:05', crNextAppointmentDate:'2026-08-03',
     ...values
   };
-  const FixedDate = class extends Date {
-    constructor(...args) { super(...(args.length ? args : ['2026-07-21T10:39:00+08:00'])); }
-  };
   return Function(
     'fieldText', 'formatDisplayDate', 'appointmentMode', 'CONFIG', 'staffRecordForValue',
-    'validEmail', 'lastPdfName', 'pdfFileName', 'Date',
+    'validEmail', 'lastPdfName', 'pdfFileName', 'resolveContractDueDate',
     `${emailFunctions}; return buildShareEmailContent();`
   )(
     id => fields[id] || '',
     value => { const [y,m,d] = String(value).split('-'); return y && m && d ? `${d}/${m}/${y}` : value; },
     mode, { share }, () => staffRecord || { active:true, email:'Blake@amplifysolutionsgroup.com.au' },
-    value => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value), '', () => 'appointment.pdf', FixedDate
+    value => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value), '', () => 'appointment.pdf', () => due
   );
 }
 
@@ -50,7 +46,7 @@ const inPerson = buildEmail({});
 assert.equal(inPerson.subject, 'Sales Appointment Documents | Alex / Smith & Jenny: Jones | 21/07/2026');
 assert.equal(inPerson.body, `Hi Natalie,
 
-Please find the completed sales appointment documents for the following clients:
+Please find the completed sales appointment documents for the following appointment.
 
 Clients:
 Alex / Smith & Jenny: Jones
@@ -61,15 +57,11 @@ Property:
 Appointment Date:
 21/07/2026
 
+Contract Due Date:
+15/08/2026
+
 Next Appointment:
 02/08/2026 2:05 PM
-
-Contract Issued:
-21/07/2026 10:39 AM
-
-The appointment PDF and supporting ZIP package have been downloaded to this device.
-
-Please attach both files to this email before sending.
 
 Kind regards,
 
@@ -82,6 +74,7 @@ assert.doesNotMatch(zoom.body, /03\/08\/2026 2:05 PM/, 'Zoom must not invent the
 
 const noNext = buildEmail({ values:{ eoiNextApptDate:'', eoiNextApptTime:'', crNextAppointmentDate:'' } });
 assert.doesNotMatch(noNext.body, /Next Appointment:/, 'blank next appointment omits the complete block');
+assert.equal(buildEmail({ due:{ valid:false, value:'' } }), null, 'invalid Contract Due Date blocks email content');
 assert.equal(buildEmail({ staffRecord:{ active:true, email:'Natalie@sjssolutionscorp.com.au' } }).cc, '', 'primary recipient is not duplicated in CC');
 assert.equal(buildEmail({ staffRecord:{ active:true, email:'blake@example.com' } }).cc, 'blake@example.com');
 

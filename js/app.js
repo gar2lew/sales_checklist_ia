@@ -4914,15 +4914,6 @@
     const displayHour = hours % 12 || 12;
     return `${displayHour}:${match[2]} ${suffix}`;
   }
-  function formatContractIssued(value){
-    const date = value instanceof Date ? value : new Date(value);
-    if(isNaN(date.getTime())) return '';
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const time = formatEmailTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
-    return `${dd}/${mm}/${yyyy} ${time}`;
-  }
   function emailNextAppointment(){
     if(appointmentMode === 'zoom'){
       const date = (fieldText('crNextAppointmentDate') || '').trim();
@@ -4934,6 +4925,8 @@
     return `${formatDisplayDate(date)}${time ? ` ${time}` : ''}`;
   }
   function buildShareEmailContent(){
+    const contractDueDate = resolveContractDueDate();
+    if(!contractDueDate.valid) return null;
     const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
     const client1 = (fieldText('clientName') || '').trim();
     const client2 = (fieldText('client2Name') || '').trim();
@@ -4944,10 +4937,9 @@
     const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
 
     const nextAppointment = emailNextAppointment();
-    const contractIssued = formatContractIssued(new Date());
     const nextAppointmentBlock = nextAppointment ? `\n\nNext Appointment:\n${nextAppointment}` : '';
     const subject = `Sales Appointment Documents | ${clientNames} | ${date}`;
-    const body = `Hi Natalie,\n\nPlease find the completed sales appointment documents for the following clients:\n\nClients:\n${clientNames}\n\nProperty:\n${property}\n\nAppointment Date:\n${date}${nextAppointmentBlock}\n\nContract Issued:\n${contractIssued}\n\nThe appointment PDF and supporting ZIP package have been downloaded to this device.\n\nPlease attach both files to this email before sending.\n\nKind regards,\n\n${staffName}`;
+    const body = `Hi Natalie,\n\nPlease find the completed sales appointment documents for the following appointment.\n\nClients:\n${clientNames}\n\nProperty:\n${property}\n\nAppointment Date:\n${date}\n\nContract Due Date:\n${contractDueDate.value}${nextAppointmentBlock}\n\nKind regards,\n\n${staffName}`;
     const fallbackBody = body;
     const fileName = lastPdfName || pdfFileName();
     const cc = resolveShareCc(staffName);
@@ -4962,7 +4954,7 @@
     const prompt = $('shareEmailFallback');
     const link = $('openPreparedEmail');
     if(!prompt || !link) return;
-    const body = hasZip ? email.fallbackBody : email.fallbackBody.replace('PDF and ZIP have', 'PDF has').replace('files to this email', 'file to this email');
+    const body = email.fallbackBody;
     const query = [];
     if(email.cc) query.push(`cc=${encodeURIComponent(email.cc)}`);
     query.push(`subject=${encodeURIComponent(email.subject)}`, `body=${encodeURIComponent(body)}`);

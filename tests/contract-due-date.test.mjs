@@ -117,9 +117,8 @@ try {
   await page.click('#generateTop');
   await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
 
-  assert.match(emailBefore, /Contract Issued:/);
-  assert.match(emailBefore, /The appointment PDF and supporting ZIP package have been downloaded/);
-  assert.doesNotMatch(emailBefore, /Contract Due Date:/, 'Prompt 1 must not alter the email template');
+  assert.match(emailBefore, /Contract Due Date:/, 'Prompt 3 integrates the resolved due date into the email');
+  assert.doesNotMatch(emailBefore, /Contract Issued:|downloaded to this device|attach both files/i);
 
   console.log('PASS Contract Due Date UI, exclusivity, drafts, validation, and mode contracts');
 } finally {
