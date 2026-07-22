@@ -158,7 +158,7 @@ try{
   assert.deepEqual(await page.evaluate(()=>window._testState.resolveContractDueDate()),{valid:false,value:''});
   assert.deepEqual(await page.locator('#iaSolicitorOption option').allTextContents(),['B.O.S.S Conveyancing','Natalie to Confirm','Other']);
   assert.match(source,/const APP_VERSION = '2\.7\.0-alpha\.1';/);
-assert.match(swSource,/const CACHE_VERSION = 'v2\.7\.0-alpha\.19';/);
+assert.match(swSource,/const CACHE_VERSION = 'v2\.7\.0-alpha\.20';/);
 
   console.log(JSON.stringify({
     subject:inPerson.subject,

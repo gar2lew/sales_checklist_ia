@@ -5738,6 +5738,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     var wbUndoStack = [];
     var wbRedoStack = [];
 	    var wbSavedPages = [];
+	    var wbResizeObserver = null;
 
 	    /* Template definitions */
 	    var WHITEBOARD_TEMPLATES = {
@@ -5846,6 +5847,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
       var wrap = wbCanvas.parentElement;
       if(!wrap) return;
       var w = wrap.clientWidth;
+      if(w <= 0) return;
       var h = parseInt(wrap.style.minHeight) || 340;
       wbCanvas.width = Math.round(w * 2);
       wbCanvas.height = Math.round(h * 2);
@@ -6089,7 +6091,19 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
 	      });
 	    }
 
+	    var wbWrap = wbCanvas.parentElement;
+	    if(wbWrap && typeof ResizeObserver !== 'undefined'){
+	      wbResizeObserver = new ResizeObserver(function(entries){
+	        if(entries.some(function(entry){ return entry.target === wbWrap && entry.contentRect.width > 0; })) wbResize();
+	      });
+	      wbResizeObserver.observe(wbWrap);
+	    }
+	    function wbCleanupResizeHandling(){
+	      if(wbResizeObserver){ wbResizeObserver.disconnect(); wbResizeObserver = null; }
+	      window.removeEventListener('resize', wbResize);
+	    }
 	    setTimeout(wbResize, 100);
     window.addEventListener('resize', wbResize);
+	    window.addEventListener('pagehide', wbCleanupResizeHandling, {once:true});
   }
 })();

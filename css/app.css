@@ -832,6 +832,7 @@
     .show-in-person .zoom-only { display: none; }
     .show-zoom .in-person-only { display: none; }
     .show-zoom .zoom-only { display: block; }
+    .show-zoom #timelineZoom { display: flex; }
 
     /* Zoom attachment placeholders */
     .attachment-placeholder {
