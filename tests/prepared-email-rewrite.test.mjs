@@ -146,7 +146,7 @@ try{
   await page.evaluate(()=>document.querySelector('#loadTestData').click());
   await page.uncheck('#contractDueDateTbc');
   await page.fill('#contractDueDate','');
-  await page.evaluate(()=>document.querySelector('#shareTop').click());
+  await page.click('#generateTop');
   await page.locator('#contractDueDateField .fieldError').waitFor({timeout:10000});
   assert.match(await page.textContent('#contractDueDateField .fieldError'), /Select a Contract Due Date or choose To Be Confirmed/);
   assert.equal(await page.evaluate(()=>window.__nativeShareCalls.length),0,'invalid due date prevents native share');
@@ -158,7 +158,7 @@ try{
   assert.deepEqual(await page.evaluate(()=>window._testState.resolveContractDueDate()),{valid:false,value:''});
   assert.deepEqual(await page.locator('#iaSolicitorOption option').allTextContents(),['B.O.S.S Conveyancing','Natalie to Confirm','Other']);
   assert.match(source,/const APP_VERSION = '2\.7\.0-alpha\.1';/);
-assert.match(swSource,/const CACHE_VERSION = 'v2\.7\.0-alpha\.15';/);
+assert.match(swSource,/const CACHE_VERSION = 'v2\.7\.0-alpha\.16';/);
 
   console.log(JSON.stringify({
     subject:inPerson.subject,

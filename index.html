@@ -135,7 +135,7 @@
             <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
           <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
-          <div class="statusBadge">Status: <span id="status">Ready.</span></div>
+          <div class="statusBadge">Status: <span id="status" role="status" aria-live="polite" aria-atomic="true">Ready.</span></div>
         </div>
         
         <div class="headerActions">
@@ -1070,13 +1070,10 @@
     </div>
   </section>
 
-  <section class="shareEmailFallback hidden" id="shareEmailFallback" role="status" aria-live="polite" aria-labelledby="shareEmailFallbackTitle">
-    <div>
-      <strong id="shareEmailFallbackTitle">Files downloaded</strong>
-      <p>The prepared email cannot include attachments automatically. Open it, then attach the downloaded PDF and ZIP before sending.</p>
-    </div>
-    <a class="btn primary" id="openPreparedEmail" href="#">Open prepared email</a>
-    <button class="btn" type="button" id="dismissPreparedEmail">Dismiss</button>
+  <section class="hidden" id="shareEmailFallback" aria-hidden="true">
+    <span id="shareEmailFallbackTitle"></span>
+    <a id="openPreparedEmail" href="#" hidden tabindex="-1" aria-hidden="true"></a>
+    <button type="button" id="dismissPreparedEmail" hidden disabled tabindex="-1" aria-hidden="true"></button>
   </section>
 
   <div class="footerBar">

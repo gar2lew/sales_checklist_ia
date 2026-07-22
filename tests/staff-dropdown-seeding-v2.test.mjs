@@ -158,8 +158,11 @@ try {
     page.once('dialog', dialog => dialog.accept());
     await page.evaluate(() => document.querySelector('#loadTestData').click());
     await page.selectOption('#teamMember', staff.name);
-    await page.evaluate(() => document.querySelector('#shareTop').click());
-    await page.locator('#shareEmailFallback:not(.hidden)').waitFor({ timeout:30000 });
+    await page.click('#generateTop');
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Appointment package ready'), null, { timeout:30000 });
+    await page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
+    await page.click('#preparePackageEmail');
+    await page.waitForFunction(() => document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
     const href = await page.getAttribute('#openPreparedEmail', 'href');
     await context.close();
     return href;

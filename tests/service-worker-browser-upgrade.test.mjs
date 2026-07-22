@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const currentWorker = await readFile(path.join(root, "service-worker.js"), "utf8");
-const previousWorker = currentWorker.replace("v2.7.0-alpha.15", "v2.7.0-alpha.14");
+const previousWorker = currentWorker.replace("v2.7.0-alpha.16", "v2.7.0-alpha.15");
 let servedWorker = previousWorker;
 const mime = {
   ".css": "text/css",
@@ -47,34 +47,53 @@ async function waitForCache(page, expected, absent = []) {
 }
 
 try {
-  const upgradeContext = await browser.newContext({ serviceWorkers: "allow" });
+  const upgradeContext = await browser.newContext({ serviceWorkers: "allow", acceptDownloads:true });
   const upgradePage = await upgradeContext.newPage();
+  const offlineDownloads=[];
+  upgradePage.on('download',download=>offlineDownloads.push(download.suggestedFilename()));
   await upgradePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await upgradePage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.14");
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.15");
 
   servedWorker = currentWorker;
   await upgradePage.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
     await registration.update();
   });
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.15", ["sales-capture-v2.7.0-alpha.14"]);
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.16", ["sales-capture-v2.7.0-alpha.15"]);
 
   await upgradeContext.setOffline(true);
   await upgradePage.reload({ waitUntil: "domcontentloaded" });
   assert.equal(await upgradePage.locator("#landingScreen").isVisible(), true, "upgraded application shell must remain available offline");
   assert.notEqual(await upgradePage.locator("#landingScreen").evaluate((element) => getComputedStyle(element).display), "none", "upgraded cached CSS must render offline");
+  await upgradePage.selectOption('#landingStaff','Garry Lewis');
+  await upgradePage.click('#landingContinue');
+  upgradePage.once('dialog',dialog=>dialog.accept());
+  await upgradePage.evaluate(()=>document.querySelector('#loadTestData').click());
+  await upgradePage.click('#generateTop');
+  await upgradePage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Appointment package ready'),null,{timeout:30000});
+  assert.equal(await upgradePage.locator('#appointmentPackageReady').isVisible(),true,'offline package generation must reach complete ready state');
+  await upgradePage.click('#saveCombinedPdf');
+  await upgradePage.click('#savePackageZip');
+  const downloadDeadline=Date.now()+10000;
+  while(offlineDownloads.length < 2 && Date.now() < downloadDeadline) await upgradePage.waitForTimeout(50);
+  assert.equal(offlineDownloads.filter(name=>name.endsWith('.pdf')).length,1,'offline PDF save must use the current package');
+  assert.equal(offlineDownloads.filter(name=>name.endsWith('.zip')).length,1,'offline ZIP save must use the current package');
+  await upgradePage.evaluate(()=>document.querySelector('#openPreparedEmail').addEventListener('click',event=>event.preventDefault(),{once:true,capture:true}));
+  await upgradePage.click('#preparePackageEmail');
+  await upgradePage.waitForFunction(()=>document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
+  assert.match(await upgradePage.getAttribute('#openPreparedEmail','href'),/^mailto:Natalie%40sjssolutionscorp\.com\.au\?/,'offline Prepare Email must construct the approved mailto');
   await upgradeContext.close();
 
   const freshContext = await browser.newContext({ serviceWorkers: "allow" });
   const freshPage = await freshContext.newPage();
   await freshPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await freshPage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.15", ["sales-capture-v2.7.0-alpha.14"]);
+  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.16", ["sales-capture-v2.7.0-alpha.15"]);
   assert.equal(await freshPage.locator("#landingScreen").isVisible(), true, "fresh installation must render the current shell");
   await freshContext.close();
 
-  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.14 upgrade, cache cleanup, and offline reload");
+  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.15 upgrade, cache cleanup, and offline reload");
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

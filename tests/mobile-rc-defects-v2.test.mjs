@@ -113,7 +113,7 @@ try {
   assert.match(html, /id="preparePackageEmail"/);
   assert.match(source, /CONFIG\.share\.to/);
   assert.match(source, /CONFIG\.share\.cc/);
-  assert.doesNotMatch(source.slice(source.indexOf('async function sharePdf'), source.indexOf('async function downloadPackage')), /window\.open\(mailto/);
+  assert.doesNotMatch(source.slice(source.indexOf('async function shareAppointmentPackage'), source.indexOf('async function saveReadyPdf')), /window\.open\(mailto/);
   assert.match(source, /completed sales appointment documents for the following appointment/);
   assert.match(source, /Contract Due Date:/);
   assert.doesNotMatch(source, /supporting ZIP package have been downloaded to this device/i, 'retired download copy must remain absent');

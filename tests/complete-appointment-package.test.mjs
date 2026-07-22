@@ -228,10 +228,15 @@ try {
   assert.equal(await page.evaluate(() => window._testState.getAppointmentPackage()), null, 'changing appointment mode invalidates the previous package');
   const zoomPackage = await page.evaluate(async () => {
     const result = await window._testState.buildAppointmentPackage();
-    return { pdf:result.filenames.combinedPdf, zip:result.filenames.zip, counts:window._testState.getPackageGenerationCounts() };
+    return { pdf:result.filenames.combinedPdf, zip:result.filenames.zip, entries:result.filenames.entries, counts:window._testState.getPackageGenerationCounts() };
   });
   assert.equal(zoomPackage.pdf, 'Sales Appointment - Zoom - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf');
   assert.equal(zoomPackage.zip, '21-07-2026 - John Smith & Jenny Smith - Sales Appointment Documents.zip');
+  assert.deepEqual(zoomPackage.entries, [
+    'Sales Appointment - Zoom - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf',
+    'First Consultation - Brisbane - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf',
+    'Client Review Assessment - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf'
+  ]);
   assert.equal(zoomPackage.counts.combinedPdf, shared.counts.combinedPdf + 1);
   assert.equal(zoomPackage.counts.zip, shared.counts.zip + 1);
 
@@ -287,7 +292,7 @@ try {
   const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../service-worker.js', import.meta.url), 'utf8');
   assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
-  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.15';/);
+  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.16';/);
 
   console.log(JSON.stringify({
     packageResult:{

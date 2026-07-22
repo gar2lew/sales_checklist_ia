@@ -90,7 +90,7 @@ try {
     await page.locator('#previewPaper canvas:not(#previewOverlay)').screenshot({ path: join(caseDir, 'ia-preview.png') });
 
     const compiledDownloadPromise = page.waitForEvent('download');
-    await page.click('#downloadBottom');
+    await page.click('#saveCombinedPdf');
     const compiledDownload = await compiledDownloadPromise;
     const compiledPath = join(caseDir, 'compiled.pdf');
     await compiledDownload.saveAs(compiledPath);

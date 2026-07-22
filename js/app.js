@@ -357,7 +357,25 @@
     clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3200);
   }
   function status(msg){ $('status').textContent = msg; }
+  function addAriaDescription(el,descriptionId){
+    if(!el || !descriptionId) return;
+    const ids=new Set(String(el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    ids.add(descriptionId);
+    el.setAttribute('aria-describedby',Array.from(ids).join(' '));
+  }
+  function removeAriaDescription(el,descriptionId){
+    if(!el || !descriptionId) return;
+    const ids=String(el.getAttribute('aria-describedby') || '').split(/\s+/).filter(id=>id && id !== descriptionId);
+    if(ids.length) el.setAttribute('aria-describedby',ids.join(' '));
+    else el.removeAttribute('aria-describedby');
+  }
+  function removeValidationDescriptions(){
+    document.querySelectorAll('.fieldError[id]').forEach(error=>{
+      document.querySelectorAll('[aria-describedby]').forEach(el=>removeAriaDescription(el,error.id));
+    });
+  }
   function clearValidation(){
+    removeValidationDescriptions();
     document.querySelectorAll('.invalidField').forEach(el=>{
       el.classList.remove('invalidField');
       el.removeAttribute('aria-invalid');
@@ -510,9 +528,14 @@
     el.setAttribute('aria-invalid','true');
     const msg=document.createElement('div');
     msg.className='fieldError';
+    msg.id='err-'+id;
+    msg.setAttribute('data-field',id);
+    msg.setAttribute('role','alert');
     msg.textContent=message;
     const parent=el.parentElement || el;
     parent.appendChild(msg);
+    addAriaDescription(el,msg.id);
+    if(id === 'contractDueDate') addAriaDescription($('contractDueDateTbc'),msg.id);
   }
   function requireField(errors, id, message){
     if(!fieldText(id)) errors.push({id,message});
@@ -862,42 +885,11 @@
     reader.readAsText(file);
   }
 
-  // Check if native Web Share with files is available (not just basic share).
-  function canSharePdfFiles(){
-    if(!lastPdfBlob) return false;
-    if(!navigator.share) return false;
-    if(!navigator.canShare) return false;
-    try{
-      const file = new File([lastPdfBlob], lastPdfName || pdfFileName(), {type:'application/pdf'});
-      return navigator.canShare({files:[file]});
-    }catch{ return false; }
-  }
-
-  // Is sharing or the mailto fallback possible at all? (regardless of whether a PDF exists yet)
-  function canShareFilesPossible(){
-    // Web Share with files is available.
-    if(navigator.share && navigator.canShare){
-      try{
-        const probe = new File([''], 'probe.pdf', {type:'application/pdf'});
-        if(navigator.canShare({files:[probe]})) return true;
-      }catch{}
-    }
-    // Fallback mailto path works in any browser.
-    return true;
-  }
-
   function updateActionButtons(){
-    const hasPdf = !!lastPdfBlob;
-    ['downloadTop','downloadBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
-    ['downloadPackageTop','downloadPackageBottom'].forEach(id=>{ const el=$(id); if(el) el.disabled=!hasPdf; });
-    // Share button is enabled whenever sharing or fallback email is possible.
-    // It can also auto-generate a PDF if one does not exist yet.
-    const sharePossible = canShareFilesPossible();
-    ['shareTop','shareBottom'].forEach(id=>{
+    ['downloadTop','downloadBottom','downloadPackageTop','downloadPackageBottom','shareTop','shareBottom'].forEach(id=>{
       const el=$(id);
       if(!el) return;
-      el.disabled = !sharePossible;
-      el.title = sharePossible ? '' : 'Sharing is not supported in this browser.';
+      el.disabled=true;
     });
   }
   function updateIaOverrides() {
@@ -2120,11 +2112,16 @@
       el.removeAttribute('aria-invalid');
     }
     var err = document.querySelector('.fieldError[data-field="'+id+'"]');
-    if(err) err.remove();
+    if(err){
+      removeAriaDescription(el,err.id);
+      if(id === 'contractDueDate') removeAriaDescription($('contractDueDateTbc'),err.id);
+      err.remove();
+    }
   }
 
   /* Clear all inline validation UI */
   function clearAllFieldErrors(){
+    removeValidationDescriptions();
     document.querySelectorAll('.invalidField').forEach(function(el){
       el.classList.remove('invalidField');
       el.removeAttribute('aria-invalid');
@@ -2153,13 +2150,15 @@
           var msg = document.createElement('div');
           msg.className = 'fieldError';
           msg.setAttribute('data-field', item.id);
+          msg.setAttribute('role','alert');
           msg.textContent = item.message;
           var parent = el.parentElement || el;
           parent.appendChild(msg);
           /* Attempt aria-describedby – only if field has an id */
           var descId = 'err-' + item.id;
           msg.id = descId;
-          el.setAttribute('aria-describedby', descId);
+          addAriaDescription(el,descId);
+          if(item.id === 'contractDueDate') addAriaDescription($('contractDueDateTbc'),descId);
         }
         /* Track which section this field belongs to */
         var sectionId = sectionForField(item.id);
@@ -4831,7 +4830,19 @@
     return {blob, name:lastPdfName};
   }
   function downloadBlob(blob,name){
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
+    const a=document.createElement('a');
+    const objectUrl=URL.createObjectURL(blob);
+    a.href=objectUrl;
+    a.download=name;
+    try{
+      document.body.appendChild(a);
+      a.click();
+    }catch(err){
+      URL.revokeObjectURL(objectUrl);
+      a.remove();
+      throw err;
+    }
+    setTimeout(()=>{URL.revokeObjectURL(objectUrl); a.remove();},1000);
   }
   async function generatePdfOnly(){
     if(packageGenerationInProgress) return;
@@ -4859,22 +4870,6 @@
       setPackageGenerationDisabled(false);
       if(lastAppointmentPackage) renderPackageReady('ready');
     }
-  }
-  async function downloadPdf(){
-    /* Pre-validation only when generating new PDF */
-    if(!lastPdfBlob){
-      var dCheck = structuredReadinessCheck();
-      if(!dCheck.ready){
-        activateValidation();
-        status('Complete ' + dCheck.missingCount + ' required item' + (dCheck.missingCount !== 1 ? 's' : '') + ' before generating.');
-        return;
-      }
-    }
-    try{
-      const appointmentPackage = await buildAppointmentPackage();
-      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
-      toast('PDF download started.');
-    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not download PDF.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF download failed.'); }
   }
   async function buildIndividualPdfs(expectedRevision=documentRevision){
     if (lastIndividualPdfsRevision === expectedRevision && await validIndividualPdfs(lastIndividualPdfs)) return lastIndividualPdfs;
@@ -5128,24 +5123,6 @@
     return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc, ccDiagnostic:cc ? '' : 'No staff or fallback CC address is configured.' };
   }
 
-  function hidePreparedEmailAction(){
-    const prompt = $('shareEmailFallback');
-    if(prompt) prompt.classList.add('hidden');
-  }
-  function showPreparedEmailAction(email, hasZip){
-    const prompt = $('shareEmailFallback');
-    const link = $('openPreparedEmail');
-    if(!prompt || !link) return;
-    const body = email.fallbackBody;
-    const query = [];
-    if(email.cc) query.push(`cc=${encodeURIComponent(email.cc)}`);
-    query.push(`subject=${encodeURIComponent(email.subject)}`, `body=${encodeURIComponent(body)}`);
-    link.href = `mailto:${encodeURIComponent(email.to)}?${query.join('&')}`;
-    if(email.ccDiagnostic) console.warn(email.ccDiagnostic);
-    prompt.classList.remove('hidden');
-    link.focus({preventScroll:true});
-  }
-
   async function currentReadyPackage(){
     if(packageGenerationInProgress || !await isValidAppointmentPackage(lastAppointmentPackage)){
       renderPackageReady(packageReadyHasBeenShown ? 'stale' : 'idle');
@@ -5188,15 +5165,25 @@
   async function saveReadyPdf(){
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
-    downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
-    status('Combined PDF save started.');
+    try{
+      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
+      status('Combined PDF save started.');
+    }catch(err){
+      console.error(err);
+      status('The combined PDF could not be saved. Try again.');
+    }
   }
 
   async function saveReadyZip(){
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
-    downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
-    status('ZIP save started.');
+    try{
+      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+      status('ZIP save started.');
+    }catch(err){
+      console.error(err);
+      status('The ZIP could not be saved. Try again.');
+    }
   }
 
   async function prepareReadyEmail(){
@@ -5207,82 +5194,14 @@
     const link=$('openPreparedEmail');
     if(!link) return;
     link.href=preparedEmailHref(email);
-    link.click();
-    status('Prepared email opened.');
-  }
-
-  async function sharePdf(){
     try{
-      hidePreparedEmailAction();
-      const appointmentPackage = await buildAppointmentPackage();
-      const pdfFile = appointmentPackage.combinedPdfFile;
-      const zipFile = appointmentPackage.zipFile;
-      const email = buildShareEmailContent();
-      const { subject, body } = email;
-
-      status('Building Office Package...');
-
-      // Try native Web Share with both files (no mailto pre-open)
-      const canMultiShare = navigator.share && navigator.canShare &&
-        (() => { try { return navigator.canShare({ files: [pdfFile, zipFile] }); } catch { return false; } })();
-
-      if (canMultiShare) {
-        try {
-          const sharePromise = navigator.share({
-            title: subject,
-            text: body,
-            files: [pdfFile, zipFile]
-          });
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('share-timeout')), CONFIG.share.nativeShareTimeoutMs || 2500);
-          });
-          await Promise.race([sharePromise, timeoutPromise]);
-          toast('Share sheet opened.');
-          status('Share sheet opened. If your email app does not attach the files, use the downloaded copies.');
-          return;
-        } catch (shareErr) {
-          const msg = (shareErr && shareErr.message) || '';
-          const name = (shareErr && shareErr.name) || '';
-          const userCancelled = name === 'AbortError' &&
-            (!msg || /cancel/i.test(msg)) &&
-            !/fail|timeout/i.test(msg);
-          if (userCancelled) return;
-          // Any other failure — fall through to download + mailto
-        }
-      }
-
-      // Fallback: download available files, then expose a real tap target for
-      // opening mailto. Safari may discard the original user gesture after the
-      // asynchronous package build and downloads, so automatic navigation here
-      // is unreliable.
-      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
-      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
-      showPreparedEmailAction(email,true);
-      const msg = 'PDF and ZIP downloaded. Tap “Open prepared email”, then attach both files before sending.';
-      status(msg + (email.cc ? '' : ' No CC recipient is configured.'));
+      link.click();
+      status('Prepared email opened.');
     }catch(err){
-      if(err && err.name === 'AbortError') return;
-      if(!err || !err.isValidation) console.error(err);
-      toast(err && err.isValidation && err.message ? err.message : 'Could not share PDF.');
-      if(err && err.isValidation) status('Please fix the highlighted fields.');
+      console.error(err);
+      status('The prepared email could not be opened. Try again.');
     }
   }
-
-  async function downloadPackage(){
-    try{
-      status('Building Office Package...');
-      const appointmentPackage = await buildAppointmentPackage();
-      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
-      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
-      toast('Package downloaded (PDF + ZIP).');
-      status('Package downloaded (PDF + ZIP).');
-    }catch(err){
-      if(!err || !err.isValidation) console.error(err);
-      toast(err && err.isValidation && err.message ? err.message : 'Could not download package.');
-      if(err && err.isValidation) status('Please fix the highlighted fields.');
-    }
-  }
-
 
     // =========================================================================
   // SECTION P: DRAFT PERSISTENCE
@@ -5621,21 +5540,10 @@
   // =========================================================================
   $('generateTop').addEventListener('click',generatePdfOnly);
   $('generateBottom').addEventListener('click',generatePdfOnly);
-  $('downloadTop').addEventListener('click',downloadPdf);
-  $('downloadBottom').addEventListener('click',downloadPdf);
-  if($('downloadPackageTop')) $('downloadPackageTop').addEventListener('click',downloadPackage);
-  if($('downloadPackageBottom')) $('downloadPackageBottom').addEventListener('click',downloadPackage);
-  $('shareTop').addEventListener('click',sharePdf);
-  $('shareBottom').addEventListener('click',sharePdf);
   if($('sharePackage')) $('sharePackage').addEventListener('click',shareAppointmentPackage);
   if($('saveCombinedPdf')) $('saveCombinedPdf').addEventListener('click',saveReadyPdf);
   if($('savePackageZip')) $('savePackageZip').addEventListener('click',saveReadyZip);
   if($('preparePackageEmail')) $('preparePackageEmail').addEventListener('click',prepareReadyEmail);
-  if($('dismissPreparedEmail')) $('dismissPreparedEmail').addEventListener('click',hidePreparedEmailAction);
-  if($('openPreparedEmail')) $('openPreparedEmail').addEventListener('click',()=>{
-    hidePreparedEmailAction();
-    status('Prepared email opened. Attach the downloaded files before sending.');
-  });
   $('previewTop').addEventListener('click',()=>refreshPreview());
   $('previewPrev').addEventListener('click',()=>refreshPreview(-1));
   $('previewNext').addEventListener('click',()=>refreshPreview(1));

@@ -13,6 +13,7 @@ const worker = readFileSync(new URL('../service-worker.js', import.meta.url), 'u
 
 assert.match(html, />Generate Appointment Package</);
 assert.match(html, /id="appointmentPackageReady"/);
+assert.match(html, /id="status"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
 assert.match(html, />Appointment Package Ready</);
 assert.match(html, />Your combined PDF and document ZIP are ready\.</);
 assert.match(html, /id="sharePackage"[\s\S]*>Share Package</);
@@ -25,7 +26,7 @@ assert.ok(html.indexOf('id="savePackageZip"') < html.indexOf('id="preparePackage
 assert.match(styles, /\.package-ready-actions[\s\S]*grid/);
 assert.match(styles, /min-height:\s*44px/);
 assert.match(styles, /overflow-wrap:\s*anywhere/);
-assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.15';/);
+assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.16';/);
 assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
 
 const mime = { '.css':'text/css', '.html':'text/html', '.js':'text/javascript', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml' };
@@ -95,6 +96,20 @@ try {
     assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 44);
   }
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  const legacyDownloads=downloads.length;
+  const legacyShares=await page.evaluate(async () => {
+    window.__shareCalls=[];
+    for(const id of ['downloadTop','downloadBottom','downloadPackageTop','downloadPackageBottom','shareTop','shareBottom']){
+      document.querySelector(`#${id}`).click();
+    }
+    await new Promise(resolve=>setTimeout(resolve,100));
+    return window.__shareCalls.length;
+  });
+  assert.equal(downloads.length,legacyDownloads,'hidden legacy controls cannot trigger downloads');
+  assert.equal(legacyShares,0,'hidden legacy controls cannot trigger native sharing');
+  for(const id of ['downloadTop','downloadBottom','downloadPackageTop','downloadPackageBottom','shareTop','shareBottom']){
+    assert.equal(await page.locator(`#${id}`).isDisabled(),true,`${id} remains permanently disabled`);
+  }
   await page.locator('#sharePackage').focus();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement?.id),'saveCombinedPdf','ready actions follow their visual keyboard order');
@@ -119,6 +134,31 @@ try {
   assert.match(await page.getAttribute('#openPreparedEmail','href'),/^mailto:Natalie%40sjssolutionscorp\.com\.au\?/);
   assert.equal(downloads.length,downloadsBeforeEmail,'Prepare Email does not download files');
   assert.deepEqual(await page.evaluate(() => window._testState.getPackageGenerationCounts()),countsBeforeEmail,'Prepare Email does not regenerate the package');
+
+  await page.evaluate(() => {
+    window.__originalAnchorClick=HTMLAnchorElement.prototype.click;
+    window.__originalRevokeObjectURL=URL.revokeObjectURL;
+    window.__revokedObjectUrls=[];
+    window.__anchorsBeforeFailure=document.querySelectorAll('body > a[download]').length;
+    URL.revokeObjectURL=url=>window.__revokedObjectUrls.push(url);
+    HTMLAnchorElement.prototype.click=function(){throw new Error('simulated save failure');};
+  });
+  await page.click('#saveCombinedPdf');
+  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('could not be saved'));
+  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'save failure retains ready state');
+  assert.equal(await page.locator('#saveCombinedPdf').isEnabled(),true,'save failure remains retryable');
+  assert.equal(await page.evaluate(() => window.__revokedObjectUrls.length),1,'failed save revokes its object URL');
+  assert.equal(await page.locator('body > a[download]').count(),await page.evaluate(()=>window.__anchorsBeforeFailure),'failed save removes its temporary anchor');
+  await page.evaluate(() => {
+    HTMLAnchorElement.prototype.click=window.__originalAnchorClick;
+    URL.revokeObjectURL=window.__originalRevokeObjectURL;
+  });
+
+  await page.evaluate(() => { document.querySelector('#openPreparedEmail').click=()=>{throw new Error('simulated mailto failure');}; });
+  await page.click('#preparePackageEmail');
+  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('email could not be opened'));
+  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'mailto failure retains ready state');
+  assert.equal(await page.locator('#preparePackageEmail').isEnabled(),true,'mailto failure remains retryable');
 
   await page.evaluate(() => {
     window.__shareCalls=[];
@@ -151,15 +191,62 @@ try {
   await page.click('#sharePackage');
   assert.equal(await page.locator('#appointmentPackageReady').isVisible(), true, 'cancel retains ready state');
 
+  await page.evaluate(() => Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('simulated share failure');}}));
+  await page.click('#sharePackage');
+  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('could not be shared'));
+  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'share failure retains ready state');
+  assert.equal(await page.locator('#sharePackage').isEnabled(),true,'share failure remains retryable');
+
   await page.setViewportSize({width:1366,height:768});
   const wideActionTops=await page.locator('.package-ready-actions button').evaluateAll(buttons=>buttons.map(button=>Math.round(button.getBoundingClientRect().top)));
   assert.ok(Math.max(...wideActionTops)-Math.min(...wideActionTops) <= 1,'wide ready actions use one aligned row');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,'wide layout has no horizontal overflow');
 
-  await page.fill('#clientName', 'Changed Client');
-  await page.locator('#clientName').blur();
-  assert.equal(await page.locator('#sharePackage').isDisabled(), true);
-  assert.match(await page.textContent('#packageReadyNotice'), /changed|regenerate/i);
+  const viewports=[[320,568],[375,667],[390,844],[393,852],[414,896],[844,390],[412,915],[1024,768],[1280,800],[1440,900],[1920,1080]];
+  for(const [width,height] of viewports){
+    await page.setViewportSize({width,height});
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,`${width}x${height} has no horizontal overflow`);
+    for(const id of ['sharePackage','saveCombinedPdf','savePackageZip','preparePackageEmail']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 44,`${id} retains 44px at ${width}x${height}`);
+  }
+  await page.setViewportSize({width:1280,height:800});
+  await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
+  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'critical ready content remains at 200% text size');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,'200% text size has no horizontal overflow');
+  await page.evaluate(()=>{document.documentElement.style.fontSize='';});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),true);
+  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'ready state remains under reduced motion');
+
+  async function assertInvalidates(label,action){
+    await installPackage();
+    await action();
+    await page.waitForFunction(()=>window._testState.getAppointmentPackage() === null);
+    assert.equal(await page.locator('#sharePackage').isDisabled(),true,`${label} disables stale actions`);
+    assert.match(await page.textContent('#packageReadyNotice'),/changed|regenerate/i,`${label} shows stale guidance`);
+  }
+  await page.setViewportSize({width:390,height:844});
+  await installPackage();
+  await page.click('#summaryDisclosure');
+  assert.notEqual(await page.evaluate(()=>window._testState.getAppointmentPackage()),null,'presentation-only summary disclosure preserves the package');
+  await assertInvalidates('client name',async()=>{await page.fill('#clientName','Changed Client'); await page.locator('#clientName').blur();});
+  await assertInvalidates('client contact',async()=>{await page.fill('#clientPhone','0412345678'); await page.locator('#clientPhone').blur();});
+  await assertInvalidates('property',async()=>{await page.fill('#propertySaleAddress','Changed Property, Perth WA'); await page.locator('#propertySaleAddress').blur();});
+  await assertInvalidates('appointment date',async()=>{await page.fill('#date','22/07/2026'); await page.locator('#date').blur();});
+  await assertInvalidates('appointment time',async()=>{await page.selectOption('#eoiNextApptTime','11:30 AM');});
+  await assertInvalidates('Contract Due Date',async()=>{await page.uncheck('#contractDueDateTbc');});
+  await assertInvalidates('EOI value',async()=>{await page.fill('#eoiPriceLand','$410,000'); await page.locator('#eoiPriceLand').blur();});
+  await assertInvalidates('IA value',async()=>{await page.fill('#iaAmount','$12,000'); await page.locator('#iaAmount').blur();});
+  await page.click('#saveDraft');
+  await page.click('#loadDraft');
+  await assertInvalidates('staff after draft rerender',async()=>{await page.selectOption('#teamMember','Blake Duffield');});
+  await assertInvalidates('conveyancer after draft rerender',async()=>{await page.selectOption('#iaSolicitorOption','Natalie to Confirm');});
+  await assertInvalidates('document inclusion',async()=>{await page.uncheck('#includeIA');});
+  await assertInvalidates('signature',async()=>{
+    await page.locator('#signature').dispatchEvent('pointerdown',{pointerId:1,clientX:20,clientY:20});
+    await page.locator('#signature').dispatchEvent('pointerup',{pointerId:1,clientX:24,clientY:24});
+  });
+  await assertInvalidates('supporting upload',async()=>{await page.locator('#photoInput0').setInputFiles(resolve(root,'icons','icon-192.png'));});
+  await assertInvalidates('appointment mode',async()=>{await page.click('#backToStart'); await page.click('.mode-card[data-mode="zoom"]'); await page.click('#landingContinue');});
 
   console.log('PASS appointment package ready actions, sharing hierarchy, independent saves, stale state, mobile layout, and cache');
 } finally {

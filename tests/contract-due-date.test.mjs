@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-const emailBefore = source.slice(source.indexOf('function buildShareEmailContent'), source.indexOf('function hidePreparedEmailAction'));
+const emailBefore = source.slice(source.indexOf('function buildShareEmailContent'), source.indexOf('async function currentReadyPackage'));
 const mime = { '.css':'text/css', '.html':'text/html', '.js':'text/javascript', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml' };
 const server = createServer((request, response) => {
   const pathname = new URL(request.url, 'http://127.0.0.1').pathname;
@@ -110,6 +110,10 @@ try {
   await page.click('#generateTop');
   await page.locator('#contractDueDateField .fieldError').waitFor({ timeout:10000 });
   assert.equal(await page.getAttribute('#contractDueDate', 'aria-invalid'), 'true');
+  assert.equal(await page.getAttribute('#contractDueDateField .fieldError','id'),'err-contractDueDate');
+  assert.match(await page.getAttribute('#contractDueDate','aria-describedby'),/err-contractDueDate/);
+  assert.match(await page.getAttribute('#contractDueDateTbc','aria-describedby'),/err-contractDueDate/);
+  assert.equal(await page.getAttribute('#contractDueDateField .fieldError','role'),'alert');
   assert.match(await page.textContent('#contractDueDateField .fieldError'), /Select a Contract Due Date or choose To Be Confirmed/);
   assert.doesNotMatch(await page.textContent('#status'), /PDF ready/);
 
