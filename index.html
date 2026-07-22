@@ -647,10 +647,10 @@
                 <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
                 <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
               </div>
-              <div class="fields two" style="margin-top:12px">
+              <div class="fields two sale-finance-grid" style="margin-top:12px">
                 <div>
-                  <label for="eoiFinancePercent">Percentage of Finance</label>
-                  <select id="eoiFinancePercent">
+                  <label for="client1FinancePercentage">Client 1 Percentage of Finance</label>
+                  <select id="client1FinancePercentage">
                     <option value="">Select %</option>
                     <option value="10%">10%</option>
                     <option value="20%">20%</option>
@@ -663,15 +663,25 @@
                     <option value="90%">90%</option>
                   </select>
                 </div>
-                <div class="fields two" style="gap:12px; margin: 0; padding: 0">
-                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off">
-                    <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
-                      <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
-                      <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
-                      <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
-                      <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
-                    </div>
-                  </div>
+                <div id="client2FinancePercentageField">
+                  <label for="client2FinancePercentage">Client 2 Percentage of Finance</label>
+                  <select id="client2FinancePercentage">
+                    <option value="">Select %</option>
+                    <option value="10%">10%</option>
+                    <option value="20%">20%</option>
+                    <option value="30%">30%</option>
+                    <option value="40%">40%</option>
+                    <option value="50%">50%</option>
+                    <option value="60%">60%</option>
+                    <option value="70%">70%</option>
+                    <option value="80%">80%</option>
+                    <option value="90%">90%</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sale-schedule-grid" id="saleDetailsSchedule">
+                <div class="in-person-next-appointment" id="inPersonNextAppointmentGroup" role="group" aria-label="Next Appointment">
+                  <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off"></div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
                     <select id="eoiNextApptTime">
@@ -700,7 +710,14 @@
                     </select>
                   </div>
                 </div>
+                <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
+                  <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
+                  <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
+                  <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
+                  <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
+                </div>
               </div>
+              <input type="hidden" id="eoiFinancePercent" value="">
               <!-- Keep hidden/legacy field for draft compatibility -->
               <input type="hidden" id="eoiNextAppointment" value="">
               <input type="hidden" id="eoiIdAttached" value="">

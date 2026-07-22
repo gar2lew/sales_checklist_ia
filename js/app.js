@@ -104,7 +104,7 @@
     'client2Name','client2Phone','client2Email',
     'includeIA','iaForm','iaAmount','iaClientNames','iaAddress','iaProperty','iaSolicitor','iaDate','iaApplySignature1','iaApplySignature2','showIaOverrides',
     'includeEOI','eoiTemplate','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
-    'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
+    'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','client1FinancePercentage','client2FinancePercentage','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
     'laVidaFinanceBrokerChoice','laVidaFinanceBrokerName','laVidaFinanceBrokerEmail','laVidaFinanceBrokerPhone','laVidaConveyancerChoice','laVidaConveyancerName','laVidaConveyancerEmail','laVidaConveyancerPhone',
     'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA','zoomFirstConsultTemplate','fcPreferredSuburbs','fcMinBudget','fcMaxBudget','fcAdditionalNotes','crInspections','crNextAppointmentDate','crScheduleNotes'
   ];
@@ -312,6 +312,23 @@
   // Shared shorthand helpers eliminate repeated DOM query patterns.
   function isChecked(id){ const el = $(id); return !!(el && el.checked); }
   function hasClient2(){ return fieldText('client2Name').length > 0; }
+  const financePercentageOptions = Object.freeze(['10%','20%','30%','40%','50%','60%','70%','80%','90%']);
+  function normalizeFinancePercentage(value){
+    const normalized=String(value || '').trim();
+    return financePercentageOptions.includes(normalized) ? normalized : '';
+  }
+  function syncFinanceCompatibility(){
+    if($('eoiFinancePercent')) $('eoiFinancePercent').value=normalizeFinancePercentage(fieldText('client1FinancePercentage'));
+  }
+  function syncClient2FinanceState(){
+    const wrapper=$('client2FinancePercentageField');
+    const control=$('client2FinancePercentage');
+    if(!wrapper || !control) return;
+    const active=hasClient2();
+    wrapper.classList.toggle('hidden',!active);
+    control.disabled=!active;
+    wrapper.setAttribute('aria-hidden',String(!active));
+  }
   function mergedClientNames(){
     const c1 = fieldText('clientName');
     const c2 = fieldText('client2Name');
@@ -331,6 +348,7 @@
   // Call this after any major form state change to refresh all UI panels.
   function refreshAllUI(){
     syncContractDueDateState();
+    syncFinanceCompatibility(); syncClient2FinanceState();
     updateName(); updateDateDisplays(); updateIaDetails(); updateEoiDetails();
     updateLaVidaDetails(); updateHLTotal(); clearGenerated(); refreshPreview();
   }
@@ -489,7 +507,7 @@
       }
       return;
     }
-    var target = $(appointmentMode === 'zoom' ? 'crNextAppointmentDate' : 'eoiNextApptDate');
+    var target = $(appointmentMode === 'zoom' ? 'crNextAppointmentDate' : 'inPersonNextAppointmentGroup');
     if(target && target.parentElement && field.previousElementSibling !== target){
       target.insertAdjacentElement('afterend',field);
     }
@@ -1232,6 +1250,8 @@
     el.dataset.bound = 'true';
     el.addEventListener('input',()=>{
       refreshFormBindings();
+      if(id==='clientName' || id==='client2Name') syncClient2FinanceState();
+      if(id==='client1FinancePercentage') syncFinanceCompatibility();
       if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
       if(id==='eoiPriceTotal') applyPriceFormat(el);
     });
@@ -1242,6 +1262,8 @@
       clearValidation();
       if(id==='includeIA' || id==='iaForm' || id==='showIaOverrides') { updateIaDetails(); updateIaOverrides(); }
       if(id==='includeEOI' || id==='showEoiOverrides') { updateEoiDetails(); updateEoiOverrides(); }
+      if(id==='clientName' || id==='client2Name') syncClient2FinanceState();
+      if(id==='client1FinancePercentage') syncFinanceCompatibility();
       if(id==='eoiTemplate') { updateLaVidaDetails(); applyLaVidaDefaults(false); }
       if(id==='laVidaFinanceBrokerChoice' || id==='laVidaConveyancerChoice') { syncLaVidaContactsFromChoices(true); }
       if(id==='eoiPriceLand' || id==='eoiPriceHouse' || id==='eoiPriceTotal'){
@@ -1738,7 +1760,8 @@
   function applyPdfDefaults(force=false){
     const defaults = adminSettings.pdfDefaults || defaultAdminSettings.pdfDefaults;
     if($('iaAmount') && (force || !fieldText('iaAmount'))) setControlValue('iaAmount', defaults.authorityAmount || '$10,000');
-    if($('eoiFinancePercent') && (force || !fieldText('eoiFinancePercent'))) setControlValue('eoiFinancePercent', defaults.financePercent || '');
+    if($('client1FinancePercentage') && (force || !fieldText('client1FinancePercentage'))) setControlValue('client1FinancePercentage', normalizeFinancePercentage(defaults.financePercent));
+    syncFinanceCompatibility();
     if($('eoiBranch') && (force || !fieldText('eoiBranch'))) setControlValue('eoiBranch', defaults.branch || '');
     if($('compressPhotos') && force) $('compressPhotos').checked = !!defaults.compressPhotos;
     if($('iaApplySignature1') && force) $('iaApplySignature1').checked = !!defaults.iaApplySignature1;
@@ -1782,6 +1805,8 @@
   });
   if($('contractDueDateTbc')) $('contractDueDateTbc').addEventListener('change',syncContractDueDateState);
   syncContractDueDateState();
+  syncFinanceCompatibility();
+  syncClient2FinanceState();
   document.querySelectorAll('input[name="eoiOwnership"]').forEach(el => el.addEventListener('change',()=>{ clearGenerated(); updateSectionProgress(); updateTimelineProgress(); updateCollapseIndicators(); }));
   $('staffMode').addEventListener('change',()=>{ adminSettings.staff.mode='select'; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
   $('solicitorMode').addEventListener('change',()=>{ adminSettings.solicitor.mode=$('solicitorMode').value; saveAdminSettings(); renderAdminSettings(); renderConfigurableFields(); clearGenerated(); });
@@ -3869,7 +3894,7 @@
 
     ctx.fillStyle='#00086d'; ctx.font='700 13px Arial'; ctx.fillText('Proposed land, house or house-and-land sale details',left,y); y+=20;
     drawLineValue(ctx,'Sale Type:',fieldText('eoiSaleType'),left,y,250,{labelW:68,maxLines:1});
-    drawLineValue(ctx,'Finance:',fieldText('eoiFinancePercent'),315,y,238,{labelW:64,maxLines:1}); y+=26;
+    drawLineValue(ctx,'Finance:',fieldText('client1FinancePercentage'),315,y,238,{labelW:64,maxLines:1}); y+=26;
     drawLineValue(ctx,'Address of Sale:',eoiSaleAddressValue(),left,y,511,{labelW:96,maxLines:2,lineH:13}); y+=36;
     drawLineValue(ctx,'Land:',formatPrice(fieldText('eoiPriceLand')),left,y,150,{labelW:42,maxLines:1});
     drawLineValue(ctx,'House:',formatPrice(fieldText('eoiPriceHouse')),222,y,150,{labelW:46,maxLines:1});
@@ -5224,6 +5249,7 @@
   // SECTION P: DRAFT PERSISTENCE
   // =========================================================================
   function getDraft(){
+    syncFinanceCompatibility();
     const data={}; fields.forEach(id=>{const el=$(id); if(!el)return; data[id]=(el.type==='checkbox')?el.checked:el.value;});
     data.eoiOwnership=eoiOwnership();
     data.signature=hasSignature?sig.toDataURL('image/png'):null;
@@ -5263,6 +5289,10 @@
     if (data.eoiTemplate === undefined || !String(data.eoiTemplate).trim()) {
       data.eoiTemplate = 'standard';
     }
+    const hasClient1Finance=data.client1FinancePercentage !== undefined;
+    data.client1FinancePercentage=normalizeFinancePercentage(hasClient1Finance ? data.client1FinancePercentage : data.eoiFinancePercent);
+    data.client2FinancePercentage=normalizeFinancePercentage(data.client2FinancePercentage);
+    data.eoiFinancePercent=data.client1FinancePercentage;
     migrateLaVidaDraftSelections(data);
     preserveDraftDropdownValue('staff', data.teamMember);
     preserveDraftDropdownValue('staff', data.eoiStaffMember);
@@ -5298,6 +5328,8 @@
     });
     renderConfigurableControl('solicitor','solicitorControl','iaSolicitor','Solicitor / Conveyancer','Name of solicitor or conveyancer',false);
     syncContractDueDateState();
+    syncFinanceCompatibility();
+    syncClient2FinanceState();
     if ((data.eoiNextApptDate === undefined || !String(data.eoiNextApptDate).trim()) && data.eoiNextAppointment) {
       const val = String(data.eoiNextAppointment).trim();
       const dateMatch = val.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/);
@@ -5519,7 +5551,8 @@
     setControlValue('eoiPriceLand', '$400,000');
     setControlValue('eoiPriceHouse', '$475,000');
     setControlValue('eoiPriceTotal', '$875,000');
-    setControlValue('eoiFinancePercent', '80%');
+    setControlValue('client1FinancePercentage', '80%');
+    syncFinanceCompatibility();
     setControlValue('iaAmount', '$10,000');
     setControlValue('iaDate', today);
     setControlValue('iaForm', 'perth');

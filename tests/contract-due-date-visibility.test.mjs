@@ -51,16 +51,18 @@ try {
       assert.ok((await date.boundingBox()).height >= 44,`date input retains 44px at ${viewport.width}px`);
       assert.ok((await tbc.boundingBox()).height >= 44,`TBC label retains 44px at ${viewport.width}px`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,`${viewport.width}px has no horizontal overflow`);
-      assert.equal(await page.locator('#contractDueDateField').evaluate((group,id) => {
-        const nextDate=document.getElementById(id);
-        return group.parentElement === nextDate?.parentElement && group.previousElementSibling === nextDate;
-      },nextAppointmentId),true,`${mode} due-date group follows its Next Appointment Date at ${viewport.width}px`);
+      assert.equal(await page.locator('#contractDueDateField').evaluate((group,{id,mode}) => {
+        const target=document.getElementById(mode === 'zoom' ? id : 'inPersonNextAppointmentGroup');
+        return group.parentElement === target?.parentElement && group.previousElementSibling === target;
+      },{id:nextAppointmentId,mode}),true,`${mode} due-date group follows its complete Next Appointment group at ${viewport.width}px`);
       assert.equal(await page.locator('#appointmentInfoSection #contractDueDateField').count(),0,'due-date group is absent from the beginning of the form');
-      assert.deepEqual(await page.evaluate(id => {
+      assert.deepEqual(await page.evaluate(({id,mode}) => {
         const focusable=Array.from(document.querySelectorAll('input:not([disabled]),select:not([disabled]),textarea:not([disabled]),button:not([disabled]),a[href]'));
         const start=focusable.indexOf(document.getElementById(id));
-        return focusable.slice(start,start+3).map(el=>el.id);
-      },nextAppointmentId),[nextAppointmentId,'contractDueDate','contractDueDateTbc'],`${mode} keyboard order follows the requested placement`);
+        return focusable.slice(start,start+(mode === 'zoom' ? 3 : 4)).map(el=>el.id);
+      },{id:nextAppointmentId,mode}),mode === 'zoom'
+        ? [nextAppointmentId,'contractDueDate','contractDueDateTbc']
+        : [nextAppointmentId,'eoiNextApptTime','contractDueDate','contractDueDateTbc'],`${mode} keyboard order follows the requested placement`);
       observations.push({ mode, viewport, field:await field.boundingBox(), date:await date.boundingBox(), tbc:await tbc.boundingBox() });
       await page.close();
     }

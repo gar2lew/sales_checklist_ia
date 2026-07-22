@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2\.7\.0-alpha\.18';/, "Contract Due Date placement hotfix must advance from v2.7.0-alpha.17 to v2.7.0-alpha.18");
+assert.match(source, /const CACHE_VERSION = 'v2\.7\.0-alpha\.19';/, "Sale Details finance-layout hotfix must advance from v2.7.0-alpha.18 to v2.7.0-alpha.19");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -34,7 +34,7 @@ const context = {
   },
   caches: {
     async open(name) { openedCaches.push(name); return cache; },
-    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "unrelated-cache"]; },
+    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18", "unrelated-cache"]; },
     async delete(name) { deletedCaches.push(name); return true; },
     async match(request) {
       if (request === "/index.html") return cachedIndex;
@@ -56,7 +56,7 @@ assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install"])
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.18", "fresh install must populate the new cache");
+assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.19", "fresh install must populate the new cache");
 assert.equal(skipWaitingCalls, 1, "fresh install must retain immediate worker activation");
 assert.deepEqual(cachedAssets, [
   "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/app.js",
@@ -75,7 +75,7 @@ assert.deepEqual(cachedAssets, [
 
 listeners.get("activate")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17"], "upgrade must delete previous application caches without touching unrelated caches");
+assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18"], "upgrade must delete previous application caches without touching unrelated caches");
 assert.equal(claimCalls, 1, "upgrade must retain immediate client claiming");
 
 async function dispatchFetch(request) {
