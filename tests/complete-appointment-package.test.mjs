@@ -198,18 +198,12 @@ try {
   });
   assert.ok(regenerated.entries.some(name => name.includes('Changed Property, Perth WA')));
 
-  await page.evaluate(() => {
-    window.__sharedFiles = null;
-    Object.defineProperty(navigator, 'canShare', { configurable:true, value:({ files }) => files?.length === 2 });
-    Object.defineProperty(navigator, 'share', { configurable:true, value:async payload => { window.__sharedFiles = payload.files.map(file => ({ name:file.name, type:file.type, size:file.size })); } });
-  });
   await page.evaluate(() => window._testState.renderPackageReady('ready'));
-  await page.click('#sharePackage');
-  await page.waitForFunction(() => Array.isArray(window.__sharedFiles));
-  const shared = await page.evaluate(() => ({ files:window.__sharedFiles, counts:window._testState.getPackageGenerationCounts() }));
-  assert.equal(shared.files.length, 2);
-  assert.deepEqual(shared.files.map(file => file.type), ['application/pdf','application/zip']);
-  assert.deepEqual(shared.counts, regenerated.counts, 'native Share reuses the complete package');
+  const beforeCombinedDownloads = downloads.length;
+  await page.click('#downloadPackage');
+  await page.waitForFunction(() => document.querySelector('#packageDownloadStatus').textContent.includes('Downloads started'));
+  while(downloads.length < beforeCombinedDownloads + 2) await page.waitForTimeout(20);
+  assert.deepEqual(await page.evaluate(() => window._testState.getPackageGenerationCounts()), regenerated.counts, 'Download Package reuses the complete package');
 
   const beforePackageDownloads = downloads.length;
   await page.click('#saveCombinedPdf');
@@ -237,8 +231,8 @@ try {
     'First Consultation - Brisbane - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf',
     'Client Review Assessment - John Smith & Jenny Smith - Garry Lewis - 21-07-2026.pdf'
   ]);
-  assert.equal(zoomPackage.counts.combinedPdf, shared.counts.combinedPdf + 1);
-  assert.equal(zoomPackage.counts.zip, shared.counts.zip + 1);
+  assert.equal(zoomPackage.counts.combinedPdf, regenerated.counts.combinedPdf + 1);
+  assert.equal(zoomPackage.counts.zip, regenerated.counts.zip + 1);
 
   const concurrent = await page.evaluate(async () => {
     window._testState.clearGenerated();
@@ -292,7 +286,7 @@ try {
   const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../service-worker.js', import.meta.url), 'utf8');
   assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
-assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.20';/);
+  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.21';/);
 
   console.log(JSON.stringify({
     packageResult:{
@@ -303,7 +297,7 @@ assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.20';/);
     },
     cacheReuse:reused,
     cacheInvalidation:regenerated,
-    nativeShare:shared.files,
+    packageDownload:downloads.slice(beforeCombinedDownloads,beforeCombinedDownloads + 2),
     sanitised
   }, null, 2));
   console.log('PASS complete appointment package artifacts, cache, filenames, and entry points');

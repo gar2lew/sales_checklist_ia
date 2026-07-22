@@ -16,17 +16,17 @@ assert.match(html, /id="appointmentPackageReady"/);
 assert.match(html, /id="status"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
 assert.match(html, />Appointment Package Ready</);
 assert.match(html, />Your combined PDF and document ZIP are ready\.</);
-assert.match(html, /id="sharePackage"[\s\S]*>Share Package</);
+assert.match(html, /id="downloadPackage"[\s\S]*>Download Package</);
 assert.match(html, /id="saveCombinedPdf"[\s\S]*>Save Combined PDF</);
 assert.match(html, /id="savePackageZip"[\s\S]*>Save ZIP</);
 assert.match(html, /id="preparePackageEmail"[\s\S]*>Prepare Email</);
-assert.ok(html.indexOf('id="sharePackage"') < html.indexOf('id="saveCombinedPdf"'));
+assert.ok(html.indexOf('id="downloadPackage"') < html.indexOf('id="saveCombinedPdf"'));
 assert.ok(html.indexOf('id="saveCombinedPdf"') < html.indexOf('id="savePackageZip"'));
 assert.ok(html.indexOf('id="savePackageZip"') < html.indexOf('id="preparePackageEmail"'));
 assert.match(styles, /\.package-ready-actions[\s\S]*grid/);
 assert.match(styles, /min-height:\s*44px/);
 assert.match(styles, /overflow-wrap:\s*anywhere/);
-assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.20';/);
+assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.21';/);
 assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
 
 const mime = { '.css':'text/css', '.html':'text/html', '.js':'text/javascript', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml' };
@@ -91,7 +91,7 @@ try {
   assert.equal(await page.locator('#appointmentPackageReady').isVisible(), true);
   assert.equal(await page.textContent('#packageReadyPdfName'), 'Sales Appointment - John Smith.pdf');
   assert.equal(await page.textContent('#packageReadyZipName'), '22-07-2026 - John Smith - Sales Appointment Documents.zip');
-  for(const id of ['sharePackage','saveCombinedPdf','savePackageZip','preparePackageEmail']) {
+  for(const id of ['downloadPackage','saveCombinedPdf','savePackageZip','preparePackageEmail']) {
     assert.equal(await page.locator(`#${id}`).isEnabled(), true);
     assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 44);
   }
@@ -110,7 +110,7 @@ try {
   for(const id of ['downloadTop','downloadBottom','downloadPackageTop','downloadPackageBottom','shareTop','shareBottom']){
     assert.equal(await page.locator(`#${id}`).isDisabled(),true,`${id} remains permanently disabled`);
   }
-  await page.locator('#sharePackage').focus();
+  await page.locator('#downloadPackage').focus();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement?.id),'saveCombinedPdf','ready actions follow their visual keyboard order');
 
@@ -160,42 +160,13 @@ try {
   assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'mailto failure retains ready state');
   assert.equal(await page.locator('#preparePackageEmail').isEnabled(),true,'mailto failure remains retryable');
 
-  await page.evaluate(() => {
-    window.__shareCalls=[];
-    Object.defineProperty(navigator, 'canShare', { configurable:true, value:({files}) => files.length === 2 });
-    Object.defineProperty(navigator, 'share', { configurable:true, value:async payload => window.__shareCalls.push(payload.files.map(file => file.name)) });
-  });
-  await page.click('#sharePackage');
-  await page.waitForFunction(() => window.__shareCalls.length === 1);
-  assert.deepEqual(await page.evaluate(() => window.__shareCalls[0]), ['Sales Appointment - John Smith.pdf','22-07-2026 - John Smith - Sales Appointment Documents.zip']);
-
-  await page.evaluate(() => {
-    window.__shareCalls=[];
-    Object.defineProperty(navigator, 'canShare', { configurable:true, value:({files}) => files.length === 1 && files[0].type === 'application/pdf' });
-  });
-  await page.click('#sharePackage');
-  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('ZIP remains'));
-  assert.deepEqual(await page.evaluate(() => window.__shareCalls[0]), ['Sales Appointment - John Smith.pdf']);
-
-  const downloadCount = downloads.length;
-  await page.evaluate(() => Object.defineProperty(navigator, 'canShare', { configurable:true, value:() => false }));
-  await page.click('#sharePackage');
-  await page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('File sharing is not available'));
-  assert.equal(await page.textContent('#status'), 'File sharing is not available in this browser. You can save the PDF and ZIP separately.');
-  assert.equal(downloads.length, downloadCount, 'unavailable sharing triggers no downloads');
-
-  await page.evaluate(() => {
-    Object.defineProperty(navigator, 'canShare', { configurable:true, value:() => true });
-    Object.defineProperty(navigator, 'share', { configurable:true, value:async () => { throw new DOMException('cancelled','AbortError'); } });
-  });
-  await page.click('#sharePackage');
-  assert.equal(await page.locator('#appointmentPackageReady').isVisible(), true, 'cancel retains ready state');
-
-  await page.evaluate(() => Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new Error('simulated share failure');}}));
-  await page.click('#sharePackage');
-  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('could not be shared'));
-  assert.equal(await page.locator('#appointmentPackageReady').isVisible(),true,'share failure retains ready state');
-  assert.equal(await page.locator('#sharePackage').isEnabled(),true,'share failure remains retryable');
+  const beforePackageDownload = downloads.length;
+  const countsBeforePackageDownload=await page.evaluate(() => window._testState.getPackageGenerationCounts());
+  await page.click('#downloadPackage');
+  await page.waitForFunction(() => document.querySelector('#packageDownloadStatus').textContent.includes('Downloads started'));
+  while(downloads.length < beforePackageDownload + 2) await page.waitForTimeout(20);
+  assert.deepEqual(downloads.slice(beforePackageDownload), ['Sales Appointment - John Smith.pdf','22-07-2026 - John Smith - Sales Appointment Documents.zip']);
+  assert.deepEqual(await page.evaluate(() => window._testState.getPackageGenerationCounts()),countsBeforePackageDownload,'Download Package reuses the ready package');
 
   await page.setViewportSize({width:1366,height:768});
   const wideActionTops=await page.locator('.package-ready-actions button').evaluateAll(buttons=>buttons.map(button=>Math.round(button.getBoundingClientRect().top)));
@@ -206,7 +177,7 @@ try {
   for(const [width,height] of viewports){
     await page.setViewportSize({width,height});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),true,`${width}x${height} has no horizontal overflow`);
-    for(const id of ['sharePackage','saveCombinedPdf','savePackageZip','preparePackageEmail']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 44,`${id} retains 44px at ${width}x${height}`);
+    for(const id of ['downloadPackage','saveCombinedPdf','savePackageZip','preparePackageEmail']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 44,`${id} retains 44px at ${width}x${height}`);
   }
   await page.setViewportSize({width:1280,height:800});
   await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
@@ -221,7 +192,7 @@ try {
     await installPackage();
     await action();
     await page.waitForFunction(()=>window._testState.getAppointmentPackage() === null);
-    assert.equal(await page.locator('#sharePackage').isDisabled(),true,`${label} disables stale actions`);
+    assert.equal(await page.locator('#downloadPackage').isDisabled(),true,`${label} disables stale actions`);
     assert.match(await page.textContent('#packageReadyNotice'),/changed|regenerate/i,`${label} shows stale guidance`);
   }
   await page.setViewportSize({width:390,height:844});

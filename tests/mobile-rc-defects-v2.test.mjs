@@ -138,10 +138,11 @@ try {
   });
   assert.ok(fallbackLayout.allTouchTargets, 'ready actions must retain 44px touch targets');
   assert.ok(fallbackLayout.noOverflow, 'ready panel must not create horizontal overflow');
-  await fallback.page.evaluate(() => Object.defineProperty(navigator, 'canShare', { configurable:true, value:() => false }));
-  await fallback.page.click('#sharePackage');
-  await fallback.page.waitForFunction(() => document.querySelector('#status').textContent.startsWith('File sharing is not available'));
-  assert.equal(downloads.length, 0, 'unavailable file sharing must not download files');
+  const packageDownloadsBefore=downloads.length;
+  await fallback.page.click('#downloadPackage');
+  await fallback.page.waitForFunction(() => document.querySelector('#packageDownloadStatus').textContent.includes('Downloads started'));
+  while(downloads.length < packageDownloadsBefore + 2) await fallback.page.waitForTimeout(20);
+  assert.equal(downloads.length, packageDownloadsBefore + 2, 'Download Package initiates the PDF and ZIP downloads');
   await fallback.page.evaluate(() => document.querySelector('#openPreparedEmail').addEventListener('click', event => event.preventDefault(), { once:true, capture:true }));
   await fallback.page.click('#preparePackageEmail');
   await fallback.page.waitForFunction(() => document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
@@ -152,32 +153,7 @@ try {
   assert.doesNotMatch(decodeURIComponent(mailto), /Contract Issued:|downloaded|attach/i);
   assert.match(await fallback.page.textContent('#status'), /Prepared email opened/);
 
-  await fallback.page.evaluate(() => {
-    window.__nativeShareCalls = [];
-    Object.defineProperty(navigator, 'canShare', { configurable:true, value:payload => Array.isArray(payload.files) && payload.files.length > 0 });
-    Object.defineProperty(navigator, 'share', { configurable:true, value:payload => { window.__nativeShareCalls.push(payload); return Promise.resolve(); } });
-  });
-  const downloadsBeforeNative = downloads.length;
-  await fallback.page.click('#sharePackage');
-  await fallback.page.waitForFunction(() => window.__nativeShareCalls.length === 1, null, { timeout:30000 });
-  assert.equal(await fallback.page.evaluate(() => window.__nativeShareCalls[0].files.length), 2, 'native multi-file share must receive PDF and ZIP');
-  assert.equal(downloads.length, downloadsBeforeNative, 'successful native share must not duplicate downloads');
-  assert.ok(await fallback.page.locator('#appointmentPackageReady').isVisible());
-
-  await fallback.page.evaluate(() => {
-    Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new DOMException('cancelled', 'AbortError')) });
-  });
-  await fallback.page.click('#sharePackage');
-  await fallback.page.waitForTimeout(500);
-  assert.equal(downloads.length, downloadsBeforeNative, 'cancelled native share must not trigger fallback downloads');
-
-  await fallback.page.evaluate(() => {
-    Object.defineProperty(navigator, 'share', { configurable:true, value:() => Promise.reject(new Error('native share rejected')) });
-  });
-  await fallback.page.click('#sharePackage');
-  await fallback.page.waitForFunction(() => document.querySelector('#status').textContent.includes('could not be shared'));
-  assert.equal(downloads.length, downloadsBeforeNative, 'rejected native share must not trigger unrelated downloads');
-  assert.ok(await fallback.page.locator('#appointmentPackageReady').isVisible(), 'share failure retains ready state');
+  assert.ok(await fallback.page.locator('#appointmentPackageReady').isVisible(), 'Download Package retains ready state');
   await fallback.context.close();
 
   console.log('PASS mobile RC defect regression contracts');

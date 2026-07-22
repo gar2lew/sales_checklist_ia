@@ -21,7 +21,7 @@ This checklist covers the ASG workspace upgrade on `polish/minimum-commercial-se
 | Landing keyboard dropdown, click-outside close, and Start Appointment | Verified automatically | Focused presentation regression suite |
 | Draft saved/loaded/dirty and PDF ready/invalidated presentation | Verified automatically | Focused presentation regression suite |
 | PDF preview refresh and navigation controls | Verified automatically | Existing PDF visual smoke and focused workspace regression checks |
-| Download PDF, Download Package, and email/download share fallback | Verified automatically | Download-event and fallback assertions in the focused regression suite |
+| Download Package initiates the Combined PDF and Document ZIP, with individual-save fallback guidance | Verified automatically | Deterministic download instrumentation in `tests/date-download-package.test.mjs` |
 | Native operating-system share sheet | Blocked | Headless Chromium cannot invoke or validate iOS/Android native share UI |
 | Physical software-keyboard and safe-area behavior | Blocked | No physical iPhone, Android phone, or iPad was connected to this environment |
 
@@ -33,7 +33,10 @@ This checklist covers the ASG workspace upgrade on `polish/minimum-commercial-se
 | Software keyboard open on first, middle, and final fields | Requires manual device verification | Focused field remains visible; page scroll does not jump behind the header or footer |
 | Bottom safe-area inset | Requires manual device verification | Footer clears the home indicator and every action remains tappable |
 | Sticky footer while scrolling long sections | Requires manual device verification | Footer remains stable and does not cover the active field, photo control, or signature canvas |
-| Native share sheet | Requires manual device verification | Share opens the iOS sheet with the generated PDF; cancellation leaves the workspace usable |
+| Native date controls | Requires manual device verification | Next Appointment Date and Contract Due Date match adjacent controls; the native picker opens and the selected date remains centred in portrait and landscape |
+| Contract Due Date TBC state | Requires manual device verification | Selecting To Be Confirmed disables the date visibly without clipping or losing its label |
+| Download Package | Requires manual device verification | One tap initiates the Combined PDF and Document ZIP; any Safari prompt is handled and both files appear in Downloads where supported |
+| Download fallback and email handover | Requires manual device verification | Downloads started guidance appears; Save Combined PDF and Save ZIP remain usable; Prepare Email opens and both files can be attached manually |
 | Field focus and scrolling | Requires manual device verification | Previous/Next keyboard navigation and direct taps reveal the whole focused control |
 | Section expansion/collapse | Requires manual device verification | Existing optional EOI/IA detail toggles retain state and do not move focus unexpectedly |
 | PDF preview navigation | Requires manual device verification | Previous/Next changes pages once per tap without layout shift |
@@ -46,7 +49,7 @@ This checklist covers the ASG workspace upgrade on `polish/minimum-commercial-se
 | Software keyboard open with resize/pan behavior | Requires manual device verification | Active controls remain visible above the keyboard and sticky footer |
 | Gesture-navigation bottom inset | Requires manual device verification | Footer actions clear the gesture area and remain at least 44px high |
 | Sticky footer during long-form scrolling | Requires manual device verification | No content obstruction or footer flicker |
-| Native share sheet | Requires manual device verification | Android share targets receive the generated PDF correctly; cancellation is non-destructive |
+| Download Package and email handover | Requires manual device verification | PDF and ZIP initiation, individual-save fallback, Downloads guidance, Prepare Email, and manual attachments all remain usable |
 | Field focus and scrolling | Requires manual device verification | Address, email, date, and text areas scroll into a stable visible position |
 | Section expansion/collapse | Requires manual device verification | Existing optional EOI/IA details expand and collapse without losing entered values |
 | PDF preview navigation | Requires manual device verification | Page count and rendered preview remain synchronised |
@@ -59,7 +62,7 @@ This checklist covers the ASG workspace upgrade on `polish/minimum-commercial-se
 | On-screen and hardware keyboard | Requires manual device verification | Focus order remains logical and focused controls are not hidden |
 | Safe-area inset and sticky footer | Requires manual device verification | Footer clears device insets and does not obscure the final card or signature controls |
 | Split-screen or reduced-width browser | Requires manual device verification | Workspace reflows without horizontal overflow or inaccessible toolbar actions |
-| Native share sheet | Requires manual device verification | Generated PDF appears in the platform share sheet and the app recovers after cancel/share |
+| Download Package and email handover | Requires manual device verification | PDF and ZIP initiation, individual saves, Prepare Email, and manual attachment work without layout obstruction |
 | Section expansion/collapse | Requires manual device verification | Optional document sections retain values and visual state |
 | PDF preview navigation | Requires manual device verification | Touch targets work reliably and the preview remains legible |
 

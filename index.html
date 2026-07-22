@@ -1081,11 +1081,16 @@
       <div><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
     </dl>
     <div class="package-ready-actions">
-      <button type="button" class="btn primary" id="sharePackage" disabled>Share Package</button>
+      <button type="button" class="btn primary" id="downloadPackage" disabled>Download Package</button>
       <button type="button" class="btn" id="saveCombinedPdf" disabled>Save Combined PDF</button>
       <button type="button" class="btn" id="savePackageZip" disabled>Save ZIP</button>
       <button type="button" class="btn" id="preparePackageEmail" disabled>Prepare Email</button>
     </div>
+    <div class="package-download-status" id="packageDownloadStatus" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <strong id="packageDownloadStatusTitle"></strong>
+      <span id="packageDownloadStatusInstruction"></span>
+    </div>
+    <button type="button" class="legacy-output-action" id="sharePackage" disabled hidden tabindex="-1" aria-hidden="true"></button>
   </section>
 
   <section class="hidden" id="shareEmailFallback" aria-hidden="true">

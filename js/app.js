@@ -211,6 +211,7 @@
   let packageBuildPromise = null;
   let packageBuildRevision = -1;
   let packageReadyHasBeenShown = false;
+  let packageDownloadStatusPackage = null;
   let packageGenerationInProgress = false;
   const packageGenerationCounts = { combinedPdf:0, zip:0 };
   let previewPageIndex = 0;
@@ -1011,10 +1012,32 @@
   }
 
   function setPackageActionDisabled(disabled){
-    ['sharePackage','saveCombinedPdf','savePackageZip','preparePackageEmail'].forEach(id=>{
+    ['downloadPackage','saveCombinedPdf','savePackageZip','preparePackageEmail'].forEach(id=>{
       const button=$(id);
       if(button) button.disabled=disabled;
     });
+  }
+  function resetPackageDownloadStatus(){
+    const panel=$('packageDownloadStatus');
+    if(panel){
+      panel.hidden=true;
+      panel.classList.remove('is-fallback');
+      if($('packageDownloadStatusTitle')) $('packageDownloadStatusTitle').textContent='';
+      if($('packageDownloadStatusInstruction')) $('packageDownloadStatusInstruction').textContent='';
+    }
+    packageDownloadStatusPackage=null;
+  }
+  function showPackageDownloadStatus(kind,appointmentPackage){
+    const panel=$('packageDownloadStatus');
+    if(!panel) return;
+    const fallback=kind === 'fallback';
+    panel.hidden=false;
+    panel.classList.toggle('is-fallback',fallback);
+    $('packageDownloadStatusTitle').textContent=fallback ? 'Separate downloads may be required' : 'Downloads started';
+    $('packageDownloadStatusInstruction').textContent=fallback
+      ? 'Your browser may require separate downloads. Tap Save Combined PDF and Save ZIP below.'
+      : 'Please tap Prepare Email and attach the Combined PDF and Document ZIP from your Downloads.';
+    packageDownloadStatusPackage=appointmentPackage;
   }
   function setPackageGenerationDisabled(disabled){
     ['generateTop','generateBottom'].forEach(id=>{
@@ -1034,6 +1057,7 @@
     const notice=$('packageReadyNotice');
     const title=$('appointmentPackageReadyTitle');
     const description=$('appointmentPackageReadyDescription');
+    if(!ready || (packageDownloadStatusPackage && packageDownloadStatusPackage !== lastAppointmentPackage)) resetPackageDownloadStatus();
     if(title) title.textContent=stale ? 'Appointment Package Needs Regeneration' : 'Appointment Package Ready';
     if(description) description.textContent=stale ? 'The appointment has changed since this package was generated.' : 'Your combined PDF and document ZIP are ready.';
     if(ready && pdfName) pdfName.textContent=lastAppointmentPackage.filenames.combinedPdf;
@@ -5181,26 +5205,18 @@
     return `mailto:${encodeURIComponent(email.to)}?${query.join('&')}`;
   }
 
-  async function shareAppointmentPackage(){
+  async function downloadReadyPackage(){
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
-    const email=buildShareEmailContent();
-    if(!email){ status('Please fix the highlighted fields.'); return; }
-    const bothFiles=[appointmentPackage.combinedPdfFile,appointmentPackage.zipFile];
-    const pdfOnly=[appointmentPackage.combinedPdfFile];
-    const canShare=files=>navigator.share && navigator.canShare && (()=>{ try{return navigator.canShare({files});}catch{return false;} })();
-    const files=canShare(bothFiles) ? bothFiles : (canShare(pdfOnly) ? pdfOnly : null);
-    if(!files){
-      status('File sharing is not available in this browser. You can save the PDF and ZIP separately.');
-      return;
-    }
     try{
-      await navigator.share({title:email.subject,text:email.body,files});
-      status(files.length === 2 ? 'Appointment package shared.' : 'The combined PDF was shared. The ZIP remains available to save separately.');
+      downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
+      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+      showPackageDownloadStatus('started',appointmentPackage);
+      status('Downloads started.');
     }catch(err){
-      if(err && err.name === 'AbortError') return;
       console.error(err);
-      status('The appointment package could not be shared. Try again or save the files separately.');
+      showPackageDownloadStatus('fallback',appointmentPackage);
+      status('Your browser may require separate downloads. Tap Save Combined PDF and Save ZIP below.');
     }
   }
 
@@ -5590,7 +5606,7 @@
   // =========================================================================
   $('generateTop').addEventListener('click',generatePdfOnly);
   $('generateBottom').addEventListener('click',generatePdfOnly);
-  if($('sharePackage')) $('sharePackage').addEventListener('click',shareAppointmentPackage);
+  if($('downloadPackage')) $('downloadPackage').addEventListener('click',downloadReadyPackage);
   if($('saveCombinedPdf')) $('saveCombinedPdf').addEventListener('click',saveReadyPdf);
   if($('savePackageZip')) $('savePackageZip').addEventListener('click',saveReadyZip);
   if($('preparePackageEmail')) $('preparePackageEmail').addEventListener('click',prepareReadyEmail);

@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const currentWorker = await readFile(path.join(root, "service-worker.js"), "utf8");
-const previousWorker = currentWorker.replace("v2.7.0-alpha.20", "v2.7.0-alpha.19");
+const previousWorker = currentWorker.replace("v2.7.0-alpha.21", "v2.7.0-alpha.20");
 let servedWorker = previousWorker;
 const mime = {
   ".css": "text/css",
@@ -53,14 +53,14 @@ try {
   upgradePage.on('download',download=>offlineDownloads.push(download.suggestedFilename()));
   await upgradePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await upgradePage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.19");
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.20");
 
   servedWorker = currentWorker;
   await upgradePage.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
     await registration.update();
   });
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.20", ["sales-capture-v2.7.0-alpha.19"]);
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.21", ["sales-capture-v2.7.0-alpha.20"]);
 
   await upgradeContext.setOffline(true);
   await upgradePage.reload({ waitUntil: "domcontentloaded" });
@@ -73,6 +73,9 @@ try {
   await upgradePage.click('#generateTop');
   await upgradePage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Appointment package ready'),null,{timeout:30000});
   assert.equal(await upgradePage.locator('#appointmentPackageReady').isVisible(),true,'offline package generation must reach complete ready state');
+  assert.equal(await upgradePage.locator('#downloadPackage').isVisible(),true,'activated cache must expose Download Package');
+  assert.equal((await upgradePage.textContent('#downloadPackage')).trim(),'Download Package');
+  assert.equal(await upgradePage.locator('#sharePackage').isHidden(),true,'stale Share Package UI must not survive activation');
   await upgradePage.click('#saveCombinedPdf');
   await upgradePage.click('#savePackageZip');
   const downloadDeadline=Date.now()+10000;
@@ -89,11 +92,11 @@ try {
   const freshPage = await freshContext.newPage();
   await freshPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await freshPage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.20", ["sales-capture-v2.7.0-alpha.19"]);
+  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.21", ["sales-capture-v2.7.0-alpha.20"]);
   assert.equal(await freshPage.locator("#landingScreen").isVisible(), true, "fresh installation must render the current shell");
   await freshContext.close();
 
-  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.19 upgrade, cache cleanup, and offline reload");
+  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.20 upgrade, cache cleanup, and offline reload");
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
