@@ -103,8 +103,9 @@ const exampleZipListing = [
   filenameApi.individualPhotoFilename({ client:'Client 2', description:'Rates / Notice.' }, 4)
 ];
 
-assert.match(source, /<input id="\$\{fieldId\}"[^>]*list="\$\{listId\}"/);
-assert.match(source, /<datalist id="\$\{listId\}"/);
+assert.match(source, /<select id="iaSolicitorOption">/);
+assert.match(source, /<input id="iaSolicitorOther" type="text"/);
+assert.match(source, /<input id="\$\{fieldId\}" type="hidden"/);
 assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
 console.log(JSON.stringify({ exampleEmail:inPerson, exampleZipName:filenameApi.zipFileName(), exampleZipListing }, null, 2));
 console.log('PASS RC email, conveyancer, and ZIP polish contracts');

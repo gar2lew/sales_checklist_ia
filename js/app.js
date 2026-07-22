@@ -41,7 +41,7 @@
     },
     solicitors: {
       mode: 'select',
-      options: ['B.O.S.S Conveyancing']
+      options: ['B.O.S.S Conveyancing', 'Natalie to Confirm']
     },
     share: {
       to: 'Natalie@sjssolutionscorp.com.au',
@@ -1213,9 +1213,38 @@
       .concat(allOptions.map(o=>`<option value="${htmlEscape(o.value)}">${htmlEscape(o.label)}</option>`))
       .join('');
   }
+  const IA_SOLICITOR_BOSS = 'B.O.S.S Conveyancing';
+  const IA_SOLICITOR_NATALIE = 'Natalie to Confirm';
+  const IA_SOLICITOR_OTHER = 'Other';
+  function resolveIaSolicitor(){
+    return fieldText('iaSolicitor');
+  }
+  function syncIaSolicitorControl(eventType=''){
+    const option = $('iaSolicitorOption');
+    const other = $('iaSolicitorOther');
+    const otherField = $('iaSolicitorOtherField');
+    const resolved = $('iaSolicitor');
+    if(!option || !other || !otherField || !resolved) return '';
+    const customMode = option.value === IA_SOLICITOR_OTHER;
+    otherField.classList.toggle('hidden', !customMode);
+    other.disabled = !customMode;
+    const value = customMode ? other.value.trim() : option.value;
+    resolved.value = value;
+    if(eventType) resolved.dispatchEvent(new Event('input', {bubbles:true}));
+    if(eventType === 'change') resolved.dispatchEvent(new Event('change', {bubbles:true}));
+    return value;
+  }
+  function bindIaSolicitorControl(){
+    const option = $('iaSolicitorOption');
+    const other = $('iaSolicitorOther');
+    if(!option || !other) return;
+    option.addEventListener('change',()=>syncIaSolicitorControl('change'));
+    other.addEventListener('input',()=>syncIaSolicitorControl('input'));
+    other.addEventListener('change',()=>syncIaSolicitorControl('change'));
+  }
   function renderConfigurableControl(kind, controlId, fieldId, label, placeholder, required){
     const config = adminSettings[kind];
-    const current = fieldText(fieldId) || (kind === 'solicitor' ? optionValuesFor(kind)[0]?.value || '' : '');
+    const current = fieldText(fieldId) || (kind === 'solicitor' ? IA_SOLICITOR_BOSS : '');
     const control = $(controlId);
     if(!control) return;
     const requiredMarkup = required ? ' <span class="required">*</span>' : '';
@@ -1226,12 +1255,13 @@
       control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}"${disabled}>${optionMarkup}</select>`;
       if(current) $(fieldId).value = current;
     } else if(kind === 'solicitor'){
-      const listId = `${fieldId}Options`;
-      const optionMarkup = optionValuesFor(kind)
-        .map(option => `<option value="${htmlEscape(option.value)}"></option>`)
-        .join('');
-      control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><input id="${fieldId}" type="text" list="${listId}" placeholder="${htmlEscape(placeholder)}"><datalist id="${listId}">${optionMarkup}</datalist>`;
-      $(fieldId).value = current;
+      const resolved = String(current || IA_SOLICITOR_BOSS).trim() || IA_SOLICITOR_BOSS;
+      const standard = resolved === IA_SOLICITOR_BOSS || resolved === IA_SOLICITOR_NATALIE;
+      const selected = standard ? resolved : IA_SOLICITOR_OTHER;
+      const custom = standard ? '' : resolved;
+      control.innerHTML = `<label for="iaSolicitorOption">${label}${requiredMarkup}</label><select id="iaSolicitorOption"><option value="${IA_SOLICITOR_BOSS}">${IA_SOLICITOR_BOSS}</option><option value="${IA_SOLICITOR_NATALIE}">${IA_SOLICITOR_NATALIE}</option><option value="${IA_SOLICITOR_OTHER}">${IA_SOLICITOR_OTHER}</option></select><div id="iaSolicitorOtherField" class="solicitor-other-field${standard ? ' hidden' : ''}"><label for="iaSolicitorOther">Other Solicitor / Conveyancer</label><input id="iaSolicitorOther" type="text" value="${htmlEscape(custom)}" placeholder="${htmlEscape(placeholder)}"${standard ? ' disabled' : ''}></div><input id="${fieldId}" type="hidden" value="${htmlEscape(resolved)}">`;
+      $('iaSolicitorOption').value = selected;
+      bindIaSolicitorControl();
     } else if(config.mode === 'select'){
       const optionMarkup = selectOptionsMarkup(optionValuesFor(kind), 'Select', current);
       control.innerHTML = `<label for="${fieldId}">${label}${requiredMarkup}</label><select id="${fieldId}">${optionMarkup}</select>`;
@@ -5095,7 +5125,6 @@
     preserveDraftDropdownValue('staff', data.teamMember);
     preserveDraftDropdownValue('staff', data.eoiStaffMember);
     preserveDraftDropdownValue('branch', data.eoiBranch);
-    preserveDraftDropdownValue('solicitor', data.iaSolicitor);
     preserveDraftDropdownValue('eoiTemplates', data.eoiTemplate);
     /* Preserve zoom dropdown values from draft */
     renderZoomFields();
@@ -5106,6 +5135,7 @@
     preserveZoomDraftValue('clientReviewTimeline', data.clientReviewTimeline);
     renderAdminSettings();
     renderConfigurableFields();
+    if(data.iaSolicitor === undefined && $('iaSolicitor')) $('iaSolicitor').value='';
     if(data.contractDueDate === undefined && $('contractDueDate')) $('contractDueDate').value='';
     if(data.contractDueDateTbc === undefined && $('contractDueDateTbc')) $('contractDueDateTbc').checked=false;
     fields.forEach(id=>{
@@ -5124,6 +5154,7 @@
         }
       }
     });
+    renderConfigurableControl('solicitor','solicitorControl','iaSolicitor','Solicitor / Conveyancer','Name of solicitor or conveyancer',false);
     syncContractDueDateState();
     if ((data.eoiNextApptDate === undefined || !String(data.eoiNextApptDate).trim()) && data.eoiNextAppointment) {
       const val = String(data.eoiNextAppointment).trim();
@@ -5364,6 +5395,7 @@
         else el.value='';
       }
     });
+    renderConfigurableControl('solicitor','solicitorControl','iaSolicitor','Solicitor / Conveyancer','Name of solicitor or conveyancer',false);
     $('date').value=formatDisplayDate(localDateISO());
     if($('iaDate')) $('iaDate').value = $('date').value;
     if($('eoiDate')) $('eoiDate').value = $('date').value;
@@ -5493,6 +5525,7 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     getZoomPdfName: () => zoomPdfFileName(),
     getOutputPlan: () => outputPlan(),
     resolveContractDueDate: () => resolveContractDueDate(),
+    resolveIaSolicitor: () => resolveIaSolicitor(),
     loadDraft: () => loadDraft(),
     setDraft: (data) => setDraft(data),
     getFieldsOnCurrentPage: () => getFieldsOnCurrentPage(),

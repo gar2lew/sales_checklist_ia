@@ -44,6 +44,12 @@ async function setValue(selector, value) {
   await page.locator(selector).dispatchEvent('change');
 }
 
+async function setConveyancer(value) {
+  const standard = ['B.O.S.S Conveyancing', 'Natalie to Confirm'];
+  await page.selectOption('#iaSolicitorOption', standard.includes(value) ? value : 'Other');
+  if(!standard.includes(value)) await page.fill('#iaSolicitorOther', value);
+}
+
 try {
   await page.goto(`http://127.0.0.1:${port}/`, { waitUntil:'networkidle' });
   await page.selectOption('#landingStaff', 'Garry Lewis');
@@ -57,10 +63,10 @@ try {
   await setValue('#propertySaleAddress', 'Test Unit, Footscray VIC');
   await setValue('#teamMember', 'Garry Lewis');
   await page.check('#includeIA');
-  await setValue('#iaSolicitor', 'Example Legal & Conveyancing');
+  await setConveyancer('Example Legal & Conveyancing');
 
   await page.click('#saveDraft');
-  await setValue('#iaSolicitor', 'Temporary Replacement');
+  await setConveyancer('Temporary Replacement');
   await page.click('#loadDraft');
   const conveyancerAfterDraftReload = await page.inputValue('#iaSolicitor');
   assert.equal(conveyancerAfterDraftReload, 'Example Legal & Conveyancing');
@@ -71,6 +77,14 @@ try {
     await page.waitForFunction(photoIndex => Boolean(window._testState.getPhotos()[photoIndex].img), index);
   }
 
+  await setConveyancer('Natalie to Confirm');
+  await page.click('#generateBottom');
+  await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
+  const standardRenderedText = await page.evaluate(() => window.__renderedPdfText);
+  assert.ok(standardRenderedText.includes('Natalie to Confirm'), 'standard conveyancer option must be rendered into the generated IA PDF canvas');
+
+  await page.evaluate(() => { window.__renderedPdfText = []; });
+  await setConveyancer('Example Legal & Conveyancing');
   await page.click('#generateBottom');
   await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('PDF ready'), null, { timeout:30000 });
   const renderedText = await page.evaluate(() => window.__renderedPdfText);

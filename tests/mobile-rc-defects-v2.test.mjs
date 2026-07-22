@@ -83,29 +83,30 @@ try {
   await context.close();
 
   const defaults = await openApp();
-  assert.equal(await defaults.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'INPUT', 'IA solicitor must be an editable native input/list combobox');
+  assert.equal(await defaults.page.locator('#iaSolicitorOption').evaluate(el => el.tagName), 'SELECT', 'IA solicitor must use a native dropdown');
   assert.equal(await defaults.page.inputValue('#iaSolicitor'), 'B.O.S.S Conveyancing', 'B.O.S.S Conveyancing must be the initial selection');
-  assert.equal(await defaults.page.getAttribute('#iaSolicitor', 'list'), 'iaSolicitorOptions');
-  assert.ok(await defaults.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('B.O.S.S Conveyancing')));
+  assert.deepEqual(await defaults.page.locator('#iaSolicitorOption option').allTextContents(), ['B.O.S.S Conveyancing','Natalie to Confirm','Other']);
   await defaults.context.close();
 
   const configured = await openApp({
     staff:{ mode:'select', options:['Test User'] }, branch:{ options:['Perth','Brisbane'] },
     solicitor:{ mode:'select', options:['Example Legal', 'B.O.S.S Conveyancing'] }
   });
-  assert.ok(await configured.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('Example Legal')), 'additional configured solicitor must remain selectable');
   await configured.page.check('#includeIA');
-  assert.ok(await configured.page.locator('#iaSolicitor').evaluate(element => element.getBoundingClientRect().height >= 44), 'solicitor combobox must retain a 44px touch target');
-  await configured.page.fill('#iaSolicitor', 'Custom & Co Conveyancing');
+  assert.ok(await configured.page.locator('#iaSolicitorOption').evaluate(element => element.getBoundingClientRect().height >= 44), 'solicitor dropdown must retain a 44px touch target');
+  await configured.page.selectOption('#iaSolicitorOption', 'Other');
+  await configured.page.fill('#iaSolicitorOther', 'Custom & Co Conveyancing');
   await configured.page.click('#saveDraft');
-  await configured.page.fill('#iaSolicitor', 'B.O.S.S Conveyancing');
+  await configured.page.selectOption('#iaSolicitorOption', 'B.O.S.S Conveyancing');
   await configured.page.click('#loadDraft');
   assert.equal(await configured.page.inputValue('#iaSolicitor'), 'Custom & Co Conveyancing', 'draft load must restore custom solicitor text');
+  assert.equal(await configured.page.inputValue('#iaSolicitorOption'), 'Other');
+  assert.equal(await configured.page.inputValue('#iaSolicitorOther'), 'Custom & Co Conveyancing');
   await configured.context.close();
 
   const legacy = await openApp({ staff:{ mode:'text', options:['Legacy Staff'] }, solicitor:{ mode:'text', value:'Legacy Conveyancing', options:[] } });
-  assert.equal(await legacy.page.locator('#iaSolicitor').evaluate(el => el.tagName), 'INPUT');
-  assert.ok(await legacy.page.locator('#iaSolicitorOptions option').evaluateAll(options => options.map(option => option.value).includes('Legacy Conveyancing')), 'legacy free-text setting must be preserved as an option');
+  assert.equal(await legacy.page.locator('#iaSolicitorOption').evaluate(el => el.tagName), 'SELECT');
+  assert.equal(await legacy.page.inputValue('#iaSolicitorOption'), 'B.O.S.S Conveyancing', 'legacy admin settings do not replace the approved fresh default');
   await legacy.context.close();
 
   assert.match(html, /id="shareEmailFallback"/);

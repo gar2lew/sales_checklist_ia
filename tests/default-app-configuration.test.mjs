@@ -38,7 +38,7 @@ const expectedAdminSettings = {
     { id:'sam-roberts', name:'Sam Roberts', email:'Sam@amplifysolutionsgroup.com.au', office:'Both', role:'Owner/CEO', active:true }
   ] },
   branch: { options: ['Perth', 'Brisbane'] },
-  solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing'] },
+  solicitor: { mode: 'select', options: ['B.O.S.S Conveyancing', 'Natalie to Confirm'] },
   eoiTemplates: { options: [
     { value: 'standard', label: 'Standard' },
     { value: 'laVidaHomes', label: 'La Vida Homes' }

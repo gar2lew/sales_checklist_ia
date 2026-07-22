@@ -75,7 +75,8 @@ try {
   await page.check('#contractDueDateTbc');
   await page.check('#includeIA');
   await page.selectOption('#iaForm', 'perth');
-  await page.fill('#iaSolicitor', 'Custom Test Conveyancing');
+  await page.selectOption('#iaSolicitorOption', 'Other');
+  await page.fill('#iaSolicitorOther', 'Custom Test Conveyancing');
 
   for (const testCase of cases) {
     const caseDir = join(artifactRoot, testCase.slug);
