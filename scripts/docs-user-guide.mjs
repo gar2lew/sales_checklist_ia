@@ -7,6 +7,11 @@ import {
   createRunPaths,
   getWriteContract,
 } from './docs/config.mjs';
+import {
+  assertCleanNamedBranch,
+  inspectRepository,
+} from './docs/git-integrity.mjs';
+import { runMetadataUpdate } from './docs/metadata.mjs';
 
 const foundationOnlyHandler = async ({ mode }) => {
   throw new Error(
@@ -14,9 +19,28 @@ const foundationOnlyHandler = async ({ mode }) => {
   );
 };
 
-const defaultHandlers = Object.freeze(Object.fromEntries(
-  COMMANDS.map((mode) => [mode, foundationOnlyHandler]),
-));
+const metadataOnlyGenerateHandler = async ({
+  paths,
+  repositoryInspector,
+  assertRepository,
+  metadataUpdate,
+  clock,
+}) => {
+  const repository = await repositoryInspector({ repoRoot: paths.repoRoot });
+  await assertRepository(repository, { mode: 'generate' });
+  return metadataUpdate({
+    repoRoot: paths.repoRoot,
+    repository,
+    clock,
+  });
+};
+
+const defaultHandlers = Object.freeze({
+  generate: metadataOnlyGenerateHandler,
+  screenshots: foundationOnlyHandler,
+  validate: foundationOnlyHandler,
+  clean: foundationOnlyHandler,
+});
 
 export async function runDocumentationCommand(mode, dependencies = {}) {
   assertDocumentationMode(mode);
@@ -30,6 +54,10 @@ export async function runDocumentationCommand(mode, dependencies = {}) {
     mode,
     paths: createRunPaths(repoRoot),
     writeContract: getWriteContract(mode),
+    repositoryInspector: dependencies.repositoryInspector ?? inspectRepository,
+    assertRepository: dependencies.assertRepository ?? assertCleanNamedBranch,
+    metadataUpdate: dependencies.metadataUpdate ?? runMetadataUpdate,
+    clock: dependencies.clock ?? (() => new Date()),
   }));
 }
 

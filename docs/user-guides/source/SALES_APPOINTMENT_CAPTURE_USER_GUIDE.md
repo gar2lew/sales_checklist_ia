@@ -1,10 +1,16 @@
 # Sales Appointment Capture
 
+<!-- docs-automation:metadata:start -->
+**Application version:** 2.7.0-alpha.1<br>
+**Guide version:** 1.0.0<br>
+**Generated:** 22 July 2026<br>
+**Git branch:** fix/staff-dropdown-seeding-v2<br>
+**Source commit:** 9db1800ce947f634520bb391826ad44ded8a6b82
+<!-- docs-automation:metadata:end -->
+
 ## Staff User Guide
 
 **ASG internal staff resource**  
-**Application version:** 2.7.0-alpha.1  
-**Published:** 22 July 2026
 
 This guide explains the complete staff workflow for in-person and Zoom sales appointments. Examples use fictional test information only.
 

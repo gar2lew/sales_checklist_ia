@@ -3,7 +3,9 @@ import {
   mkdtemp,
   mkdir,
   readFile,
+  readdir,
   rm,
+  stat,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -50,6 +52,14 @@ import {
   discoverPython,
   discoverTooling,
 } from '../scripts/docs/tooling.mjs';
+import {
+  formatPerthLongDate,
+  parseGeneratedMetadata,
+  readApplicationVersion,
+  replaceGeneratedMetadata,
+  runMetadataUpdate,
+  updateGeneratedMetadataFile,
+} from '../scripts/docs/metadata.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 
@@ -838,4 +848,201 @@ test('Playwright capture contract is deterministic and writes only to the inject
     }),
     /Screenshot capture.*outside the pipeline temporary directory/si,
   );
+});
+
+const metadataFixture = Object.freeze({
+  applicationVersion: '2.7.0-alpha.1',
+  guideVersion: '1.0.0',
+  generatedDate: '22 July 2026',
+  sourceBranch: 'fix/staff-dropdown-seeding-v2',
+  sourceCommit: '9db1800ce947f634520bb391826ad44ded8a6b82',
+});
+
+function markdownWithMetadata(lineEnding = '\n') {
+  return [
+    '# Sales Appointment Capture',
+    '',
+    '<!-- docs-automation:metadata:start -->',
+    '**Application version:** old',
+    '**Guide version:** old',
+    '**Generated:** old',
+    '**Git branch:** old',
+    '**Source commit:** old',
+    '<!-- docs-automation:metadata:end -->',
+    '',
+    'Hand-authored body.',
+    '',
+  ].join(lineEnding);
+}
+
+test('metadata replacement accepts exactly one marker pair and preserves guide body bytes', () => {
+  const before = markdownWithMetadata();
+  const after = replaceGeneratedMetadata(before, metadataFixture);
+  assert.equal(after.slice(0, after.indexOf('<!-- docs-automation:metadata:start -->')), '# Sales Appointment Capture\n\n');
+  assert.equal(after.slice(after.indexOf('<!-- docs-automation:metadata:end -->') + '<!-- docs-automation:metadata:end -->'.length), '\n\nHand-authored body.\n');
+  assert.deepEqual(parseGeneratedMetadata(after), {
+    'Application version': '2.7.0-alpha.1',
+    'Guide version': '1.0.0',
+    Generated: '22 July 2026',
+    'Git branch': 'fix/staff-dropdown-seeding-v2',
+    'Source commit': '9db1800ce947f634520bb391826ad44ded8a6b82',
+  });
+  assert.match(after, /\*\*Application version:\*\* 2\.7\.0-alpha\.1<br>\n/);
+  assert.doesNotMatch(after, /\*\*Git commit:/);
+});
+
+test('metadata marker validation rejects missing, duplicate, reversed, and malformed blocks', () => {
+  const valid = markdownWithMetadata();
+  const start = '<!-- docs-automation:metadata:start -->';
+  const end = '<!-- docs-automation:metadata:end -->';
+  for (const [value, pattern] of [
+    [valid.replace(start, ''), /missing start marker/i],
+    [valid.replace(end, ''), /missing end marker/i],
+    [valid.replace(start, `${start}\n${start}`), /duplicate start marker/i],
+    [valid.replace(end, `${end}\n${end}`), /duplicate end marker/i],
+    [`# Guide\n\n${end}\ntext\n${start}\n`, /start marker must appear before end marker/i],
+    [valid.replace('**Generated:** old', 'Generated without approved formatting'), /malformed metadata block/i],
+  ]) {
+    assert.throws(() => replaceGeneratedMetadata(value, metadataFixture), pattern);
+  }
+});
+
+test('application version parser accepts one authoritative runtime constant and rejects ambiguity', () => {
+  assert.equal(
+    readApplicationVersion("const APP_VERSION = '2.7.0-alpha.1';"),
+    '2.7.0-alpha.1',
+  );
+  assert.throws(() => readApplicationVersion('const OTHER = true;'), /authoritative APP_VERSION.*not found/i);
+  assert.throws(
+    () => readApplicationVersion("const APP_VERSION='2.7.0-alpha.1'; const APP_VERSION = '2.7.0-alpha.2';"),
+    /conflicting APP_VERSION/i,
+  );
+  assert.throws(() => readApplicationVersion("const APP_VERSION = 'release';"), /malformed APP_VERSION/i);
+});
+
+test('Perth long-date formatting is stable across the UTC date boundary', () => {
+  assert.equal(formatPerthLongDate(new Date('2026-07-21T16:30:00.000Z')), '22 July 2026');
+  assert.equal(formatPerthLongDate(new Date('2026-07-22T15:59:59.000Z')), '22 July 2026');
+  assert.equal(formatPerthLongDate(new Date('2026-07-22T16:00:00.000Z')), '23 July 2026');
+});
+
+test('atomic metadata update preserves CRLF, skips identical writes, and removes temporary files', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-metadata-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const path = resolve(root, 'guide.md');
+  await writeFile(path, markdownWithMetadata('\r\n'), 'utf8');
+
+  const changed = await updateGeneratedMetadataFile(path, metadataFixture);
+  assert.equal(changed.changed, true);
+  const updated = await readFile(path, 'utf8');
+  assert.equal(updated.includes('\r\n'), true);
+  assert.equal(updated.replaceAll('\r\n', '').includes('\n'), false);
+  assert.deepEqual(await readdir(root), ['guide.md']);
+
+  const before = await stat(path);
+  const unchanged = await updateGeneratedMetadataFile(path, metadataFixture);
+  const after = await stat(path);
+  assert.equal(unchanged.changed, false);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+
+  const original = updated.replace('<!-- docs-automation:metadata:start -->', '');
+  await writeFile(path, original, 'utf8');
+  const invalidBefore = await readFile(path);
+  await assert.rejects(updateGeneratedMetadataFile(path, metadataFixture), /missing start marker/i);
+  assert.deepEqual(await readFile(path), invalidBefore);
+  assert.deepEqual(await readdir(root), ['guide.md']);
+});
+
+test('atomic metadata update cleans its temporary file when replacement fails', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-metadata-failure-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const path = resolve(root, 'guide.md');
+  const original = markdownWithMetadata();
+  await writeFile(path, original, 'utf8');
+  await assert.rejects(
+    updateGeneratedMetadataFile(path, metadataFixture, {
+      replace: async () => { throw new Error('replace failed'); },
+    }),
+    /replace failed/,
+  );
+  assert.equal(await readFile(path, 'utf8'), original);
+  assert.deepEqual(await readdir(root), ['guide.md']);
+});
+
+test('metadata phase reads the runtime version and uses captured Git provenance and injected clock', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-metadata-phase-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(resolve(root, 'js'), { recursive: true });
+  await mkdir(resolve(root, 'docs/user-guides/source'), { recursive: true });
+  await writeFile(resolve(root, 'js/app.js'), "const APP_VERSION = '2.7.0-alpha.1';\n");
+  await writeFile(
+    resolve(root, 'docs/user-guides/source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md'),
+    markdownWithMetadata(),
+  );
+  const result = await runMetadataUpdate({
+    repoRoot: root,
+    repository: {
+      branch: 'fix/staff-dropdown-seeding-v2',
+      sourceCommit: '9db1800ce947f634520bb391826ad44ded8a6b82',
+    },
+    clock: () => new Date('2026-07-21T16:30:00.000Z'),
+  });
+  assert.equal(result.changed, true);
+  assert.equal(result.applicationVersion, '2.7.0-alpha.1');
+  assert.equal(result.guideVersion, '1.0.0');
+  const metadata = parseGeneratedMetadata(await readFile(result.path, 'utf8'));
+  assert.equal(metadata.Generated, '22 July 2026');
+  assert.equal(metadata['Git branch'], 'fix/staff-dropdown-seeding-v2');
+  assert.equal(metadata['Source commit'], '9db1800ce947f634520bb391826ad44ded8a6b82');
+  assert.deepEqual((await readdir(root)).sort(), ['docs', 'js']);
+});
+
+test('canonical guide contains one generated metadata block immediately below its title', async () => {
+  const source = await readFile(
+    resolve(repoRoot, 'docs/user-guides/source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md'),
+    'utf8',
+  );
+  assert.equal((source.match(/docs-automation:metadata:start/g) ?? []).length, 1);
+  assert.equal((source.match(/docs-automation:metadata:end/g) ?? []).length, 1);
+  assert.match(source, /^# Sales Appointment Capture\r?\n\r?\n<!-- docs-automation:metadata:start -->/);
+  assert.deepEqual(parseGeneratedMetadata(source), {
+    'Application version': '2.7.0-alpha.1',
+    'Guide version': '1.0.0',
+    Generated: '22 July 2026',
+    'Git branch': 'fix/staff-dropdown-seeding-v2',
+    'Source commit': '9db1800ce947f634520bb391826ad44ded8a6b82',
+  });
+});
+
+test('generate command invokes only metadata after clean named-branch preflight in Phase 5', async () => {
+  const calls = [];
+  const repository = {
+    repoRoot,
+    branch: 'fix/staff-dropdown-seeding-v2',
+    sourceCommit: '9db1800ce947f634520bb391826ad44ded8a6b82',
+    changes: [],
+  };
+  const result = await runDocumentationCommand('generate', {
+    repoRoot,
+    repositoryInspector: async ({ repoRoot: suppliedRoot }) => {
+      calls.push(['inspect', suppliedRoot]);
+      return repository;
+    },
+    assertRepository: async (supplied, options) => {
+      calls.push(['assert', supplied, options]);
+    },
+    metadataUpdate: async (options) => {
+      calls.push(['metadata', options]);
+      return { changed: false, path: 'guide.md' };
+    },
+    clock: () => new Date('2026-07-21T16:30:00.000Z'),
+  });
+  assert.deepEqual(result, { changed: false, path: 'guide.md' });
+  assert.equal(calls[0][0], 'inspect');
+  assert.deepEqual(calls[1], ['assert', repository, { mode: 'generate' }]);
+  assert.equal(calls[2][0], 'metadata');
+  assert.equal(calls[2][1].repoRoot, repoRoot);
+  assert.equal(calls[2][1].repository, repository);
+  assert.equal(calls[2][1].clock().toISOString(), '2026-07-21T16:30:00.000Z');
+  assert.equal(calls.length, 3);
 });
