@@ -197,6 +197,52 @@ export async function discoverDocumentGenerationTooling(options = {}) {
   });
 }
 
+function assertDirectExecutable(executable, label) {
+  if (/\.(?:cmd|bat|ps1)$/i.test(executable)) {
+    throw stageError(
+      label,
+      `directly executable binary required; "${executable}" is a wrapper`,
+      `Set DOCS_${label === 'pdfinfo' ? 'PDFINFO' : 'PDF_RENDERER'} to a native executable.`,
+    );
+  }
+}
+
+async function validateDirectTool(candidate, label, run) {
+  assertDirectExecutable(candidate, label);
+  let result;
+  try {
+    result = await run(candidate, ['-v'], { timeoutMs: 10_000 });
+  } catch (cause) {
+    throw stageError(
+      label,
+      `"${candidate}" could not be executed`,
+      `Install a native ${label} executable or set its DOCS_* override.`,
+      cause,
+    );
+  }
+  if (result.exitCode !== 0) {
+    throw stageError(
+      label,
+      `"${candidate}" exited with code ${result.exitCode}`,
+      `Install a working native ${label} executable or set its DOCS_* override.`,
+    );
+  }
+  return Object.freeze({ executable: candidate, prefixArgs: Object.freeze([]) });
+}
+
+export async function discoverValidationTooling(options = {}) {
+  assertNodeFeatures(options.nodeEnvironment);
+  const env = options.env ?? process.env;
+  const run = options.run ?? runCommand;
+  const pdfinfo = await validateDirectTool(env.DOCS_PDFINFO ?? 'pdfinfo', 'pdfinfo', run);
+  const renderer = await validateDirectTool(
+    env.DOCS_PDF_RENDERER ?? 'pdftoppm',
+    'PDF renderer',
+    run,
+  );
+  return Object.freeze({ pdfinfo, renderer });
+}
+
 export async function discoverTooling(options = {}) {
   assertNodeFeatures(options.nodeEnvironment);
   const repoRoot = resolve(options.repoRoot ?? process.cwd());

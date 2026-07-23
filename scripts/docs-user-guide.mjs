@@ -13,7 +13,11 @@ import {
 } from './docs/git-integrity.mjs';
 import { generateDocuments } from './docs/documents.mjs';
 import { runMetadataUpdate } from './docs/metadata.mjs';
-import { discoverDocumentGenerationTooling } from './docs/tooling.mjs';
+import {
+  discoverDocumentGenerationTooling,
+  discoverValidationTooling,
+} from './docs/tooling.mjs';
+import { validateGuide } from './docs/validation.mjs';
 
 const foundationOnlyHandler = async ({ mode }) => {
   throw new Error(
@@ -44,10 +48,23 @@ const documentGenerateHandler = async ({
   });
 };
 
+const validationHandler = async ({
+  paths,
+  repositoryInspector,
+  assertRepository,
+  validationTooling,
+  guideValidation,
+}) => {
+  const repository = await repositoryInspector({ repoRoot: paths.repoRoot });
+  await assertRepository(repository, { mode: 'validate' });
+  const tooling = await validationTooling({ repoRoot: paths.repoRoot });
+  return guideValidation({ repoRoot: paths.repoRoot, tooling });
+};
+
 const defaultHandlers = Object.freeze({
   generate: documentGenerateHandler,
   screenshots: foundationOnlyHandler,
-  validate: foundationOnlyHandler,
+  validate: validationHandler,
   clean: foundationOnlyHandler,
 });
 
@@ -68,6 +85,8 @@ export async function runDocumentationCommand(mode, dependencies = {}) {
     metadataUpdate: dependencies.metadataUpdate ?? runMetadataUpdate,
     generationTooling: dependencies.generationTooling ?? discoverDocumentGenerationTooling,
     documentGeneration: dependencies.documentGeneration ?? generateDocuments,
+    validationTooling: dependencies.validationTooling ?? discoverValidationTooling,
+    guideValidation: dependencies.guideValidation ?? validateGuide,
     clock: dependencies.clock ?? (() => new Date()),
   }));
 }
@@ -75,7 +94,11 @@ export async function runDocumentationCommand(mode, dependencies = {}) {
 async function main() {
   const mode = process.argv[2];
   try {
-    await runDocumentationCommand(mode);
+    const result = await runDocumentationCommand(mode);
+    if (mode === 'validate') {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      if (result.status === 'FAIL') process.exitCode = 1;
+    }
   } catch (error) {
     process.stderr.write(`[docs:${mode ?? 'unknown'}] ${error.message}\n`);
     process.exitCode = 1;

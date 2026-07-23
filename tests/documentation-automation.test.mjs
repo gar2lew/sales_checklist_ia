@@ -186,6 +186,27 @@ test('orchestrator dispatches each approved mode to its distinct injected handle
   );
 });
 
+test('validate mode performs clean preflight, discovers direct tools, and returns findings', async () => {
+  const calls = [];
+  const result = await runDocumentationCommand('validate', {
+    repoRoot,
+    repositoryInspector: async () => ({ branch: 'feature/docs', commit: 'abc123', changes: [] }),
+    assertRepository: async (repository, options) => calls.push(['preflight', repository, options]),
+    validationTooling: async () => ({
+      pdfinfo: { executable: 'pdfinfo.exe', prefixArgs: [] },
+      renderer: { executable: 'pdftoppm.exe', prefixArgs: [] },
+    }),
+    guideValidation: async (options) => {
+      calls.push(['validate', options.tooling]);
+      return { status: 'WARN', findings: [{ code: 'VISUAL_SPARSE' }] };
+    },
+  });
+  assert.equal(result.status, 'WARN');
+  assert.equal(calls[0][0], 'preflight');
+  assert.deepEqual(calls[0][2], { mode: 'validate' });
+  assert.equal(calls[1][0], 'validate');
+});
+
 test('direct command execution preserves literal arguments and bounds output', async () => {
   const literal = await runCommand(
     process.execPath,
