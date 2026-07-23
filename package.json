@@ -8,7 +8,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "smoke": "node test-smoke/phase5-regression.js"
+    "smoke": "node test-smoke/phase5-regression.js",
+    "docs:user-guide": "node scripts/docs-user-guide.mjs generate",
+    "docs:screenshots": "node scripts/docs-user-guide.mjs screenshots",
+    "docs:validate": "node scripts/docs-user-guide.mjs validate",
+    "docs:clean": "node scripts/docs-user-guide.mjs clean"
   },
   "repository": {
     "type": "git",
