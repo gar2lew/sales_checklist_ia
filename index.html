@@ -17,62 +17,115 @@
 <body>
   <!-- LANDING SCREEN ========================================================= -->
   <div id="landingScreen" class="landing-screen">
-    <div class="landing-bg">
-      <div class="landing-panel">
-        <div class="landing-card">
-          <div class="landing-card-header">
-            <p class="landing-brand">AMPLIFY SOLUTIONS GROUP</p>
-            <h1>Sales Appointment Capture</h1>
-            <p class="landing-subtitle">Select your name</p>
+    <div class="landing-outer">
+      <div class="landing-container">
+        <section class="landing-left" aria-labelledby="landingHeading">
+          <svg class="landing-curve" viewBox="0 0 130 1000" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,0 C70,220 70,780 0,1000 L0,1000 L0,0 Z" fill="#06152B"></path>
+            <path d="M0,0 C70,220 70,780 0,1000" stroke="#C9A45C" stroke-width="2" fill="none"></path>
+          </svg>
+          <svg class="landing-waves" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-50 120 C120 80 280 160 460 100"></path>
+            <path d="M-50 170 C120 130 280 210 460 150"></path>
+            <path d="M-50 220 C120 180 280 260 460 200"></path>
+            <path d="M-50 420 C140 380 260 470 460 410"></path>
+            <path d="M-50 470 C140 430 260 520 460 460"></path>
+          </svg>
+          <div class="landing-left-content">
+            <div class="landing-logo-wrap" aria-label="Amplify Solutions Group">
+              <div class="landing-logo-row">
+                <span class="landing-logo-asg">ASG</span>
+                <span class="landing-logo-sep" aria-hidden="true"></span>
+                <span class="landing-logo-sub"><span>AMPLIFY</span><span>SOLUTIONS</span><span>GROUP</span></span>
+              </div>
+              <div class="landing-logo-line" aria-hidden="true"></div>
+            </div>
+            <h1 class="landing-heading" id="landingHeading">Sales Appointment<br>Capture</h1>
+            <p class="landing-tagline">Professional. Compliant. Complete.</p>
+            <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
+            <div class="landing-benefits">
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">✓</span>
+                <div class="benefit-text"><strong>Compliant</strong><span>Built for Australian standards</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">◇</span>
+                <div class="benefit-text"><strong>Complete</strong><span>All documents in one place</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true">⌾</span>
+                <div class="benefit-text"><strong>Secure</strong><span>Your data remains on this device</span></div>
+              </div>
+            </div>
           </div>
-          <div class="landing-card-body">
-            <div class="landing-field">
-              <div id="landingStaffControl">
-                <input id="landingStaff" type="text" placeholder="— Choose your name —" autocomplete="off">
-              </div>
-            </div>
-            <div class="landing-field">
-              <label>Appointment Type</label>
-              <div class="mode-cards">
-                <button type="button" class="mode-card active" data-mode="inPerson">
-                  <span class="mode-card-icon">👤</span>
-                  <span class="mode-card-title">In-person</span>
-                </button>
-                <button type="button" class="mode-card" data-mode="zoom">
-                  <span class="mode-card-icon">🖥</span>
-                  <span class="mode-card-title">Zoom</span>
-                </button>
-              </div>
-              <p class="mode-card-hint">Face-to-face appointment</p>
-            </div>
-            <div id="recentDraftCard" class="recent-draft-card hidden">
-              <div class="recent-draft-header">
-                <span class="recent-draft-dot"></span>
-                Recent draft available
-              </div>
-              <div class="recent-draft-body">
-                <div class="recent-draft-grid">
-                  <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
-                  <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
-                  <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
-                </div>
-                <div class="recent-draft-footer">
-                  <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
-                  <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
-                </div>
-              </div>
-            </div>
-            <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>
+          <div class="landing-version" data-app-version-label>Version 2.7.0-alpha.1</div>
+        </section>
+
+        <section class="landing-right" aria-labelledby="landingFormTitle">
+          <div class="landing-security-badge">
+            <span class="security-badge-icon" aria-hidden="true">✓</span>
+            <div class="security-badge-text"><strong>Secure &amp; Professional</strong><span>Your information is protected on this device</span></div>
           </div>
-          <div class="landing-version" data-app-version-label>v2.5.1-alpha.1</div>
-        </div>
+          <div class="landing-right-content">
+            <p class="landing-welcome">WELCOME</p>
+            <h2 class="landing-form-title" id="landingFormTitle">Start New Appointment</h2>
+            <div class="landing-divider" aria-hidden="true"><span></span><i>◆</i><span></span></div>
+            <p class="landing-subtitle">Select your name and appointment type to begin.</p>
+
+            <div class="landing-card-body">
+              <div class="landing-field">
+                <label for="landingStaff">Your Name <span class="required">*</span></label>
+                <div class="landing-input-shell" id="landingStaffControl">
+                  <span class="landing-input-icon" aria-hidden="true">⌄</span>
+                  <select id="landingStaff" aria-label="Your Name">
+                    <option value="" disabled selected>Choose your name</option>
+                  </select>
+                </div>
+                <div class="landing-staff-configuration hidden" id="landingStaffConfiguration" role="status">
+                  <span>No staff members are configured on this device.</span>
+                  <button type="button" class="btn secondary" id="configureStaffFromLanding" aria-controls="settingsOverlay">Open Global Settings</button>
+                </div>
+              </div>
+              <div class="landing-field">
+                <label>Appointment Type</label>
+                <div class="mode-cards">
+                  <button type="button" class="mode-card active" data-mode="inPerson">
+                    <span class="mode-card-icon" aria-hidden="true">👤</span>
+                    <span class="mode-card-title">In-person</span>
+                  </button>
+                  <button type="button" class="mode-card" data-mode="zoom">
+                    <span class="mode-card-icon" aria-hidden="true">🖥</span>
+                    <span class="mode-card-title">Zoom</span>
+                  </button>
+                </div>
+                <p class="mode-card-hint">Face-to-face appointment</p>
+              </div>
+              <div id="recentDraftCard" class="recent-draft-card hidden">
+                <div class="recent-draft-header"><span class="recent-draft-dot"></span>Recent draft available</div>
+                <div class="recent-draft-body">
+                  <div class="recent-draft-grid">
+                    <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
+                    <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
+                  </div>
+                  <div class="recent-draft-footer">
+                    <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
+                    <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
+                  </div>
+                </div>
+              </div>
+              <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Continue →</span></button>
+            </div>
+            <p class="landing-privacy"><span aria-hidden="true">▣</span> Your information stays secure on this device</p>
+          </div>
+        </section>
       </div>
     </div>
   </div>
 
-  <div class="app">
+  <div class="app" id="mainApp">
     <header class="appHeader stickyHeader">
       <div class="headerInner">
         <div class="headerBrand">
@@ -82,27 +135,31 @@
             <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
           <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
-          <div class="statusBadge">Status: <span id="status">Ready.</span></div>
+          <div class="statusBadge">Status: <span id="status" role="status" aria-live="polite" aria-atomic="true">Ready.</span></div>
         </div>
         
         <div class="headerActions">
-          <div class="actionGroup">
+          <div class="actionGroup actionGroup-appointment">
             <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
             <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
             <span class="save-status" id="saveStatus" role="status" aria-live="polite"></span>
-            <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
           </div>
 
-          <div class="actionGroup">
-            <button class="btn toolbar-btn primary" id="generateTop">Generate PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
-            <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="previewTop">↻ Refresh Preview</button>
+          <div class="actionGroup actionGroup-output">
+            <button class="btn toolbar-btn primary" id="generateTop">Generate Appointment Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadTop" disabled>Download PDF</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadPackageTop" disabled>Download Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="shareTop" disabled>Share PDF</button>
           </div>
           
-          <div class="actionGroup">
-            <button class="btn toolbar-btn" id="openSettings">Settings</button>
+          <div class="actionGroup actionGroup-admin">
+            <div class="workspaceSecondaryActions" id="workspaceSecondaryActions">
+              <button type="button" class="btn toolbar-btn secondaryActionsTrigger" id="secondaryActionsTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="secondaryActionMenu">More actions</button>
+              <div class="secondaryActionMenu" id="secondaryActionMenu">
+                <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
+                <button class="btn toolbar-btn" id="openSettings">Settings</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -132,12 +189,15 @@
     </nav>
 
     <div class="grid">
-      <main>
         <section class="card appointment-summary-card full" id="appointmentSummaryCard">
           <div class="summary-card-header">
             <span>Appointment Summary</span>
-            <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+            <div class="summary-card-header-actions">
+              <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+              <button type="button" class="btn small summary-disclosure" id="summaryDisclosure" aria-expanded="false" aria-controls="summaryDetails">Show details</button>
+            </div>
           </div>
+          <div class="summary-details" id="summaryDetails">
           <div class="progress-badges">
             <span id="appointmentBadge" class="badge badge-incomplete">Incomplete</span>
             <span id="eoiBadge" class="badge badge-not-required">Not Required</span>
@@ -209,8 +269,11 @@
               <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomIA"></span><span id="zoomSumIA">IA</span></span>
             </div>
           </div>
+          </div>
         </section>
 
+      <div class="workspaceContent">
+      <main>
         <section class="card" id="appointmentInfoSection">
           <h2>1. Appointment & client information</h2>
           <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
@@ -584,10 +647,10 @@
                 <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
                 <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
               </div>
-              <div class="fields two" style="margin-top:12px">
+              <div class="fields two sale-finance-grid" style="margin-top:12px">
                 <div>
-                  <label for="eoiFinancePercent">Percentage of Finance</label>
-                  <select id="eoiFinancePercent">
+                  <label for="client1FinancePercentage">Client 1 Percentage of Finance</label>
+                  <select id="client1FinancePercentage">
                     <option value="">Select %</option>
                     <option value="10%">10%</option>
                     <option value="20%">20%</option>
@@ -600,7 +663,24 @@
                     <option value="90%">90%</option>
                   </select>
                 </div>
-                <div class="fields two" style="gap:12px; margin: 0; padding: 0">
+                <div id="client2FinancePercentageField">
+                  <label for="client2FinancePercentage">Client 2 Percentage of Finance</label>
+                  <select id="client2FinancePercentage">
+                    <option value="">Select %</option>
+                    <option value="10%">10%</option>
+                    <option value="20%">20%</option>
+                    <option value="30%">30%</option>
+                    <option value="40%">40%</option>
+                    <option value="50%">50%</option>
+                    <option value="60%">60%</option>
+                    <option value="70%">70%</option>
+                    <option value="80%">80%</option>
+                    <option value="90%">90%</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sale-schedule-grid" id="saleDetailsSchedule">
+                <div class="in-person-next-appointment" id="inPersonNextAppointmentGroup" role="group" aria-label="Next Appointment">
                   <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off"></div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
@@ -630,7 +710,14 @@
                     </select>
                   </div>
                 </div>
+                <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
+                  <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
+                  <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
+                  <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
+                  <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
+                </div>
               </div>
+              <input type="hidden" id="eoiFinancePercent" value="">
               <!-- Keep hidden/legacy field for draft compatibility -->
               <input type="hidden" id="eoiNextAppointment" value="">
               <input type="hidden" id="eoiIdAttached" value="">
@@ -800,7 +887,10 @@
 
       <aside class="previewWrap">
         <section class="card">
-          <h2>Output preview</h2>
+          <div class="previewHeading">
+            <h2>Output preview</h2>
+            <button type="button" class="btn toolbar-btn" id="previewTop">↻ Refresh Preview</button>
+          </div>
           <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.
             <label class="region-toggle-label" style="display:block;margin-top:4px">
               <input type="checkbox" id="showFieldRegions"> Show field regions
@@ -850,6 +940,7 @@
           <div class="mapped-fields-list hidden" id="mappedFieldsList" role="list" aria-label="Fields on this preview page"></div>
         </section>
       </aside>
+      </div>
     </div>
   </div>
 
@@ -888,10 +979,10 @@
           <div class="fields">
             <div>
               <label for="staffMode">Staff Member field type</label>
-              <select id="staffMode">
-                <option value="text">Free-text input</option>
+              <select id="staffMode" disabled aria-describedby="staffModeHint">
                 <option value="select">Dropdown/select</option>
               </select>
+              <p class="hint" id="staffModeHint">Appointment staff must be selected from configured active staff members.</p>
               <div class="adminList" id="staffOptionsList"></div>
               <div class="adminActions">
                 <button type="button" class="btn small" id="addStaffOption">Add option</button>
@@ -912,7 +1003,6 @@
             <div>
               <label for="solicitorMode">Solicitor / Conveyancer field type</label>
               <select id="solicitorMode">
-                <option value="text">Free-text input</option>
                 <option value="select">Dropdown/select</option>
               </select>
               <div class="adminList" id="solicitorOptionsList"></div>
@@ -978,6 +1068,37 @@
     </section>
   </div>
 
+  <section class="appointment-package-ready hidden" id="appointmentPackageReady" aria-labelledby="appointmentPackageReadyTitle">
+    <div class="package-ready-heading">
+      <div>
+        <h2 id="appointmentPackageReadyTitle">Appointment Package Ready</h2>
+        <p id="appointmentPackageReadyDescription">Your combined PDF and document ZIP are ready.</p>
+      </div>
+      <p class="package-ready-notice" id="packageReadyNotice" role="status" aria-live="polite"></p>
+    </div>
+    <dl class="package-ready-files">
+      <div><dt>Combined PDF</dt><dd id="packageReadyPdfName"></dd></div>
+      <div><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
+    </dl>
+    <div class="package-ready-actions">
+      <button type="button" class="btn primary" id="downloadPackage" disabled>Download Package</button>
+      <button type="button" class="btn" id="saveCombinedPdf" disabled>Save Combined PDF</button>
+      <button type="button" class="btn" id="savePackageZip" disabled>Save ZIP</button>
+      <button type="button" class="btn" id="preparePackageEmail" disabled>Prepare Email</button>
+    </div>
+    <div class="package-download-status" id="packageDownloadStatus" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <strong id="packageDownloadStatusTitle"></strong>
+      <span id="packageDownloadStatusInstruction"></span>
+    </div>
+    <button type="button" class="legacy-output-action" id="sharePackage" disabled hidden tabindex="-1" aria-hidden="true"></button>
+  </section>
+
+  <section class="hidden" id="shareEmailFallback" aria-hidden="true">
+    <span id="shareEmailFallbackTitle"></span>
+    <a id="openPreparedEmail" href="#" hidden tabindex="-1" aria-hidden="true"></a>
+    <button type="button" id="dismissPreparedEmail" hidden disabled tabindex="-1" aria-hidden="true"></button>
+  </section>
+
   <div class="footerBar">
     <div class="footerInner">
       <div class="name" id="fileNamePreview">Sales Appointment - DD-MM-YYYY - ClientName.pdf</div>
@@ -988,16 +1109,16 @@
         <button class="btn" id="saveDraftBottom" title="Save Draft">
           <span class="btn-icon">💾</span><span class="btn-text">Save Draft</span>
         </button>
-        <button class="btn dark" id="generateBottom" title="Generate PDF">
-          <span class="btn-icon">⚡</span><span class="btn-text">Generate PDF</span>
+        <button class="btn dark" id="generateBottom" title="Generate Appointment Package">
+          <span class="btn-icon">⚡</span><span class="btn-text">Generate Appointment Package</span>
         </button>
-        <button class="btn" id="downloadBottom" disabled title="Download PDF">
+        <button class="btn legacy-output-action" id="downloadBottom" disabled title="Download PDF">
           <span class="btn-icon">📥</span><span class="btn-text">Download PDF</span>
         </button>
-        <button class="btn" id="downloadPackageBottom" disabled title="Download Package">
+        <button class="btn legacy-output-action" id="downloadPackageBottom" disabled title="Download Package">
           <span class="btn-icon">📦</span><span class="btn-text">Download Package</span>
         </button>
-        <button class="btn" id="shareBottom" disabled title="Share PDF">
+        <button class="btn legacy-output-action" id="shareBottom" disabled title="Share PDF">
           <span class="btn-icon">📤</span><span class="btn-text">Share PDF</span>
         </button>
       </div>
