@@ -1,36 +1,49 @@
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { spawn } from 'node:child_process';
+import { relative, resolve } from 'node:path';
 import { chromium } from 'playwright';
 
-const root=resolve(import.meta.dirname,'..');
-const output=resolve(root,'docs/user-guides/source/screenshots');
-const baseUrl='http://localhost:8766';
-mkdirSync(output,{recursive:true});
-let server=null;
+import { SCREENSHOT_MANIFEST } from '../scripts/docs/config.mjs';
+import { assertCaptureReady } from '../scripts/docs/screenshots.mjs';
 
-async function reachable(){
-  try{return (await fetch(baseUrl)).ok;}catch{return false;}
-}
-if(!await reachable()){
-  server=spawn('python',['-m','http.server','8766','--bind','127.0.0.1'],{cwd:root,stdio:'ignore',windowsHide:true});
-  for(let i=0;i<40 && !await reachable();i++) await new Promise(resolveWait=>setTimeout(resolveWait,250));
-  assert.equal(await reachable(),true,'could not start the local screenshot server');
-}
+const root=resolve(import.meta.dirname,'..');
+const temporaryRoot=resolve(root,'.tmp/docs-user-guide/screenshots');
+const output=resolve(process.env.DOCS_SCREENSHOT_OUTPUT??temporaryRoot);
+const outputRelative=relative(temporaryRoot,output);
+assert.ok(!outputRelative.startsWith('..')&&!resolve(temporaryRoot,outputRelative).localeCompare(output),'capture output must remain under .tmp/docs-user-guide/screenshots');
+const baseUrl=process.env.DOCS_BASE_URL;
+assert.ok(baseUrl,'DOCS_BASE_URL is required');
+mkdirSync(output,{recursive:true});
+assert.deepEqual(SCREENSHOT_MANIFEST.map(({filename})=>filename),[
+  '01-appointment-type-selection.png','02-in-person-workspace.png','03-sale-details-mobile.png',
+  '04-zoom-workspace.png','05-zoom-whiteboard.png','06-draft-controls.png',
+  '07-id-signatures.png','08-package-ready.png','09-downloads-started.png'
+]);
 
 const browser=await chromium.launch({headless:true});
 const settings={staff:{mode:'select',options:[{id:'test-user',name:'Test User',email:'',office:'Perth',role:'Demonstration',active:true}]},branch:{options:['Perth','Brisbane']},solicitor:{mode:'select',options:['B.O.S.S Conveyancing','Example Legal']}};
+const fixedInstant='2026-07-22T10:00:00+08:00';
+const captureCss='*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;scroll-behavior:auto!important;caret-color:transparent!important}';
 
 async function createPage(viewport){
-  const context=await browser.newContext({viewport,deviceScaleFactor:2,serviceWorkers:'block'});
-  await context.addInitScript(value=>{
+  const context=await browser.newContext({viewport,locale:'en-AU',timezoneId:'Australia/Perth',colorScheme:'light',reducedMotion:'reduce',deviceScaleFactor:2,serviceWorkers:'block',permissions:[]});
+  await context.addInitScript(({value,frozenInstant})=>{
+    const NativeDate=Date;
+    const frozenTime=new NativeDate(frozenInstant).getTime();
+    class FrozenDate extends NativeDate{
+      constructor(...args){super(...(args.length?args:[frozenTime]));}
+      static now(){return frozenTime;}
+    }
+    Object.setPrototypeOf(FrozenDate,NativeDate);
+    globalThis.Date=FrozenDate;
     localStorage.clear();
     localStorage.setItem('salesAppointmentAdminSettings',JSON.stringify(value));
-  },settings);
+  },{value:settings,frozenInstant:fixedInstant});
   const page=await context.newPage();
   await page.goto(baseUrl,{waitUntil:'networkidle'});
-  await page.evaluate(()=>document.fonts.ready);
+  await page.addStyleTag({content:captureCss});
+  await page.waitForFunction(async()=>{await document.fonts.ready;return document.fonts.status==='loaded';});
+  await page.waitForFunction(()=>document.readyState==='complete');
   return {context,page};
 }
 
@@ -54,14 +67,19 @@ async function fillCommon(page){
 
 async function captureLocator(page,selector,name){
   const locator=page.locator(selector);
-  await locator.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(250);
+  await assertCaptureReady({page,locator,filename:name,selector});
   await locator.screenshot({path:resolve(output,name),animations:'disabled'});
+}
+
+async function capturePage(page,name){
+  const body=page.locator('body');
+  await assertCaptureReady({page,locator:body,filename:name,selector:'body'});
+  await page.screenshot({path:resolve(output,name),animations:'disabled'});
 }
 
 try{
   const desktop=await createPage({width:1440,height:900});
-  await desktop.page.screenshot({path:resolve(output,'01-appointment-type-selection.png'),animations:'disabled'});
+  await capturePage(desktop.page,'01-appointment-type-selection.png');
   await enter(desktop.page,'inPerson');
   await fillCommon(desktop.page);
   await desktop.page.check('#includeEOI');
@@ -77,7 +95,7 @@ try{
   await desktop.page.check('#contractDueDateTbc');
   await desktop.page.selectOption('#eoiBranch','Perth');
   await desktop.page.evaluate(()=>scrollTo(0,0));
-  await desktop.page.screenshot({path:resolve(output,'02-in-person-workspace.png'),animations:'disabled'});
+  await capturePage(desktop.page,'02-in-person-workspace.png');
   await captureLocator(desktop.page,'#clientIdSection','07-id-signatures.png');
   await desktop.context.close();
 
@@ -120,7 +138,7 @@ try{
   await landscape.page.fill('#crNextAppointmentDate','2026-08-05');
   await landscape.page.fill('#contractDueDate','2026-08-30');
   await landscape.page.evaluate(()=>scrollTo(0,0));
-  await landscape.page.screenshot({path:resolve(output,'04-zoom-workspace.png'),animations:'disabled'});
+  await capturePage(landscape.page,'04-zoom-workspace.png');
   const canvas=landscape.page.locator('#whiteboardCanvas');
   await canvas.scrollIntoViewIfNeeded();
   const box=await canvas.boundingBox();
@@ -136,5 +154,4 @@ try{
   console.log(`PASS captured 9 privacy-safe guide screenshots at 390x844, 844x390, and 1440x900`);
 }finally{
   await browser.close();
-  if(server){server.kill();await new Promise(resolveClose=>server.once('exit',resolveClose));}
 }

@@ -1,16 +1,18 @@
 # Sales Appointment Capture user guide
 
-The canonical content is `source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md`. Screenshots in `source/screenshots/` contain fictional test data and are generated from the current application.
+The canonical content is `source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md`. Screenshots in `screenshots/` contain fictional test data and are generated from the current application.
 
 ## Regenerate screenshots
 
-From the repository root, with Playwright available:
+The automation invokes the retained Playwright capture with an already verified local server and a temporary candidate directory:
 
 ```powershell
+$env:DOCS_BASE_URL = "http://127.0.0.1:8766"
+$env:DOCS_SCREENSHOT_OUTPUT = Join-Path (Get-Location) ".tmp/docs-user-guide/screenshots"
 node tests/user-guide-screenshots.spec.mjs
 ```
 
-The script uses an existing server at `http://localhost:8766` when available. Otherwise, it starts and stops its own temporary local server.
+The capture script never starts or stops a server and never writes directly to committed screenshots. The documentation automation owns server lifecycle and applies candidates only after the complete manifest validates.
 
 ## Build DOCX and PDF
 

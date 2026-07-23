@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import JSZip from 'jszip';
@@ -7,14 +8,15 @@ const root=resolve(import.meta.dirname,'..');
 const sourcePath=resolve(root,'docs/user-guides/source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md');
 const docxPath=resolve(root,'docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.docx');
 const pdfPath=resolve(root,'docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.pdf');
-const screenshotDir=resolve(root,'docs/user-guides/source/screenshots');
+const screenshotDir=resolve(root,'docs/user-guides/screenshots');
+const screenshotMetadataPath=resolve(root,'docs/user-guides/screenshots.json');
 const screenshots=[
   '01-appointment-type-selection.png','02-in-person-workspace.png','03-sale-details-mobile.png',
   '04-zoom-workspace.png','05-zoom-whiteboard.png','06-draft-controls.png',
   '07-id-signatures.png','08-package-ready.png','09-downloads-started.png'
 ];
 
-for(const path of [sourcePath,docxPath,pdfPath]) assert.equal(existsSync(path),true,`missing ${path}`);
+for(const path of [sourcePath,docxPath,pdfPath,screenshotMetadataPath]) assert.equal(existsSync(path),true,`missing ${path}`);
 const source=readFileSync(sourcePath,'utf8');
 for(let section=1;section<=16;section++) assert.match(source,new RegExp(`^## ${section}\\. `,'m'),`section ${section} missing`);
 assert.match(source,/Application version:\*\* 2\.7\.0-alpha\.1/i);
@@ -29,12 +31,18 @@ function pngDimensions(buffer){
   assert.equal(buffer.subarray(1,4).toString(),'PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20)};
 }
-for(const name of screenshots){
+const screenshotMetadata=JSON.parse(readFileSync(screenshotMetadataPath,'utf8'));
+assert.equal(screenshotMetadata.schemaVersion,1);
+assert.deepEqual(screenshotMetadata.screenshots.map(({filename})=>filename),screenshots);
+for(const [index,name] of screenshots.entries()){
   const path=resolve(screenshotDir,name);
   assert.equal(existsSync(path),true,`missing screenshot ${name}`);
   assert.ok(statSync(path).size>20_000,`${name} is unexpectedly small`);
-  const {width,height}=pngDimensions(readFileSync(path));
+  const bytes=readFileSync(path);
+  const {width,height}=pngDimensions(bytes);
   assert.ok(width>=350 && height>=100,`${name} dimensions are too small: ${width}x${height}`);
+  assert.equal(screenshotMetadata.screenshots[index].hash,createHash('sha256').update(bytes).digest('hex'),`${name} metadata hash differs`);
+  assert.match(screenshotMetadata.screenshots[index].lastGenerated,/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 }
 
 const docxBuffer=readFileSync(docxPath);

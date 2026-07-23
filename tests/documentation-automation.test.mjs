@@ -36,6 +36,16 @@ import {
   stopOwnedServer,
 } from '../scripts/docs/server.mjs';
 import {
+  applyScreenshotChanges,
+  assertCaptureReady,
+  buildScreenshotMetadata,
+  classifyScreenshots,
+  runScreenshotCapture,
+  serializeScreenshotMetadata,
+  sha256File,
+  validatePng,
+} from '../scripts/docs/screenshots.mjs';
+import {
   assertNodeFeatures,
   discoverPython,
   discoverTooling,
@@ -560,5 +570,272 @@ test('server cleanup is ownership-scoped, idempotent, and preserves primary erro
   await assert.rejects(
     runWithServerLease(lease, async () => { throw primary; }),
     (error) => error === primary && error.cleanupError === cleanup,
+  );
+});
+
+async function writePngFixture(path, width = 20, height = 10, suffix = '') {
+  const bytes = Buffer.alloc(33 + Buffer.byteLength(suffix));
+  Buffer.from('89504e470d0a1a0a', 'hex').copy(bytes, 0);
+  bytes.writeUInt32BE(13, 8);
+  bytes.write('IHDR', 12, 'ascii');
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  bytes[24] = 8;
+  bytes[25] = 6;
+  Buffer.from(suffix).copy(bytes, 33);
+  await mkdir(resolve(path, '..'), { recursive: true });
+  await writeFile(path, bytes);
+}
+
+test('screenshot classification supports unchanged, updated, new, and intentional removed', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-screenshots-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const candidateDir = resolve(root, 'candidate');
+  const committedDir = resolve(root, 'committed');
+  await writePngFixture(resolve(candidateDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(committedDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(candidateDir, '02-updated.png'), 20, 10, 'new');
+  await writePngFixture(resolve(committedDir, '02-updated.png'), 20, 10, 'old');
+  await writePngFixture(resolve(candidateDir, '03-new.png'), 20, 10, 'new');
+  await writePngFixture(resolve(committedDir, '04-removed.png'), 20, 10, 'removed');
+  const manifest = [
+    { filename: '01-same.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'A', description: 'Same' },
+    { filename: '02-updated.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'B', description: 'Updated' },
+    { filename: '03-new.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'C', description: 'New' },
+  ];
+  const result = await classifyScreenshots({ manifest, candidateDir, committedDir });
+  assert.deepEqual(result.UNCHANGED.map(({ filename }) => filename), ['01-same.png']);
+  assert.deepEqual(result.UPDATED.map(({ filename }) => filename), ['02-updated.png']);
+  assert.deepEqual(result.NEW.map(({ filename }) => filename), ['03-new.png']);
+  assert.deepEqual(result.REMOVED.map(({ filename }) => filename), ['04-removed.png']);
+  assert.equal(await sha256File(resolve(candidateDir, '01-same.png')), result.UNCHANGED[0].hash);
+});
+
+test('candidate validation rejects missing, unexpected, duplicate, malformed, and invalid PNG sets before writes', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-screenshot-invalid-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const candidateDir = resolve(root, 'candidate');
+  const committedDir = resolve(root, 'committed');
+  await mkdir(candidateDir, { recursive: true });
+  await mkdir(committedDir, { recursive: true });
+  const entry = {
+    filename: '01-required.png',
+    viewport: { width: 20, height: 10, deviceScaleFactor: 2 },
+    page: 'A',
+    description: 'Required',
+  };
+  await assert.rejects(
+    classifyScreenshots({ manifest: [entry], candidateDir, committedDir }),
+    /Screenshot capture.*missing.*01-required/si,
+  );
+  await writePngFixture(resolve(candidateDir, entry.filename));
+  await writePngFixture(resolve(candidateDir, 'unexpected.png'));
+  await assert.rejects(
+    classifyScreenshots({ manifest: [entry], candidateDir, committedDir }),
+    /Screenshot capture.*unexpected\.png/si,
+  );
+  await rm(resolve(candidateDir, 'unexpected.png'));
+  await assert.rejects(
+    classifyScreenshots({ manifest: [entry, entry], candidateDir, committedDir }),
+    /Screenshot manifest.*duplicate/si,
+  );
+  await writeFile(resolve(candidateDir, entry.filename), 'not png');
+  await assert.rejects(
+    classifyScreenshots({ manifest: [entry], candidateDir, committedDir }),
+    /PNG validation/si,
+  );
+  await assert.rejects(validatePng(resolve(candidateDir, entry.filename)), /PNG validation/);
+});
+
+test('capture failure never alters or removes committed screenshots', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-screenshot-preserve-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const candidateDir = resolve(root, '.tmp/docs-user-guide/screenshots');
+  const committedDir = resolve(root, 'docs/user-guides/screenshots');
+  const metadataPath = resolve(root, 'docs/user-guides/screenshots.json');
+  const committedPath = resolve(committedDir, '01-existing.png');
+  await writePngFixture(committedPath, 20, 10, 'preserve');
+  const before = await readFile(committedPath);
+  await assert.rejects(
+    applyScreenshotChanges({
+      manifest: [{
+        filename: '02-required.png',
+        viewport: { width: 20, height: 10, deviceScaleFactor: 2 },
+        page: 'Required',
+        description: 'Required',
+      }],
+      candidateDir,
+      committedDir,
+      metadataPath,
+      timestamp: '2026-07-22T02:00:00.000Z',
+    }),
+    /Screenshot capture.*missing/si,
+  );
+  assert.deepEqual(await readFile(committedPath), before);
+});
+
+test('screenshot metadata is ordered and preserves unchanged timestamps while sharing changed timestamp', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-screenshot-metadata-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const candidateDir = resolve(root, 'candidate');
+  const committedDir = resolve(root, 'committed');
+  await writePngFixture(resolve(candidateDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(committedDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(candidateDir, '02-new.png'), 30, 15, 'new');
+  const manifest = [
+    { filename: '02-new.png', viewport: { width: 30, height: 15, deviceScaleFactor: 2 }, page: 'New', description: 'New item' },
+    { filename: '01-same.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'Same', description: 'Same item' },
+  ];
+  const classification = await classifyScreenshots({ manifest, candidateDir, committedDir });
+  const timestamp = '2026-07-22T02:00:00.000Z';
+  const metadata = buildScreenshotMetadata({
+    manifest,
+    classification,
+    previousMetadata: {
+      schemaVersion: 1,
+      screenshots: [{
+        filename: '01-same.png',
+        viewport: { width: 20, height: 10, deviceScaleFactor: 2 },
+        page: 'Same',
+        description: 'Same item',
+        hash: classification.UNCHANGED[0].hash,
+        lastGenerated: '2026-01-01T00:00:00.000Z',
+      }],
+    },
+    timestamp,
+  });
+  assert.deepEqual(metadata.screenshots.map(({ filename }) => filename), ['01-same.png', '02-new.png']);
+  assert.equal(metadata.screenshots[0].lastGenerated, '2026-01-01T00:00:00.000Z');
+  assert.equal(metadata.screenshots[1].lastGenerated, timestamp);
+  const serialized = serializeScreenshotMetadata(metadata);
+  assert.equal(serialized.endsWith('\n'), true);
+  assert.equal(serialized.endsWith('\n\n'), false);
+  assert.match(serialized, /^\{\n  "schemaVersion": 1,\n  "screenshots": \[/);
+  assert.throws(
+    () => buildScreenshotMetadata({
+      manifest,
+      classification,
+      previousMetadata: { schemaVersion: 2, screenshots: [] },
+      timestamp,
+    }),
+    /Screenshot metadata.*schemaVersion/si,
+  );
+  assert.throws(
+    () => serializeScreenshotMetadata({
+      schemaVersion: 1,
+      screenshots: [...metadata.screenshots].reverse(),
+    }),
+    /Screenshot metadata.*sorted order/si,
+  );
+});
+
+test('applying screenshots preserves unchanged bytes and mtime and writes only declared outputs', async (t) => {
+  const root = await mkdtemp(resolve(tmpdir(), 'docs-screenshot-apply-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const candidateDir = resolve(root, '.tmp/docs-user-guide/screenshots');
+  const committedDir = resolve(root, 'docs/user-guides/screenshots');
+  const metadataPath = resolve(root, 'docs/user-guides/screenshots.json');
+  await writePngFixture(resolve(candidateDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(committedDir, '01-same.png'), 20, 10, 'same');
+  await writePngFixture(resolve(candidateDir, '02-new.png'), 20, 10, 'new');
+  const before = await import('node:fs/promises').then(({ stat }) => stat(resolve(committedDir, '01-same.png')));
+  const manifest = [
+    { filename: '01-same.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'A', description: 'Same' },
+    { filename: '02-new.png', viewport: { width: 20, height: 10, deviceScaleFactor: 2 }, page: 'B', description: 'New' },
+  ];
+  const result = await applyScreenshotChanges({
+    manifest,
+    candidateDir,
+    committedDir,
+    metadataPath,
+    timestamp: '2026-07-22T02:00:00.000Z',
+  });
+  const after = await import('node:fs/promises').then(({ stat }) => stat(resolve(committedDir, '01-same.png')));
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(result.metadata.screenshots.length, 2);
+  assert.equal((await readFile(metadataPath, 'utf8')).endsWith('\n'), true);
+});
+
+test('capture readiness rejects missing locators, zero bounds, and fonts that never load', async () => {
+  const page = {
+    waitForFunction: async () => {},
+    evaluate: async () => {},
+  };
+  const locator = {
+    count: async () => 1,
+    waitFor: async () => {},
+    scrollIntoViewIfNeeded: async () => {},
+    boundingBox: async () => ({ x: 0, y: 0, width: 20, height: 10 }),
+  };
+  await assert.rejects(
+    assertCaptureReady({
+      page,
+      locator: { ...locator, count: async () => 0 },
+      filename: 'missing.png',
+      selector: '#missing',
+    }),
+    /Screenshot capture.*missing.*#missing/si,
+  );
+  await assert.rejects(
+    assertCaptureReady({
+      page,
+      locator: { ...locator, boundingBox: async () => ({ width: 0, height: 10 }) },
+      filename: 'zero.png',
+      selector: '#zero',
+    }),
+    /Screenshot capture.*zero bounds.*#zero/si,
+  );
+  await assert.rejects(
+    assertCaptureReady({
+      page: { ...page, waitForFunction: async () => { throw new Error('font timeout'); } },
+      locator,
+      filename: 'fonts.png',
+      selector: '#fonts',
+    }),
+    /Screenshot capture.*fonts were not ready/si,
+  );
+});
+
+test('Playwright capture contract is deterministic and writes only to the injected temporary output', async () => {
+  const captureSource = await readFile(
+    resolve(repoRoot, 'tests/user-guide-screenshots.spec.mjs'),
+    'utf8',
+  );
+  const source = [
+    captureSource,
+    await readFile(resolve(repoRoot, 'scripts/docs/screenshots.mjs'), 'utf8'),
+  ].join('\n');
+  for (const required of [
+    "locale:'en-AU'",
+    "timezoneId:'Australia/Perth'",
+    "colorScheme:'light'",
+    "reducedMotion:'reduce'",
+    'deviceScaleFactor:2',
+    "serviceWorkers:'block'",
+    '2026-07-22T10:00:00+08:00',
+    'DOCS_BASE_URL',
+    'DOCS_SCREENSHOT_OUTPUT',
+    'document.fonts.ready',
+    "document.fonts.status==='loaded'",
+    'caret-color:transparent',
+    'animation-duration:0s',
+    'transition-duration:0s',
+    'scroll-behavior:auto',
+    'boundingBox()',
+  ]) {
+    assert.ok(source.includes(required), `missing deterministic capture contract: ${required}`);
+  }
+  assert.doesNotMatch(source, /waitForTimeout\s*\(/);
+  assert.doesNotMatch(captureSource, /docs\/user-guides\/(?:source\/)?screenshots/);
+  assert.match(source, /John Smith/);
+  assert.match(source, /Jenny Smith/);
+  await assert.rejects(
+    runScreenshotCapture({
+      repoRoot,
+      baseUrl: 'http://127.0.0.1:8766',
+      outputDir: resolve(repoRoot, 'docs/user-guides/screenshots'),
+      run: async () => { throw new Error('must not execute'); },
+    }),
+    /Screenshot capture.*outside the pipeline temporary directory/si,
   );
 });

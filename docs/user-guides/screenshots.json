@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "screenshots": [
+    {
+      "filename": "01-appointment-type-selection.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "deviceScaleFactor": 2
+      },
+      "page": "Landing",
+      "description": "Appointment type and staff selection.",
+      "hash": "64ec142263da095e67425438e0a8ac5d4558f8d496d122c75edb85829ca666e9",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "02-in-person-workspace.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "In-person header, timeline and summary.",
+      "hash": "dc43facbeb75cf9f6883f760c7e4534b1139050ca12d287bcdd39335d10b1cc6",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "03-sale-details-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "Mobile EOI sale details and contract due date.",
+      "hash": "685713b4f6146172809f409c4834e92e431c81d1835804bc8ecd3288c266ca7b",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "04-zoom-workspace.png",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "deviceScaleFactor": 2
+      },
+      "page": "Zoom",
+      "description": "Zoom header and eight-stage timeline.",
+      "hash": "e0b3cbe76b650883943c594b36889f8f2164b8596285ec4b465212fab111a6b9",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "05-zoom-whiteboard.png",
+      "viewport": {
+        "width": 844,
+        "height": 390,
+        "deviceScaleFactor": 2
+      },
+      "page": "Zoom",
+      "description": "Consultation whiteboard with deterministic stroke.",
+      "hash": "f7bbe8712ca7774349babf9454355688ec529f0fb6decc06c9546a0781518c8e",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "06-draft-controls.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "Mobile Save Draft and Load Draft controls.",
+      "hash": "d5ee28f32653f3a1f98b24b9f0177172e39539f1fd6a94aa5e9366397e0c81e3",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "07-id-signatures.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "ID attachment areas and workflow context.",
+      "hash": "e9df11086a3f43badf4e8c5e463dbaa1610b0bdef7a3c7e99a721c6b723cea51",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "08-package-ready.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "Appointment Package Ready actions.",
+      "hash": "164e0c61636dedfc1ca957e89bcb3586c25e4ad2a1491d07beae5adefb231025",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    },
+    {
+      "filename": "09-downloads-started.png",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 2
+      },
+      "page": "In-person",
+      "description": "Downloads-started handover message.",
+      "hash": "eb178566f740e55106dc9153280e4739c169b17ed91fb5abba6e23106c8cebec",
+      "lastGenerated": "2026-07-22T02:00:00.000Z"
+    }
+  ]
+}

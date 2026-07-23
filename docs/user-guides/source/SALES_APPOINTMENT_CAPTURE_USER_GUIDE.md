@@ -48,7 +48,7 @@ Sales Appointment Capture guides staff through appointment details, required for
 
 > **Before you begin:** Confirm the correct staff member and appointment type. These choices control the visible workflow and generated filenames.
 
-![Appointment type selection](screenshots/01-appointment-type-selection.png)
+![Appointment type selection](../screenshots/01-appointment-type-selection.png)
 
 ---
 
@@ -110,7 +110,7 @@ Use **Client 2 added** or **Not required** as the visible participation cue. Cli
 
 Move through the seven-stage timeline from left to right. A green stage indicates complete, gold indicates the current stage, and an outlined stage still needs attention.
 
-![In-person workspace controls and timeline](screenshots/02-in-person-workspace.png)
+![In-person workspace controls and timeline](../screenshots/02-in-person-workspace.png)
 
 ### Recommended order
 
@@ -130,7 +130,7 @@ Move through the seven-stage timeline from left to right. A green stage indicate
 
 Complete Sale Details when EOI is enabled. Fields adapt to the selected sale type and Client 2 participation.
 
-![Sale details on mobile](screenshots/03-sale-details-mobile.png)
+![Sale details on mobile](../screenshots/03-sale-details-mobile.png)
 
 | Area | Guidance |
 |---|---|
@@ -152,7 +152,7 @@ The Contract Due Date may be blank while editing or saving a draft, but final ge
 
 The Zoom workspace preserves the online consultation structure and keeps the eight stages visible horizontally.
 
-![Zoom consultation timeline](screenshots/04-zoom-workspace.png)
+![Zoom consultation timeline](../screenshots/04-zoom-workspace.png)
 
 ### Complete the consultation
 
@@ -173,7 +173,7 @@ The Zoom Client Review date is the next-appointment source for the prepared emai
 
 Use the Consultation Workspace to sketch explanations during a Zoom appointment.
 
-![Zoom whiteboard with a test drawing](screenshots/05-zoom-whiteboard.png)
+![Zoom whiteboard with a test drawing](../screenshots/05-zoom-whiteboard.png)
 
 ### Whiteboard controls
 
@@ -197,7 +197,7 @@ Rotate the device if more drawing space is needed. Confirm the canvas remains vi
 
 Attach legible ID images and capture signatures only with the client's knowledge and consent.
 
-![ID document attachment areas](screenshots/07-id-signatures.png)
+![ID document attachment areas](../screenshots/07-id-signatures.png)
 
 ### ID photographs
 
@@ -222,7 +222,7 @@ Attach legible ID images and capture signatures only with the client's knowledge
 
 Drafts are stored on the current device. Save regularly during an appointment.
 
-![Draft controls on mobile](screenshots/06-draft-controls.png)
+![Draft controls on mobile](../screenshots/06-draft-controls.png)
 
 ### Save a draft
 
@@ -257,7 +257,7 @@ Generation stops and shows an inline message when required information is missin
 
 After successful generation, the package-ready panel displays the exact Combined PDF and Document ZIP filenames.
 
-![Appointment package ready](screenshots/08-package-ready.png)
+![Appointment package ready](../screenshots/08-package-ready.png)
 
 ---
 
@@ -277,7 +277,7 @@ After **Download Package**, confirm this message:
 > **Downloads started**  
 > Please tap Prepare Email and attach the Combined PDF and Document ZIP from your Downloads.
 
-![Downloads started confirmation](screenshots/09-downloads-started.png)
+![Downloads started confirmation](../screenshots/09-downloads-started.png)
 
 The prepared email does not attach files automatically. Add both downloaded files before sending. If the native mail action does not open, use the displayed fallback details to create the message manually.
 
