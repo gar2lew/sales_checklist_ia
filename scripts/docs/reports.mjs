@@ -122,7 +122,8 @@ function changelogEntry(input) {
 
 export function renderDocumentationChangelog(input, current = '') {
   assertInput(input);
-  if (current && !current.startsWith('# Documentation Changelog\n')) {
+  const normalizedCurrent = current.replaceAll('\r\n', '\n');
+  if (normalizedCurrent && !normalizedCurrent.startsWith('# Documentation Changelog\n')) {
     throw new Error('Malformed changelog: expected Documentation Changelog heading.');
   }
   const entry = changelogEntry(input);
@@ -131,8 +132,8 @@ export function renderDocumentationChangelog(input, current = '') {
     'Screenshot changes',
     input.screenshots.map(({ filename, classification }) => `${filename}: ${classification}`).join('; '),
   );
-  const sections = current
-    ? current.trimEnd().split(/\n(?=## )/).slice(1)
+  const sections = normalizedCurrent
+    ? normalizedCurrent.trimEnd().split(/\n(?=## )/).slice(1)
     : [];
   const retained = sections.filter((section) => (
     !section.includes(key)
@@ -154,7 +155,9 @@ async function readExisting(path) {
 
 async function atomicWrite(path, content, replace = rename) {
   const current = await readExisting(path);
-  if (current === content) return 'UNCHANGED';
+  if (current === content || current.replaceAll('\r\n', '\n') === content.replaceAll('\r\n', '\n')) {
+    return 'UNCHANGED';
+  }
   await mkdir(dirname(path), { recursive: true });
   const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`;
   try {

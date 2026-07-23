@@ -286,6 +286,14 @@ async function atomicCopy(source, destination) {
 }
 
 async function atomicWrite(path, content) {
+  try {
+    const current = await readFile(path, 'utf8');
+    if (current === content || current.replaceAll('\r\n', '\n') === content.replaceAll('\r\n', '\n')) {
+      return false;
+    }
+  } catch (cause) {
+    if (cause.code !== 'ENOENT') throw cause;
+  }
   const temporary = `${path}.${process.pid}.tmp`;
   await writeFile(temporary, content);
   try {
@@ -293,6 +301,7 @@ async function atomicWrite(path, content) {
   } finally {
     await rm(temporary, { force: true });
   }
+  return true;
 }
 
 export async function applyScreenshotChanges(options = {}) {
@@ -332,8 +341,11 @@ export async function applyScreenshotChanges(options = {}) {
   for (const { filename } of classification.REMOVED) {
     await rm(resolve(options.committedDir, filename), { force: true });
   }
-  await atomicWrite(options.metadataPath, serializeScreenshotMetadata(metadata));
-  return Object.freeze({ classification, metadata });
+  const metadataChanged = await atomicWrite(
+    options.metadataPath,
+    serializeScreenshotMetadata(metadata),
+  );
+  return Object.freeze({ classification, metadata, metadataChanged });
 }
 
 function assertTemporaryCapturePath(repoRoot, outputDir) {

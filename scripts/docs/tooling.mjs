@@ -308,3 +308,36 @@ export async function discoverTooling(options = {}) {
     requiredInputs: REQUIRED_REPOSITORY_INPUTS,
   });
 }
+
+export async function discoverCaptureTooling(options = {}) {
+  assertNodeFeatures(options.nodeEnvironment);
+  const python = await (options.discoverPythonCommand ?? discoverPython)(options);
+  const resolvePlaywright = options.resolvePlaywright ?? defaultResolvePlaywright;
+  const playwright = await resolvePlaywright();
+  if (!playwright?.chromium?.launch) {
+    throw stageError(
+      'Playwright',
+      'the repository Playwright package is unavailable',
+      'Run `npm install` from the repository root and retry.',
+    );
+  }
+  let browser;
+  try {
+    browser = await playwright.chromium.launch({ headless: true });
+    await browser.close();
+  } catch (cause) {
+    if (browser) await browser.close().catch(() => {});
+    throw stageError(
+      'Chromium',
+      'the installed Playwright Chromium browser is not launchable',
+      'Run `npx playwright install chromium` and retry.',
+      cause,
+    );
+  }
+  return Object.freeze({
+    nodeVersion: options.nodeEnvironment?.nodeVersion ?? process.versions.node,
+    python,
+    playwright: 'available',
+    chromium: 'launchable',
+  });
+}

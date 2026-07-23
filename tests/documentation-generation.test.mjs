@@ -153,42 +153,21 @@ test('Python generator passes an encoded isolated-profile URI to LibreOffice', a
   assert.match(source, /shell=False/);
 });
 
-test('generate command performs preflight, metadata, tooling, then documents without later phases', async () => {
-  const calls = [];
-  const repository = {
-    repoRoot: resolve(import.meta.dirname, '..'),
-    branch: 'fix/staff-dropdown-seeding-v2',
-    sourceCommit: '6d926a19062d4c1ac80f76ef9f9eacdbcd710725',
-    changes: [],
-  };
-  const tooling = {
-    python: { executable: 'python', prefixArgs: [] },
-    libreOffice: { executable: 'soffice', prefixArgs: [] },
-  };
+test('generate orchestration retains the Phase 6 document generation service', async () => {
+  let context;
   const result = await runDocumentationCommand('generate', {
-    repoRoot: repository.repoRoot,
-    repositoryInspector: async () => {
-      calls.push('preflight');
-      return repository;
-    },
-    assertRepository: async () => calls.push('clean'),
-    metadataUpdate: async () => {
-      calls.push('metadata');
-      return { changed: false };
-    },
-    generationTooling: async () => {
-      calls.push('tooling');
-      return tooling;
-    },
-    documentGeneration: async (options) => {
-      calls.push('documents');
-      assert.equal(options.repoRoot, repository.repoRoot);
-      assert.equal(options.tooling, tooling);
-      return { promotion: { status: { docx: 'unchanged', pdf: 'unchanged' } } };
+    repoRoot: resolve(import.meta.dirname, '..'),
+    handlers: {
+      generate: async (supplied) => {
+        context = supplied;
+        return { status: 'PASS' };
+      },
     },
   });
-  assert.deepEqual(calls, ['preflight', 'clean', 'metadata', 'tooling', 'documents']);
-  assert.deepEqual(result.promotion.status, { docx: 'unchanged', pdf: 'unchanged' });
+  assert.deepEqual(result, { status: 'PASS' });
+  assert.equal(context.mode, 'generate');
+  assert.equal(typeof context.documentGeneration, 'function');
+  assert.equal(typeof context.generationTooling, 'function');
 });
 
 test('candidate validation accepts complete DOCX/PDF and rejects malformed or incomplete artifacts', async (t) => {

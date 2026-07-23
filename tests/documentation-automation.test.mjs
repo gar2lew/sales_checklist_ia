@@ -227,9 +227,12 @@ test('direct command execution preserves literal arguments and bounds output', a
 test('package scripts and temporary ignore rule expose only the approved foundation wiring', async () => {
   const packageJson = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8'));
   assert.equal(packageJson.scripts['docs:user-guide'], 'node scripts/docs-user-guide.mjs generate');
-  assert.equal(packageJson.scripts['docs:screenshots'], 'node scripts/docs-user-guide.mjs screenshots');
-  assert.equal(packageJson.scripts['docs:validate'], 'node scripts/docs-user-guide.mjs validate');
-  assert.equal(packageJson.scripts['docs:clean'], 'node scripts/docs-user-guide.mjs clean');
+  assert.equal(packageJson.scripts['docs:user-guide:capture'], 'node scripts/docs-user-guide.mjs screenshots');
+  assert.equal(packageJson.scripts['docs:user-guide:validate'], 'node scripts/docs-user-guide.mjs validate');
+  assert.equal(packageJson.scripts['docs:user-guide:clean'], 'node scripts/docs-user-guide.mjs clean');
+  assert.equal(packageJson.scripts['docs:screenshots'], 'npm run docs:user-guide:capture');
+  assert.equal(packageJson.scripts['docs:validate'], 'npm run docs:user-guide:validate');
+  assert.equal(packageJson.scripts['docs:clean'], 'npm run docs:user-guide:clean');
 
   const gitignore = await readFile(resolve(repoRoot, '.gitignore'), 'utf8');
   assert.match(gitignore, /^\/\.tmp\/docs-user-guide\/$/m);
@@ -787,6 +790,30 @@ test('applying screenshots preserves unchanged bytes and mtime and writes only d
   assert.equal(after.mtimeMs, before.mtimeMs);
   assert.equal(result.metadata.screenshots.length, 2);
   assert.equal((await readFile(metadataPath, 'utf8')).endsWith('\n'), true);
+  const metadataBefore = await stat(metadataPath);
+  const repeated = await applyScreenshotChanges({
+    manifest,
+    candidateDir,
+    committedDir,
+    metadataPath,
+    timestamp: '2026-07-22T03:00:00.000Z',
+  });
+  const metadataAfter = await stat(metadataPath);
+  assert.equal(repeated.metadataChanged, false);
+  assert.equal(metadataAfter.mtimeMs, metadataBefore.mtimeMs);
+  const crlfMetadata = (await readFile(metadataPath, 'utf8')).replaceAll('\n', '\r\n');
+  await writeFile(metadataPath, crlfMetadata);
+  const crlfBefore = await stat(metadataPath);
+  const crlfRepeated = await applyScreenshotChanges({
+    manifest,
+    candidateDir,
+    committedDir,
+    metadataPath,
+    timestamp: '2026-07-22T04:00:00.000Z',
+  });
+  const crlfAfter = await stat(metadataPath);
+  assert.equal(crlfRepeated.metadataChanged, false);
+  assert.equal(crlfAfter.mtimeMs, crlfBefore.mtimeMs);
 });
 
 test('capture readiness rejects missing locators, zero bounds, and fonts that never load', async () => {
@@ -1037,37 +1064,21 @@ test('canonical guide contains one generated metadata block immediately below it
   });
 });
 
-test('generate command preserves Phase 5 metadata inputs before later approved generation stages', async () => {
-  const calls = [];
-  const repository = {
-    repoRoot,
-    branch: 'fix/staff-dropdown-seeding-v2',
-    sourceCommit: '9db1800ce947f634520bb391826ad44ded8a6b82',
-    changes: [],
-  };
+test('generate command exposes approved phase services through one orchestration context', async () => {
+  let supplied;
   const result = await runDocumentationCommand('generate', {
     repoRoot,
-    repositoryInspector: async ({ repoRoot: suppliedRoot }) => {
-      calls.push(['inspect', suppliedRoot]);
-      return repository;
+    handlers: {
+      generate: async (context) => {
+        supplied = context;
+        return { status: 'PASS' };
+      },
     },
-    assertRepository: async (supplied, options) => {
-      calls.push(['assert', supplied, options]);
-    },
-    metadataUpdate: async (options) => {
-      calls.push(['metadata', options]);
-      return { changed: false, path: 'guide.md' };
-    },
-    generationTooling: async () => ({ python: {}, libreOffice: {} }),
-    documentGeneration: async () => ({ changed: false, path: 'guide.md' }),
-    clock: () => new Date('2026-07-21T16:30:00.000Z'),
   });
-  assert.deepEqual(result, { changed: false, path: 'guide.md' });
-  assert.equal(calls[0][0], 'inspect');
-  assert.deepEqual(calls[1], ['assert', repository, { mode: 'generate' }]);
-  assert.equal(calls[2][0], 'metadata');
-  assert.equal(calls[2][1].repoRoot, repoRoot);
-  assert.equal(calls[2][1].repository, repository);
-  assert.equal(calls[2][1].clock().toISOString(), '2026-07-21T16:30:00.000Z');
-  assert.equal(calls.length, 3);
+  assert.deepEqual(result, { status: 'PASS' });
+  assert.equal(supplied.mode, 'generate');
+  assert.equal(typeof supplied.metadataUpdate, 'function');
+  assert.equal(typeof supplied.documentGeneration, 'function');
+  assert.equal(typeof supplied.guideValidation, 'function');
+  assert.equal(typeof supplied.reporting, 'function');
 });

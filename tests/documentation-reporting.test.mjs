@@ -101,6 +101,10 @@ test('changelog creates, prepends, preserves history, records WARN, and replaces
   assert.ok(updated.indexOf('b'.repeat(40)) < updated.indexOf(sourceCommit));
   assert.match(updated, /Source commit: old/);
   assert.equal(renderDocumentationChangelog(input, first), first);
+  assert.equal(
+    renderDocumentationChangelog(input, first.replaceAll('\n', '\r\n')),
+    first,
+  );
   const changedClassification = fixture();
   changedClassification.screenshots = changedClassification.screenshots.map((item, index) => ({
     ...item,
