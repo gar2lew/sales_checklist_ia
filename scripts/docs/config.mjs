@@ -2,6 +2,18 @@ import { resolve } from 'node:path';
 
 export const GUIDE_VERSION = '1.0.0';
 
+export const SERVER_DEFAULTS = Object.freeze({
+  host: '127.0.0.1',
+  preferredPort: 8766,
+  firstPort: 8766,
+  lastPort: 8776,
+  startupTimeoutMs: 15_000,
+  pollIntervalMs: 200,
+  requestTimeoutMs: 5_000,
+  maxResponseBytes: 10 * 1024 * 1024,
+  redirect: 'manual',
+});
+
 export const COMMANDS = Object.freeze([
   'generate',
   'screenshots',

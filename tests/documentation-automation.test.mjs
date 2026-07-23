@@ -14,6 +14,7 @@ import {
   COMMANDS,
   GUIDE_VERSION,
   SCREENSHOT_MANIFEST,
+  SERVER_DEFAULTS,
   createRunPaths,
   getWriteContract,
 } from '../scripts/docs/config.mjs';
@@ -25,6 +26,15 @@ import {
   inspectRepository,
 } from '../scripts/docs/git-integrity.mjs';
 import { runCommand } from '../scripts/docs/process.mjs';
+import {
+  FINGERPRINT_PATHS,
+  buildLocalFingerprint,
+  compareServerFingerprint,
+  fetchBounded,
+  resolveServerConfiguration,
+  runWithServerLease,
+  stopOwnedServer,
+} from '../scripts/docs/server.mjs';
 import {
   assertNodeFeatures,
   discoverPython,
@@ -384,4 +394,171 @@ test('tooling preflight rejects missing Playwright, Chromium, LibreOffice, pdfin
   const tooling = await discoverTooling(base);
   assert.equal(tooling.python.executable, 'python');
   assert.equal(tooling.playwright, 'available');
+});
+
+test('server defaults and candidate configuration match the approved finite contract', () => {
+  assert.deepEqual(SERVER_DEFAULTS, {
+    host: '127.0.0.1',
+    preferredPort: 8766,
+    firstPort: 8766,
+    lastPort: 8776,
+    startupTimeoutMs: 15_000,
+    pollIntervalMs: 200,
+    requestTimeoutMs: 5_000,
+    maxResponseBytes: 10 * 1024 * 1024,
+    redirect: 'manual',
+  });
+  assert.deepEqual(FINGERPRINT_PATHS, [
+    'index.html',
+    'css/app.css',
+    'js/app.js',
+    'manifest.webmanifest',
+    'service-worker.js',
+  ]);
+  assert.deepEqual(resolveServerConfiguration({ env: {} }).ports, [
+    8766, 8767, 8768, 8769, 8770, 8771, 8772, 8773, 8774, 8775, 8776,
+  ]);
+  assert.equal(
+    resolveServerConfiguration({ env: { DOCS_BASE_URL: 'https://localhost:9443' } })
+      .explicitBaseUrl.href,
+    'https://localhost:9443/',
+  );
+  assert.equal(
+    resolveServerConfiguration({ env: { DOCS_PORT: '9000' } }).explicitPort,
+    9000,
+  );
+  for (const value of [
+    'ftp://localhost:8766',
+    'http://user@localhost:8766',
+    'http://localhost:8766/path',
+    'not a url',
+  ]) {
+    assert.throws(
+      () => resolveServerConfiguration({ env: { DOCS_BASE_URL: value } }),
+      /Server configuration.*DOCS_BASE_URL/si,
+    );
+  }
+  for (const value of ['abc', '9000.5', '1023', '65536']) {
+    assert.throws(
+      () => resolveServerConfiguration({ env: { DOCS_PORT: value } }),
+      /Server configuration.*DOCS_PORT/si,
+    );
+  }
+});
+
+test('fingerprint helpers hash raw bytes and report match, mismatch, missing, and cache busting', async (t) => {
+  const fixture = await mkdtemp(resolve(tmpdir(), 'docs-fingerprint-'));
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const content = new Map();
+  for (const path of FINGERPRINT_PATHS) {
+    await mkdir(resolve(fixture, path, '..'), { recursive: true });
+    const value = Buffer.from(`bytes:${path}`);
+    content.set(path, value);
+    await writeFile(resolve(fixture, path), value);
+  }
+  const local = await buildLocalFingerprint({ repoRoot: fixture });
+  assert.equal(local.size, 5);
+  const requested = [];
+  const matchingFetch = async (url, options) => {
+    requested.push([String(url), options.redirect]);
+    const path = new URL(url).pathname.slice(1);
+    return new Response(content.get(path), { status: 200 });
+  };
+  const matched = await compareServerFingerprint({
+    baseUrl: new URL('http://127.0.0.1:8766'),
+    localFingerprint: local,
+    fetchImpl: matchingFetch,
+    cacheToken: 'fixed',
+  });
+  assert.equal(matched.match, true);
+  assert.equal(requested.length, 5);
+  assert.ok(requested.every(([url, redirect]) => (
+    url.includes('docs_fingerprint=fixed') && redirect === 'manual'
+  )));
+
+  const mismatch = await compareServerFingerprint({
+    baseUrl: new URL('http://127.0.0.1:8766'),
+    localFingerprint: local,
+    fetchImpl: async (url) => {
+      const path = new URL(url).pathname.slice(1);
+      return new Response(path === 'js/app.js' ? 'changed' : content.get(path), { status: 200 });
+    },
+  });
+  assert.deepEqual(mismatch.mismatched, ['js/app.js']);
+  assert.equal(mismatch.match, false);
+
+  const missing = await compareServerFingerprint({
+    baseUrl: new URL('http://127.0.0.1:8766'),
+    localFingerprint: local,
+    fetchImpl: async (url) => (
+      new URL(url).pathname === '/service-worker.js'
+        ? new Response('missing', { status: 404 })
+        : new Response(content.get(new URL(url).pathname.slice(1)), { status: 200 })
+    ),
+  });
+  assert.deepEqual(missing.missing, ['service-worker.js']);
+});
+
+test('bounded fetch rejects redirects, non-200 responses, and oversized bodies', async () => {
+  await assert.rejects(
+    fetchBounded(new URL('http://localhost/file'), {
+      fetchImpl: async () => new Response('', { status: 302, headers: { location: '/other' } }),
+    }),
+    /HTTP preflight.*redirect/si,
+  );
+  await assert.rejects(
+    fetchBounded(new URL('http://localhost/file'), {
+      fetchImpl: async () => new Response('no', { status: 404 }),
+    }),
+    /HTTP preflight.*404/si,
+  );
+  await assert.rejects(
+    fetchBounded(new URL('http://localhost/file'), {
+      maxBytes: 4,
+      fetchImpl: async () => new Response('12345', {
+        status: 200,
+        headers: { 'content-length': '5' },
+      }),
+    }),
+    /HTTP preflight.*4 bytes/si,
+  );
+  await assert.rejects(
+    fetchBounded(new URL('http://localhost/file'), {
+      maxBytes: 4,
+      fetchImpl: async () => new Response('12345', { status: 200 }),
+    }),
+    /HTTP preflight.*4 bytes/si,
+  );
+});
+
+test('server cleanup is ownership-scoped, idempotent, and preserves primary errors', async () => {
+  let reusedStops = 0;
+  const reused = {
+    disposition: 'reused',
+    cleanup: async () => { reusedStops += 1; },
+  };
+  await runWithServerLease(reused, async () => 'ok');
+  assert.equal(reusedStops, 1);
+
+  const calls = [];
+  const child = { pid: 4321, exitCode: null };
+  await stopOwnedServer({
+    child,
+    platform: 'win32',
+    run: async (executable, args) => {
+      calls.push([executable, args]);
+      child.exitCode = 0;
+      return successfulResult();
+    },
+    waitForExit: async () => true,
+  });
+  assert.deepEqual(calls, [['taskkill.exe', ['/PID', '4321', '/T', '/F']]]);
+
+  const primary = new Error('primary pipeline failure');
+  const cleanup = new Error('cleanup failed');
+  const lease = { cleanup: async () => { throw cleanup; } };
+  await assert.rejects(
+    runWithServerLease(lease, async () => { throw primary; }),
+    (error) => error === primary && error.cleanupError === cleanup,
+  );
 });
