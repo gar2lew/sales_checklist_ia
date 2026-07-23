@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
@@ -11,9 +18,41 @@ import {
   getWriteContract,
 } from '../scripts/docs/config.mjs';
 import { runDocumentationCommand } from '../scripts/docs-user-guide.mjs';
+import {
+  assertAllowedChanges,
+  assertCleanNamedBranch,
+  hashProtectedFiles,
+  inspectRepository,
+} from '../scripts/docs/git-integrity.mjs';
 import { runCommand } from '../scripts/docs/process.mjs';
+import {
+  assertNodeFeatures,
+  discoverPython,
+  discoverTooling,
+} from '../scripts/docs/tooling.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
+
+async function createGitFixture(t) {
+  const directory = await mkdtemp(resolve(tmpdir(), 'docs-preflight-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const [executable, args] of [
+    ['git', ['init', '-b', 'fixture/clean']],
+    ['git', ['config', 'user.email', 'docs@example.invalid']],
+    ['git', ['config', 'user.name', 'Docs Fixture']],
+  ]) {
+    const result = await runCommand(executable, args, { cwd: directory });
+    assert.equal(result.exitCode, 0, result.stderr);
+  }
+  await writeFile(resolve(directory, 'tracked.txt'), 'baseline\n');
+  await runCommand('git', ['add', 'tracked.txt'], { cwd: directory });
+  await runCommand('git', ['commit', '-m', 'fixture'], { cwd: directory });
+  return directory;
+}
+
+function successfulResult(stdout = '') {
+  return { exitCode: 0, signal: null, stdout, stderr: '' };
+}
 
 test('foundation exposes the four approved documentation modes', () => {
   assert.deepEqual(COMMANDS, ['generate', 'screenshots', 'validate', 'clean']);
@@ -142,4 +181,207 @@ test('package scripts and temporary ignore rule expose only the approved foundat
   const gitignore = await readFile(resolve(repoRoot, '.gitignore'), 'utf8');
   assert.match(gitignore, /^\/\.tmp\/docs-user-guide\/$/m);
   assert.doesNotMatch(gitignore, /^\/?\.tmp\/?$/m);
+});
+
+test('Git preflight accepts a clean named branch and records the Source commit', async (t) => {
+  const fixture = await createGitFixture(t);
+  const nested = resolve(fixture, 'nested/path');
+  await mkdir(nested, { recursive: true });
+  const context = await inspectRepository({ repoRoot: nested });
+  await assertCleanNamedBranch(context, { mode: 'generate' });
+  assert.equal(context.branch, 'fixture/clean');
+  assert.match(context.sourceCommit, /^[0-9a-f]{40}$/);
+  assert.equal(context.shortSourceCommit, context.sourceCommit.slice(0, 12));
+  assert.equal(context.repoRoot, fixture);
+});
+
+test('Git preflight rejects detached HEAD with remediation', async (t) => {
+  const fixture = await createGitFixture(t);
+  await runCommand('git', ['checkout', '--detach'], { cwd: fixture });
+  const context = await inspectRepository({ repoRoot: fixture });
+  await assert.rejects(
+    assertCleanNamedBranch(context, { mode: 'generate' }),
+    /Git preflight.*detached HEAD.*git switch/si,
+  );
+});
+
+test('Git preflight rejects tracked, staged, and untracked dirt but exempts clean mode', async (t) => {
+  const fixture = await createGitFixture(t);
+  const cases = [
+    async () => writeFile(resolve(fixture, 'tracked.txt'), 'dirty\n'),
+    async () => {
+      await writeFile(resolve(fixture, 'staged.txt'), 'staged\n');
+      await runCommand('git', ['add', 'staged.txt'], { cwd: fixture });
+    },
+    async () => writeFile(resolve(fixture, 'untracked.txt'), 'untracked\n'),
+  ];
+  for (const makeDirty of cases) {
+    await runCommand('git', ['reset', '--hard', 'HEAD'], { cwd: fixture });
+    await runCommand('git', ['clean', '-fd'], { cwd: fixture });
+    await makeDirty();
+    const context = await inspectRepository({ repoRoot: fixture });
+    await assert.rejects(
+      assertCleanNamedBranch(context, { mode: 'generate' }),
+      /Git preflight.*working tree.*git status/si,
+    );
+    await assert.doesNotReject(assertCleanNamedBranch(context, { mode: 'clean' }));
+  }
+});
+
+test('protected hashing detects byte changes and allowed-change contracts reject scope drift', async (t) => {
+  const fixture = await createGitFixture(t);
+  await mkdir(resolve(fixture, 'js'));
+  await writeFile(resolve(fixture, 'index.html'), 'one');
+  await writeFile(resolve(fixture, 'js/app.js'), 'one');
+  await runCommand('git', ['add', '.'], { cwd: fixture });
+  await runCommand('git', ['commit', '-m', 'runtime'], { cwd: fixture });
+  const before = await hashProtectedFiles({ repoRoot: fixture });
+  await writeFile(resolve(fixture, 'js/app.js'), 'two');
+  const after = await hashProtectedFiles({ repoRoot: fixture });
+  assert.notEqual(before.get('js/app.js'), after.get('js/app.js'));
+  assert.doesNotThrow(() => assertAllowedChanges({
+    mode: 'generate',
+    changedPaths: ['docs/user-guides/guide.pdf', '.tmp/docs-user-guide/candidate.png'],
+  }));
+  for (const forbidden of [
+    'package.json',
+    'scripts/docs-user-guide.mjs',
+    'tests/documentation-automation.test.mjs',
+    'js/app.js',
+    'notes.txt',
+  ]) {
+    assert.throws(
+      () => assertAllowedChanges({ mode: 'generate', changedPaths: [forbidden] }),
+      new RegExp(`Integrity preflight.*${forbidden.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'si'),
+    );
+  }
+  assert.throws(
+    () => assertAllowedChanges({ mode: 'screenshots', changedPaths: ['docs/user-guides/README.md'] }),
+    /Integrity preflight.*README\.md/si,
+  );
+});
+
+test('Node preflight validates supported versions and required features', () => {
+  assert.doesNotThrow(() => assertNodeFeatures({
+    nodeVersion: '18.20.0',
+    fetch: () => {},
+    abortSignalTimeout: () => {},
+    createHash: () => {},
+    importMetaUrl: 'file:///test.mjs',
+  }));
+  for (const [environment, requirement] of [
+    [{ nodeVersion: '16.20.2' }, /Node 18 or newer/],
+    [{ nodeVersion: 'not-a-version' }, /valid Node version/],
+    [{ nodeVersion: '20.0.0', fetch: null }, /native fetch/],
+    [{ nodeVersion: '20.0.0', fetch: () => {}, abortSignalTimeout: null }, /AbortSignal\.timeout/],
+    [{
+      nodeVersion: '20.0.0',
+      fetch: () => {},
+      abortSignalTimeout: () => {},
+      createHash: null,
+    }, /SHA-256/],
+    [{
+      nodeVersion: '20.0.0',
+      fetch: () => {},
+      abortSignalTimeout: () => {},
+      createHash: () => {},
+      importMetaUrl: null,
+    }, /ES modules/],
+  ]) {
+    assert.throws(() => assertNodeFeatures(environment), requirement);
+  }
+});
+
+test('Python discovery honours the approved precedence and validates imports', async () => {
+  const calls = [];
+  const runner = async (executable, args) => {
+    calls.push([executable, args]);
+    return successfulResult();
+  };
+  assert.deepEqual(await discoverPython({
+    env: { DOCS_PYTHON: 'C:\\Python\\python.exe' },
+    platform: 'win32',
+    run: runner,
+  }), { executable: 'C:\\Python\\python.exe', prefixArgs: [] });
+  assert.equal(calls[0][0], 'C:\\Python\\python.exe');
+
+  const pythonFallbackCalls = [];
+  const pythonFallback = await discoverPython({
+    env: {},
+    platform: 'win32',
+    run: async (executable, args) => {
+      pythonFallbackCalls.push([executable, args]);
+      return executable === 'python' ? successfulResult() : { ...successfulResult(), exitCode: 1 };
+    },
+  });
+  assert.deepEqual(pythonFallback, { executable: 'python', prefixArgs: [] });
+  assert.equal(pythonFallbackCalls.some(([name]) => name.includes('.codex')), false);
+
+  const pyFallback = await discoverPython({
+    env: {},
+    platform: 'win32',
+    run: async (executable) => (
+      executable === 'py' ? successfulResult() : { ...successfulResult(), exitCode: 1 }
+    ),
+  });
+  assert.deepEqual(pyFallback, { executable: 'py', prefixArgs: ['-3'] });
+});
+
+test('Python discovery rejects missing interpreters and required imports', async () => {
+  await assert.rejects(
+    discoverPython({
+      env: {},
+      platform: 'linux',
+      run: async () => ({ ...successfulResult(), exitCode: 1 }),
+    }),
+    /Python preflight.*DOCS_PYTHON.*python-docx.*Pillow/si,
+  );
+  for (const missing of ['docx', 'PIL']) {
+    await assert.rejects(
+      discoverPython({
+        env: { DOCS_PYTHON: 'python-custom' },
+        platform: 'linux',
+        run: async (_executable, args) => (
+          args.at(-1)?.includes(`import ${missing}`)
+            ? { ...successfulResult(), exitCode: 1 }
+            : successfulResult()
+        ),
+      }),
+      new RegExp(`Python preflight.*${missing}`, 'si'),
+    );
+  }
+});
+
+test('tooling preflight rejects missing Playwright, Chromium, LibreOffice, pdfinfo, or input', async () => {
+  const base = {
+    repoRoot,
+    nodeEnvironment: {
+      nodeVersion: '20.11.1',
+      fetch: () => {},
+      abortSignalTimeout: () => {},
+      createHash: () => {},
+      importMetaUrl: 'file:///test.mjs',
+    },
+    discoverPythonCommand: async () => ({ executable: 'python', prefixArgs: [] }),
+    resolvePlaywright: async () => ({ chromium: { launch: async () => ({ close: async () => {} }) } }),
+    findExecutable: async (name) => ({ executable: name, prefixArgs: [] }),
+    fileExists: async () => true,
+  };
+  const failures = [
+    [{ resolvePlaywright: async () => null }, /Playwright preflight.*npm install/si],
+    [{
+      resolvePlaywright: async () => ({
+        chromium: { launch: async () => { throw new Error('browser missing'); } },
+      }),
+    }, /Chromium preflight.*playwright install chromium/si],
+    [{ findExecutable: async (name) => (name === 'libreoffice' ? null : { executable: name, prefixArgs: [] }) }, /LibreOffice preflight/],
+    [{ findExecutable: async (name) => (name === 'pdfinfo' ? null : { executable: name, prefixArgs: [] }) }, /pdfinfo preflight/],
+    [{ fileExists: async (path) => !path.endsWith('SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md') }, /Repository input preflight.*SALES_APPOINTMENT/si],
+  ];
+  for (const [override, expected] of failures) {
+    await assert.rejects(discoverTooling({ ...base, ...override }), expected);
+  }
+  const tooling = await discoverTooling(base);
+  assert.equal(tooling.python.executable, 'python');
+  assert.equal(tooling.playwright, 'available');
 });
