@@ -157,5 +157,7 @@ export function createRunPaths(repositoryRoot) {
     committedScreenshotDir: resolve(guideDir, 'screenshots'),
     tempRoot,
     tempScreenshotDir: resolve(tempRoot, 'screenshots'),
+    reportPath: resolve(guideDir, 'documentation-report.md'),
+    changelogPath: resolve(guideDir, 'changelog.md'),
   });
 }

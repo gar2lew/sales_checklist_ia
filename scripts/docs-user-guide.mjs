@@ -13,6 +13,7 @@ import {
 } from './docs/git-integrity.mjs';
 import { generateDocuments } from './docs/documents.mjs';
 import { runMetadataUpdate } from './docs/metadata.mjs';
+import { writeDocumentationReports } from './docs/reports.mjs';
 import {
   discoverDocumentGenerationTooling,
   discoverValidationTooling,
@@ -87,6 +88,7 @@ export async function runDocumentationCommand(mode, dependencies = {}) {
     documentGeneration: dependencies.documentGeneration ?? generateDocuments,
     validationTooling: dependencies.validationTooling ?? discoverValidationTooling,
     guideValidation: dependencies.guideValidation ?? validateGuide,
+    reporting: dependencies.reporting ?? writeDocumentationReports,
     clock: dependencies.clock ?? (() => new Date()),
   }));
 }

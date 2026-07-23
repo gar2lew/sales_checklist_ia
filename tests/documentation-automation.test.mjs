@@ -128,6 +128,8 @@ test('run paths remain rooted in the supplied repository', () => {
   assert.equal(paths.committedScreenshotDir, resolve(repoRoot, 'docs/user-guides/screenshots'));
   assert.equal(paths.tempRoot, resolve(repoRoot, '.tmp/docs-user-guide'));
   assert.equal(paths.tempScreenshotDir, resolve(repoRoot, '.tmp/docs-user-guide/screenshots'));
+  assert.equal(paths.reportPath, resolve(repoRoot, 'docs/user-guides/documentation-report.md'));
+  assert.equal(paths.changelogPath, resolve(repoRoot, 'docs/user-guides/changelog.md'));
   for (const path of Object.values(paths)) {
     assert.ok(path === repoRoot || path.startsWith(`${repoRoot}\\`) || path.startsWith(`${repoRoot}/`));
   }
