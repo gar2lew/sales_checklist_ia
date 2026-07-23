@@ -40,6 +40,7 @@ The pipeline will not:
 - automatically approve visual quality;
 - remove committed guide outputs;
 - stop a server it did not start;
+- stage or commit any file; the implementation agent, not the documentation command, creates the single implementation commit;
 - push, merge or deploy.
 
 ## Architecture
@@ -58,6 +59,17 @@ The orchestrator exposes four command modes through `package.json`:
 | `npm run docs:clean` | `clean` | Remove pipeline-owned temporary documentation artifacts only. |
 
 Internal implementation may use focused modules under `scripts/docs/` so pure operations can be tested without starting browsers or subprocesses. These modules are not additional user-facing entry points.
+
+### Command-specific write contracts
+
+Each mode has a closed write contract:
+
+- `docs:user-guide` may update declared committed outputs only under `docs/user-guides/**` and temporary files only under `.tmp/docs-user-guide/**`.
+- `docs:screenshots` may update only `docs/user-guides/screenshots/**`, `docs/user-guides/screenshots.json`, screenshot-related sections of `docs/user-guides/documentation-report.md`, and `.tmp/docs-user-guide/**`.
+- `docs:validate` is read-only. It may inspect files and execute validation tools but must leave the worktree byte-identical.
+- `docs:clean` may remove only `.tmp/docs-user-guide/` after the path-safety checks in this specification.
+
+The commands never run `git add`, `git commit` or any equivalent staging operation. After implementation and verification, the implementation agent creates the one requested local commit, `docs: automate user guide pipeline`.
 
 ### Existing components retained
 
@@ -99,7 +111,7 @@ The pipeline accepts any named branch and records that branch. It rejects detach
 
 All modes except `clean` require a clean Git working tree before work starts. Clean means `git status --porcelain` returns no tracked, untracked, staged or unstaged paths. This prevents generated outputs from being mixed with unrelated local work.
 
-The complete pipeline intentionally makes expected documentation outputs dirty. It records the initial commit and a baseline hash map of runtime-protected files before generation. At completion it allows changes only in the explicit documentation-output allowlist, `package.json`, documentation automation scripts/tests and the temporary directory. Any unexpected path fails the pipeline.
+The complete pipeline intentionally makes expected documentation outputs dirty. It records the initial commit and a baseline hash map of runtime-protected files before generation. At completion, committed-file changes are permitted only under `docs/user-guides/**`; temporary changes are permitted only under `.tmp/docs-user-guide/**`. Any modification to `package.json`, `scripts/**`, `tests/**`, runtime files or any other path during command execution fails the pipeline. The pipeline reports unexpected paths and does not revert them automatically.
 
 ### Runtime-protected files
 
@@ -121,12 +133,13 @@ The implementation will derive this set from tracked paths and explicit runtime 
 
 Before capture or generation, the orchestrator verifies:
 
-1. the running Node version and executable;
+1. the running Node version is supported and provides required features including native `fetch`, `AbortSignal.timeout`, ES modules and SHA-256 hashing;
 2. a usable Python executable with `python-docx` and Pillow;
 3. the repository Playwright package;
 4. a launchable Chromium browser for the installed Playwright version;
 5. LibreOffice for PDF export; and
-6. required repository files and generator scripts.
+6. Poppler `pdfinfo` for structural PDF validation; and
+7. required repository files and generator scripts.
 
 Missing tooling produces a non-zero exit and specific remediation. Examples include the repository install command for Node packages, `npx playwright install chromium` for the browser, and the configured Python/LibreOffice requirement for document export. The pipeline never installs dependencies automatically.
 
@@ -134,12 +147,21 @@ Python discovery checks, in order:
 
 1. `DOCS_PYTHON` when explicitly set;
 2. `python` on `PATH`;
-3. `py -3` on Windows; and
-4. the existing Codex workspace Python runtime when present.
+3. `py -3` on Windows.
 
 The selected interpreter must successfully import `docx` and `PIL` before it is accepted.
 
 ## Server Lifecycle and Checkout Fingerprint
+
+### Discovery configuration
+
+Server discovery uses these inputs in precedence order:
+
+1. `DOCS_BASE_URL`, when set, is parsed as a complete HTTP or HTTPS origin and used as the only reuse candidate. User information, fragments and non-HTTP protocols are rejected. A fingerprint mismatch is a hard failure because the caller explicitly selected that server.
+2. `DOCS_PORT`, when set, must be an integer from 1024 through 65535. The orchestrator checks `http://127.0.0.1:<DOCS_PORT>` for reuse and, when free, starts its owned server on that port. An occupied mismatched port is a hard failure.
+3. With neither variable set, the default port is `8766` and the finite fallback range is `8766` through `8776`, inclusive. Each occupied port is fingerprint-checked. The first matching server is reused; otherwise the first free port in the range is used for a pipeline-owned server. Exhausting the range fails with the inspected ports.
+
+All network checks use redirect policy `manual`; redirects are rejected rather than followed. Fingerprint responses are streamed with a maximum accepted body size of 10 MiB per asset. A missing or invalid `Content-Length`, when present, does not bypass the streamed byte limit.
 
 ### Fingerprint contract
 
@@ -157,9 +179,17 @@ An HTTP 200 server with any missing or mismatched file is rejected as a differen
 
 ### Pipeline-owned server
 
-If no matching server is reusable, the orchestrator starts the existing approved static-server workflow from the repository root, bound to `127.0.0.1` on an available documentation port. It waits by polling the application URL until HTTP 200 and fingerprint equality are both observed, subject to a bounded timeout. It does not use arbitrary fixed sleeps.
+If no matching server is reusable, the orchestrator starts the existing approved static-server workflow from the repository root, bound to `127.0.0.1` on the selected documentation port. Using the Python command selected during preflight, it spawns this exact argument vector directly without an intermediate shell:
 
-The child process handle is retained. A `finally` block terminates only that child process and removes only pipeline-owned temporary files, whether generation succeeds or fails. Reused servers are never stopped.
+```text
+<python-command> -m http.server <port> --bind 127.0.0.1
+```
+
+For Windows `py -3`, `<python-command>` is represented as executable `py` with `-3` retained before `-m`. The child working directory is the repository root and no shell string is constructed.
+
+Readiness has a 15-second total timeout and a 200-millisecond polling interval. A probe succeeds only when `GET /` returns HTTP 200 with redirects disabled and the complete checkout fingerprint matches. The polling interval schedules the next probe after the previous probe finishes; it is readiness polling, not an arbitrary startup sleep.
+
+The child process handle and PID are retained. A `finally` block terminates only that child process and removes only pipeline-owned temporary files, whether generation succeeds or fails. Reused servers are never stopped. On Windows, process-tree cleanup invokes `taskkill.exe /PID <owned-pid> /T /F` directly and verifies the owned process exits; the PID comes only from the child returned by the orchestrator's own spawn call. On other platforms, cleanup sends `SIGTERM`, waits up to five seconds and then sends `SIGKILL` only to the owned child process group.
 
 ## Deterministic Screenshot Capture
 
@@ -171,6 +201,19 @@ The existing Playwright flow continues to:
 - navigate both in-person and Zoom workflows;
 - exercise the whiteboard and package-ready states; and
 - capture the approved desktop and mobile views.
+
+Every Playwright context uses the following fixed environment:
+
+- locale `en-AU`;
+- timezone `Australia/Perth`;
+- frozen instant `2026-07-22T10:00:00+08:00` applied before application scripts run;
+- colour scheme `light`;
+- reduced-motion preference `reduce`;
+- a stable device scale factor of `2` for every declared viewport;
+- service workers blocked; and
+- no geolocation, notification or other environment-dependent permissions.
+
+The capture page installs deterministic CSS that disables CSS animations and transitions, hides the text caret and removes transient scroll behaviour without changing layout. It waits for `document.fonts.ready` and verifies the font set reports `loaded` before capture. Whiteboard input uses the same fixed pointer coordinates, stroke sequence and step count on every run. The capture implementation must not call an unfrozen `Date`, current clock or locale-dependent default formatter for any value visible in screenshots; demonstration dates and times are fixed fixture values.
 
 Fixed-delay waits will be removed. Before every capture, Playwright will assert the required locator exists, is visible and has a non-zero bounding box. State transitions use DOM conditions, accessible state, application status text, network readiness or browser animation-frame stability. A missing required control fails with the screenshot name, selector and expected state.
 
@@ -185,9 +228,9 @@ The orchestrator compares candidate and committed screenshots by SHA-256:
 - **UNCHANGED:** filename exists in both sets and hashes match. The committed file and its `lastGenerated` value are untouched.
 - **UPDATED:** filename exists in both sets and hashes differ. The candidate replaces the committed file.
 - **NEW:** filename exists only in the candidate set. It is copied to the committed directory.
-- **REMOVED:** filename exists only in committed metadata/directory. It is reported and removed only when the capture manifest no longer declares it.
+- **REMOVED:** filename exists in committed metadata/directory but has been intentionally removed from the authoritative capture manifest. Only this manifest change authorises deletion.
 
-The capture manifest is authoritative for expected screenshot names. Unexpected candidate files fail validation rather than being committed silently.
+The capture manifest is authoritative for expected screenshot names. Every manifest-declared screenshot must be produced successfully in the candidate directory; a missing candidate is a capture failure. Capture failure never deletes or replaces a committed screenshot. Unexpected candidate files also fail validation rather than being committed silently. REMOVED processing occurs only after the complete candidate set passes required-name validation.
 
 ### `screenshots.json`
 
@@ -220,12 +263,12 @@ The guide body remains hand-authored canonical content. Automation updates only 
 **Application version:** 2.7.0-alpha.1<br>
 **Guide version:** 1.0.0<br>
 **Generated:** 22 July 2026<br>
-**Git branch:** example/branch<br>
-**Git commit:** abcdef0123456789
+**Source branch:** example/branch<br>
+**Source commit:** abcdef0123456789
 <!-- docs-automation:metadata:end -->
 ```
 
-The application version is read from the runtime's authoritative version constant. Guide version `1.0.0` is stored in the orchestrator configuration for Documentation Automation v1. The date uses the local `Australia/Perth` calendar date rendered in Australian long-date form. The full Git commit is recorded. The metadata replacement requires exactly one start and one end marker; missing or duplicate markers fail without rewriting the guide.
+The application version is read from the runtime's authoritative version constant. Guide version `1.0.0` is stored in the orchestrator configuration for Documentation Automation v1. The date uses the local `Australia/Perth` calendar date rendered in Australian long-date form. `Source branch` and full `Source commit` identify the clean named revision used as the input to generation. They do not identify the later implementation or review commit that contains generated artifacts. The metadata replacement requires exactly one start and one end marker; missing or duplicate markers fail without rewriting the guide.
 
 DOCX and PDF inherit this metadata from Markdown through the existing generator. The cover and footer will display application version and guide version; the document properties or metadata page will include generation date, branch and full commit.
 
@@ -263,8 +306,8 @@ Validation must confirm:
 - all local Markdown image and document links resolve;
 - no `TODO`, `TBD`, placeholder copy or forbidden local/LAN URLs appear;
 - DOCX is a readable ZIP package with required document parts and guide text;
-- PDF has a valid header, opens with the repository PDF tooling and contains an allowed page count;
-- Markdown, DOCX and PDF contain matching application version, guide version, generation date and Git commit;
+- PDF starts with `%PDF-`, ends with a readable trailer/EOF, and passes Poppler `pdfinfo` with exit code zero. The parsed `Pages` value must be an integer from 16 through 20, inclusive; the current expected output is 17 pages. A deliberate guide-length change requires updating this explicit contract and its tests in the implementation commit;
+- Markdown, DOCX and PDF contain matching application version, guide version, generation date and Source commit;
 - no expected image is missing from DOCX/PDF generation inputs;
 - README documents all four NPM commands, software requirements, hash behaviour, outputs and troubleshooting; and
 - runtime-protected hashes remain unchanged.
@@ -284,9 +327,9 @@ Warnings are recorded in reports and do not fail generation unless the image is 
 
 ### `documentation-report.md`
 
-Each generation overwrites a deterministic current-run report containing:
+Each generation overwrites a current-run report with deterministic section structure, headings and list ordering. Values such as timestamps, elapsed duration, platform-specific tooling paths and environment warnings are intentionally variable and are not claimed to be byte-for-byte deterministic. The report contains:
 
-- branch and full commit;
+- Source branch and full Source commit;
 - application and guide versions;
 - generation timestamp and elapsed duration;
 - UNCHANGED, UPDATED, NEW and REMOVED screenshot lists/counts;
@@ -302,17 +345,25 @@ Each generation overwrites a deterministic current-run report containing:
 Successful full generations prepend one entry containing:
 
 - local generation date and time;
-- branch and full commit;
+- Source branch and full Source commit;
 - application and guide versions;
 - changed screenshot names by classification;
 - generated artifact names; and
 - warnings.
 
-Repeated generation for the same commit with identical screenshot classifications replaces that commit's existing entry instead of adding a duplicate. This keeps the changelog deterministic for reruns of the same source state.
+As defensive behaviour, if changelog data already contains an entry with the same Source commit and identical screenshot classifications, a successful generation replaces that entry instead of appending a duplicate. Strict clean-tree preflight remains mandatory, so this is not a supported dirty-tree rerun workflow and does not relax preflight. Changelog structure and entry ordering are deterministic; timestamp, duration and warning text may vary.
 
 ## Cleanup
 
-`npm run docs:clean` resolves `.tmp/docs-user-guide/` to an absolute path, confirms it is inside the repository and removes only that directory. It does not require a clean tree because cleanup is a recovery operation. It never removes:
+`npm run docs:clean` removes only `.tmp/docs-user-guide/`. It does not require a clean tree because cleanup is a recovery operation. Before removal it:
+
+1. resolves the repository root with `realpath`;
+2. walks `.tmp` and `.tmp/docs-user-guide` using `lstat`, rejecting symbolic links, junctions or any Windows reparse point in either path component;
+3. obtains the target real path only after those checks;
+4. verifies the target real path is a strict descendant of the repository root and equals the expected `.tmp/docs-user-guide` path under that root; and
+5. refuses cleanup when the target is the repository root, `.tmp`, a missing-path parent reached through a link, or any path outside the repository.
+
+If the target does not exist, cleanup succeeds without creating it. The command never follows a link while recursively deleting. It never removes:
 
 - committed screenshots;
 - `screenshots.json`;
@@ -342,16 +393,19 @@ Required automated coverage:
 - named clean branch accepted;
 - detached HEAD rejected;
 - dirty tree rejected, including untracked paths;
-- unavailable Node reported;
+- unsupported Node version rejected;
+- missing required Node features (`fetch`, `AbortSignal.timeout`, ES modules or SHA-256 hashing) rejected with version/remediation guidance;
 - unavailable Python or missing Python imports reported;
 - unavailable Playwright package/browser reported.
 
 ### Server lifecycle
 
 - HTTP readiness waits for a real HTTP 200;
+- redirect response rejected and oversized fingerprint response aborted;
 - reused-server fingerprint match accepted;
 - reused-server fingerprint mismatch rejected without stopping that server;
 - pipeline-owned server stopped after success and failure;
+- pipeline-owned Windows process tree stopped using only the spawned PID;
 - existing matching server preserved.
 
 ### Screenshot management
@@ -374,6 +428,15 @@ Required automated coverage:
 - missing metadata markers rejected;
 - README command and tooling contracts;
 - runtime-file integrity after generation.
+
+### Command write boundaries
+
+- `docs:user-guide` accepts changes only under `docs/user-guides/**` plus its temporary directory;
+- `docs:screenshots` rejects changes outside its screenshot, metadata and screenshot-report allowlist;
+- `docs:validate` leaves a complete before/after repository hash map unchanged;
+- `docs:clean` removes only the safe, non-reparse-point `.tmp/docs-user-guide/` target;
+- any command-time modification to `package.json`, `scripts/**`, `tests/**` or runtime files fails; and
+- no documentation command stages or commits files.
 
 ### Existing regression coverage
 
