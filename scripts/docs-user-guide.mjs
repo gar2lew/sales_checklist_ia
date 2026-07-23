@@ -11,7 +11,9 @@ import {
   assertCleanNamedBranch,
   inspectRepository,
 } from './docs/git-integrity.mjs';
+import { generateDocuments } from './docs/documents.mjs';
 import { runMetadataUpdate } from './docs/metadata.mjs';
+import { discoverDocumentGenerationTooling } from './docs/tooling.mjs';
 
 const foundationOnlyHandler = async ({ mode }) => {
   throw new Error(
@@ -19,24 +21,31 @@ const foundationOnlyHandler = async ({ mode }) => {
   );
 };
 
-const metadataOnlyGenerateHandler = async ({
+const documentGenerateHandler = async ({
   paths,
   repositoryInspector,
   assertRepository,
   metadataUpdate,
+  generationTooling,
+  documentGeneration,
   clock,
 }) => {
   const repository = await repositoryInspector({ repoRoot: paths.repoRoot });
   await assertRepository(repository, { mode: 'generate' });
-  return metadataUpdate({
+  await metadataUpdate({
     repoRoot: paths.repoRoot,
     repository,
     clock,
   });
+  const tooling = await generationTooling({ repoRoot: paths.repoRoot });
+  return documentGeneration({
+    repoRoot: paths.repoRoot,
+    tooling,
+  });
 };
 
 const defaultHandlers = Object.freeze({
-  generate: metadataOnlyGenerateHandler,
+  generate: documentGenerateHandler,
   screenshots: foundationOnlyHandler,
   validate: foundationOnlyHandler,
   clean: foundationOnlyHandler,
@@ -57,6 +66,8 @@ export async function runDocumentationCommand(mode, dependencies = {}) {
     repositoryInspector: dependencies.repositoryInspector ?? inspectRepository,
     assertRepository: dependencies.assertRepository ?? assertCleanNamedBranch,
     metadataUpdate: dependencies.metadataUpdate ?? runMetadataUpdate,
+    generationTooling: dependencies.generationTooling ?? discoverDocumentGenerationTooling,
+    documentGeneration: dependencies.documentGeneration ?? generateDocuments,
     clock: dependencies.clock ?? (() => new Date()),
   }));
 }

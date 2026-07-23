@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import re
-import shutil
 import subprocess
-import sys
-import tempfile
+import zipfile
+from datetime import datetime
 from pathlib import Path
 
 from docx import Document
@@ -23,6 +24,11 @@ SOURCE = ROOT / "docs/user-guides/source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md
 OUT_DIR = ROOT / "docs/user-guides"
 DOCX_PATH = OUT_DIR / "ASG_Sales_Appointment_Capture_User_Guide.docx"
 PDF_PATH = OUT_DIR / "ASG_Sales_Appointment_Capture_User_Guide.pdf"
+SCREENSHOTS_JSON = ROOT / "docs/user-guides/screenshots.json"
+SCREENSHOT_DIR = ROOT / "docs/user-guides/screenshots"
+LIBREOFFICE: Path | None = None
+LIBREOFFICE_PROFILE: Path | None = None
+METADATA: dict[str, str] = {}
 NAVY = "071B33"
 GOLD = "C6A14A"
 PALE_GOLD = "FBF5E7"
@@ -149,7 +155,17 @@ def add_cover(document: Document) -> None:
     purpose.paragraph_format.space_after = Pt(45)
     purpose.runs[0].font.size = Pt(12)
     purpose.runs[0].font.color.rgb = RGBColor(220, 227, 235)
-    metadata = cell.add_paragraph("APPLICATION VERSION 2.7.0-alpha.1\nPUBLISHED 22 JULY 2026")
+    metadata = cell.add_paragraph(
+        "\n".join(
+            (
+                f"Application version: {METADATA['Application version']}",
+                f"Guide version: {METADATA['Guide version']}",
+                f"Generated: {METADATA['Generated']}",
+                f"Git branch: {METADATA['Git branch']}",
+                f"Source commit: {METADATA['Source commit']}",
+            )
+        )
+    )
     for run in metadata.runs:
         run.font.size = Pt(9)
         run.font.bold = True
@@ -177,7 +193,11 @@ def configure_content_section(document: Document):
     header.runs[0].font.color.rgb = RGBColor.from_string(GOLD)
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    footer.add_run("ASG Internal Staff Resource  |  Version 2.7.0-alpha.1  |  ")
+    footer.add_run(
+        "ASG Internal Staff Resource"
+        f"  |  App {METADATA['Application version']}"
+        f"  |  Guide {METADATA['Guide version']}  |  "
+    )
     add_page_field(footer)
     for run in footer.runs:
         run.font.name = "Arial"
@@ -329,8 +349,78 @@ def render_section(document: Document, heading: str, body: str, first: bool) -> 
         index += 1
 
 
+def parse_generated_metadata(markdown: str) -> dict[str, str]:
+    start_marker = "<!-- docs-automation:metadata:start -->"
+    end_marker = "<!-- docs-automation:metadata:end -->"
+    if markdown.count(start_marker) != 1 or markdown.count(end_marker) != 1:
+        raise RuntimeError("Expected exactly one generated metadata marker pair")
+    start = markdown.index(start_marker)
+    end = markdown.index(end_marker)
+    if start >= end:
+        raise RuntimeError("Generated metadata markers are reversed")
+    lines = [
+        line.strip()
+        for line in markdown[start + len(start_marker):end].splitlines()
+        if line.strip()
+    ]
+    expected = (
+        "Application version",
+        "Guide version",
+        "Generated",
+        "Git branch",
+        "Source commit",
+    )
+    if len(lines) != len(expected):
+        raise RuntimeError("Generated metadata block is malformed")
+    metadata: dict[str, str] = {}
+    for label, line in zip(expected, lines, strict=True):
+        match = re.fullmatch(r"\*\*([^*]+):\*\*\s+(.+?)(?:<br>)?", line)
+        if not match or match.group(1) != label or not match.group(2).strip():
+            raise RuntimeError(f"Generated metadata field is malformed: {label}")
+        metadata[label] = match.group(2).strip()
+    return metadata
+
+
+def normalise_docx(path: Path) -> None:
+    temporary = path.with_suffix(".normalised.docx")
+    with zipfile.ZipFile(path, "r") as source_zip, zipfile.ZipFile(
+        temporary,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=9,
+    ) as output_zip:
+        for name in sorted(source_zip.namelist()):
+            original = source_zip.getinfo(name)
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = original.external_attr
+            info.create_system = original.create_system
+            output_zip.writestr(info, source_zip.read(name))
+    temporary.replace(path)
+
+
+def normalise_pdf(path: Path, generated: str, document_hash: str) -> None:
+    generated_date = datetime.strptime(generated, "%d %B %Y")
+    fixed_date = generated_date.strftime("D:%Y%m%d120000+08'00'")
+    content = path.read_bytes()
+    content = re.sub(
+        rb"/CreationDate\s*\(D:[^)]*\)",
+        f"/CreationDate({fixed_date})".encode("ascii"),
+        content,
+    )
+    identifier = document_hash[:32].upper().encode("ascii")
+    content = re.sub(
+        rb"/ID\s*\[\s*<[0-9A-Fa-f]{32}>\s*<[0-9A-Fa-f]{32}>\s*\]",
+        b"/ID [ <" + identifier + b">\n<" + identifier + b"> ]",
+        content,
+    )
+    path.write_bytes(content)
+
+
 def build_docx() -> None:
     markdown = SOURCE.read_text(encoding="utf-8")
+    global METADATA
+    METADATA = parse_generated_metadata(markdown)
     sections = re.findall(r"^## (\d+\..+?)\n(.*?)(?=^## \d+\.|\Z)", markdown, flags=re.M | re.S)
     if len(sections) != 16:
         raise RuntimeError(f"Expected 16 numbered sections, found {len(sections)}")
@@ -343,40 +433,88 @@ def build_docx() -> None:
     document.core_properties.title = "Sales Appointment Capture — Staff User Guide"
     document.core_properties.subject = "ASG internal staff operating guide"
     document.core_properties.author = "Amplify Solutions Group"
-    document.core_properties.comments = "Generated from canonical repository Markdown."
+    document.core_properties.comments = (
+        "Generated from canonical repository Markdown. "
+        f"Application version {METADATA['Application version']}; "
+        f"Guide version {METADATA['Guide version']}; "
+        f"Generated {METADATA['Generated']}; "
+        f"Git branch {METADATA['Git branch']}; "
+        f"Source commit {METADATA['Source commit']}."
+    )
+    fixed_datetime = datetime.strptime(METADATA["Generated"], "%d %B %Y")
+    document.core_properties.created = fixed_datetime
+    document.core_properties.modified = fixed_datetime
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     document.save(DOCX_PATH)
+    normalise_docx(DOCX_PATH)
 
 
 def export_pdf() -> None:
-    soffice = Path(r"C:\Program Files\LibreOffice\program\soffice.exe")
-    if not soffice.exists():
-        resolved = shutil.which("soffice")
-        if not resolved:
-            raise RuntimeError("LibreOffice is required to export the guide PDF")
-        soffice = Path(resolved)
-    with tempfile.TemporaryDirectory(prefix="asg-guide-lo-") as profile:
-        command = [
-            str(soffice),
-            "--headless",
-            f"-env:UserInstallation=file:///{Path(profile).as_posix()}",
-            "--convert-to",
-            "pdf:writer_pdf_Export",
-            "--outdir",
-            str(OUT_DIR),
-            str(DOCX_PATH),
-        ]
-        result = subprocess.run(command, capture_output=True, text=True, timeout=120)
-        if result.returncode:
-            raise RuntimeError(result.stderr or result.stdout)
+    if LIBREOFFICE is None or LIBREOFFICE_PROFILE is None:
+        raise RuntimeError("Validated LibreOffice executable and isolated profile are required")
+    LIBREOFFICE_PROFILE.mkdir(parents=True, exist_ok=True)
+    command = [
+        str(LIBREOFFICE),
+        "--headless",
+        "--nologo",
+        "--nodefault",
+        "--nolockcheck",
+        "--nofirststartwizard",
+        f"-env:UserInstallation={LIBREOFFICE_PROFILE.as_uri()}",
+        "--convert-to",
+        "pdf:writer_pdf_Export",
+        "--outdir",
+        str(OUT_DIR),
+        str(DOCX_PATH),
+    ]
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        shell=False,
+    )
+    if result.returncode:
+        raise RuntimeError(result.stderr or result.stdout)
     generated = OUT_DIR / f"{DOCX_PATH.stem}.pdf"
     if generated != PDF_PATH and generated.exists():
         generated.replace(PDF_PATH)
     if not PDF_PATH.exists():
         raise RuntimeError("LibreOffice did not produce the expected PDF")
+    normalise_pdf(
+        PDF_PATH,
+        METADATA["Generated"],
+        hashlib.sha256(DOCX_PATH.read_bytes()).hexdigest(),
+    )
+
+
+def configure_paths(arguments: argparse.Namespace) -> None:
+    global SOURCE, OUT_DIR, DOCX_PATH, PDF_PATH
+    global SCREENSHOTS_JSON, SCREENSHOT_DIR, LIBREOFFICE, LIBREOFFICE_PROFILE
+    SOURCE = arguments.source.resolve()
+    OUT_DIR = arguments.output_dir.resolve()
+    DOCX_PATH = OUT_DIR / "ASG_Sales_Appointment_Capture_User_Guide.docx"
+    PDF_PATH = OUT_DIR / "ASG_Sales_Appointment_Capture_User_Guide.pdf"
+    SCREENSHOTS_JSON = arguments.screenshots_json.resolve()
+    SCREENSHOT_DIR = arguments.screenshot_dir.resolve()
+    LIBREOFFICE = arguments.libreoffice
+    LIBREOFFICE_PROFILE = arguments.profile_dir.resolve()
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--screenshots-json", type=Path, required=True)
+    parser.add_argument("--screenshot-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--libreoffice", type=Path, required=True)
+    parser.add_argument("--profile-dir", type=Path, required=True)
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
+    configure_paths(parse_arguments())
     build_docx()
     export_pdf()
     print(f"Created {DOCX_PATH.relative_to(ROOT)}")

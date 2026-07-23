@@ -18,8 +18,18 @@ const screenshots=[
 
 for(const path of [sourcePath,docxPath,pdfPath,screenshotMetadataPath]) assert.equal(existsSync(path),true,`missing ${path}`);
 const source=readFileSync(sourcePath,'utf8');
+const generatedMetadata={
+  'Application version':'2.7.0-alpha.1',
+  'Guide version':'1.0.0',
+  'Generated':'22 July 2026',
+  'Git branch':'fix/staff-dropdown-seeding-v2',
+  'Source commit':'9db1800ce947f634520bb391826ad44ded8a6b82'
+};
 for(let section=1;section<=16;section++) assert.match(source,new RegExp(`^## ${section}\\. `,'m'),`section ${section} missing`);
 assert.match(source,/Application version:\*\* 2\.7\.0-alpha\.1/i);
+for(const [label,value] of Object.entries(generatedMetadata)){
+  assert.ok(source.includes(`**${label}:** ${value}`),`source metadata missing ${label}`);
+}
 assert.match(source,/Downloads started/);
 assert.match(source,/Please tap Prepare Email and attach the Combined PDF and Document ZIP from your Downloads\./);
 assert.match(source,/A draft is device-local\. Clearing browser data, removing the PWA or using another device may make that draft unavailable\./);
@@ -51,6 +61,11 @@ const docx=await JSZip.loadAsync(docxBuffer);
 const documentXml=await docx.file('word/document.xml').async('string');
 assert.match(documentXml,/Sales Appointment Capture/);
 assert.match(documentXml,/A practical guide to completing, reviewing and handing over in-person and Zoom sales appointments/);
+for(const [label,value] of Object.entries(generatedMetadata)){
+  assert.ok(documentXml.includes(label),`DOCX metadata label missing ${label}`);
+  assert.ok(documentXml.includes(value),`DOCX metadata value missing ${label}`);
+}
+assert.equal(Object.keys(docx.files).filter(name=>/^word\/media\/[^/]+$/.test(name)).length,10);
 assert.doesNotMatch(documentXml,/\b(?:TODO|TBD)\b/i);
 
 const pdf=readFileSync(pdfPath);

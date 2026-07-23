@@ -1014,7 +1014,7 @@ test('canonical guide contains one generated metadata block immediately below it
   });
 });
 
-test('generate command invokes only metadata after clean named-branch preflight in Phase 5', async () => {
+test('generate command preserves Phase 5 metadata inputs before later approved generation stages', async () => {
   const calls = [];
   const repository = {
     repoRoot,
@@ -1035,6 +1035,8 @@ test('generate command invokes only metadata after clean named-branch preflight 
       calls.push(['metadata', options]);
       return { changed: false, path: 'guide.md' };
     },
+    generationTooling: async () => ({ python: {}, libreOffice: {} }),
+    documentGeneration: async () => ({ changed: false, path: 'guide.md' }),
     clock: () => new Date('2026-07-21T16:30:00.000Z'),
   });
   assert.deepEqual(result, { changed: false, path: 'guide.md' });

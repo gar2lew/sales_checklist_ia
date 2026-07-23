@@ -163,6 +163,40 @@ async function defaultFindExecutable(name, options = {}) {
   return null;
 }
 
+export async function discoverDocumentGenerationTooling(options = {}) {
+  assertNodeFeatures(options.nodeEnvironment);
+  const repoRoot = resolve(options.repoRoot ?? process.cwd());
+  const python = await (options.discoverPythonCommand ?? discoverPython)(options);
+  const findExecutable = options.findExecutable ?? defaultFindExecutable;
+  const libreOffice = await findExecutable('libreoffice', options);
+  if (!libreOffice) {
+    throw stageError(
+      'LibreOffice',
+      'LibreOffice/soffice was not found',
+      'Install LibreOffice or add soffice to PATH, then retry.',
+    );
+  }
+  const fileExists = options.fileExists ?? defaultFileExists;
+  for (const relativePath of [
+    'docs/user-guides/source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md',
+    'docs/user-guides/screenshots.json',
+    'scripts/generate-sales-appointment-user-guide.py',
+  ]) {
+    if (!await fileExists(resolve(repoRoot, relativePath))) {
+      throw stageError(
+        'Repository input',
+        `required file is missing: ${relativePath}`,
+        'Restore the tracked documentation input and retry.',
+      );
+    }
+  }
+  return Object.freeze({
+    nodeVersion: options.nodeEnvironment?.nodeVersion ?? process.versions.node,
+    python,
+    libreOffice: Object.freeze(libreOffice),
+  });
+}
+
 export async function discoverTooling(options = {}) {
   assertNodeFeatures(options.nodeEnvironment);
   const repoRoot = resolve(options.repoRoot ?? process.cwd());
