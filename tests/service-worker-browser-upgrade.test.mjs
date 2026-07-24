@@ -64,7 +64,48 @@ try {
 
   await upgradeContext.setOffline(true);
   await upgradePage.reload({ waitUntil: "domcontentloaded" });
-  assert.equal(await upgradePage.locator("#landingScreen").isVisible(), true, "upgraded application shell must remain available offline");
+    assert.equal(await upgradePage.locator("#landingScreen").isVisible(), true, "upgraded application shell must remain available offline");
+
+  // Complete draft preservation across v2.7.0-alpha.20 to alpha.21 upgrade
+  await upgradePage.evaluate(() => {
+    const draft = {
+      appointmentMode: "zoom",
+      staffName: "Garry Lewis",
+      clientName: "Fictional Upgrade Client",
+      clientEmail: "fictional.upgrade@example.invalid",
+      clientPhone: "0412 345 678",
+      propertySaleAddress: "1 Fictional Street, Testville WA 6999",
+      includeEOI: true,
+      includeIA: true,
+      contractDueDateTbc: true,
+      signature: "data:image/png;base64,FICTIONAL_UPGRADE_SIGNATURE",
+      photos: [{ name: "fictional-upgrade-id.png", dataURL: "data:image/png;base64,FICTIONAL_UPGRADE_PHOTO", size: 1024 }],
+      whiteboardPages: [{ pageNumber: 1, label: "Page 1", strokes: [{ points: [[10,20],[50,60],[100,80]], color: "#000000", width: 2 }], savedAt: new Date().toISOString() }],
+      wbSavedPages: [{ pageNumber: 1, label: "Page 1", dataURL: "data:image/png;base64,FICTIONAL_UPGRADE_WB" }],
+      lastSaved: new Date().toISOString(),
+    };
+    localStorage.setItem("salesAppointmentDraft", JSON.stringify(draft));
+  });
+  await upgradePage.reload({ waitUntil: "domcontentloaded" });
+  const restoredAfterUpgrade = await upgradePage.evaluate(() => {
+    try {
+      const raw = localStorage.getItem("salesAppointmentDraft");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  assert.ok(restoredAfterUpgrade, "legacy draft must survive service-worker upgrade");
+  assert.equal(restoredAfterUpgrade.clientName, "Fictional Upgrade Client");
+  assert.equal(restoredAfterUpgrade.includeEOI, true);
+  assert.equal(restoredAfterUpgrade.includeIA, true);
+  assert.ok(restoredAfterUpgrade.signature.startsWith("data:image/png"));
+  assert.ok(restoredAfterUpgrade.photos[0].dataURL.startsWith("data:image/png"));
+  assert.ok(restoredAfterUpgrade.wbSavedPages[0].dataURL.startsWith("data:image/png"));
+
+  // Resume draft
+  await upgradePage.click("#resumeDraftBtn");
+  await upgradePage.waitForFunction(() => document.querySelector("#clientName")?.value === "Fictional Upgrade Client");
+  assert.equal(await upgradePage.inputValue("#clientName"), "Fictional Upgrade Client");
+  await upgradePage.evaluate(() => localStorage.removeItem("salesAppointmentDraft"));
   assert.notEqual(await upgradePage.locator("#landingScreen").evaluate((element) => getComputedStyle(element).display), "none", "upgraded cached CSS must render offline");
   await upgradePage.selectOption('#landingStaff','Garry Lewis');
   await upgradePage.click('#landingContinue');
