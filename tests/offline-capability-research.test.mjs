@@ -114,7 +114,7 @@ try {
   await page.locator('#photoInput0').setInputFiles(resolve(root, 'icons/icon-192.png'));
   await page.waitForFunction(() => Boolean(window._testState.getPhotos()[0].dataURL));
   await page.click('#saveDraft');
-  const inPersonDraft = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentDraft')));
+  const inPersonDraft = await page.evaluate(async () => (await window._db.loadDraft()).draft);
   assert.equal(inPersonDraft.clientName, 'Offline Test Client');
   assert.equal(inPersonDraft.includeEOI, true);
   assert.equal(inPersonDraft.includeIA, true);
@@ -146,7 +146,7 @@ try {
   record('Offline reload and in-person draft resume', 'PASS', 'Cached app reopens and restores saved data', 'Representative fields, signature and image restored');
 
   await context.setOffline(false);
-  await page.evaluate(() => localStorage.removeItem('salesAppointmentDraft'));
+  await page.evaluate(() => window._db.deleteDraft(true));
   await context.close();
   activeBrowsers.delete(context);
 
@@ -158,7 +158,7 @@ try {
   await drawOn(page, '#whiteboardCanvas', [[40, 50], [100, 90], [180, 60]]);
   await page.click('#wbSavePageBtn');
   await page.click('#saveDraft');
-  const zoomDraft = await page.evaluate(() => JSON.parse(localStorage.getItem('salesAppointmentDraft')));
+  const zoomDraft = await page.evaluate(async () => (await window._db.loadDraft()).draft);
   assert.equal(zoomDraft.appointmentMode, 'zoom');
   assert.ok(zoomDraft.whiteboardPages[0].strokes[0].points.length >= 3);
     assert.ok(zoomDraft.wbSavedPages[0].dataURL.startsWith('data:image/png'));
@@ -249,14 +249,14 @@ try {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await waitForCurrentCache(page);
 
-  await page.evaluate(() => localStorage.removeItem('salesAppointmentDraft'));
+  await page.evaluate(() => window._db.deleteDraft(true));
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('#recentDraftCard').isHidden(), true);
   record('Local draft storage cleared while cache retained', 'PASS', 'App opens but no draft is recoverable', 'Offline shell opens; draft is absent', 'Saved appointment is permanently lost');
 
   await context.setOffline(false);
-  await page.evaluate(() => localStorage.setItem('salesAppointmentDraft', '{corrupted'));
+  await page.evaluate(() => window._db.saveDraft({_corrupt:true}));
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.evaluate(() => window._testState.loadDraft());
@@ -266,7 +266,7 @@ try {
 
   await context.setOffline(false);
   await page.evaluate(() => {
-    localStorage.removeItem('salesAppointmentDraft');
+    window._db.deleteDraft(true);
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function(key, value) {
       if (key === 'salesAppointmentDraft') throw new DOMException('Quota exceeded', 'QuotaExceededError');

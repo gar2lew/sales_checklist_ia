@@ -1,5 +1,5 @@
-ï»¿// Offline test fixtures and helpers â€” fictional data only.
-// AUTOMATED ONLY â€” no real client data, no physical-device claims.
+// Offline test fixtures and helpers — fictional data only.
+// AUTOMATED ONLY — no real client data, no physical-device claims.
 
 const FICTIONAL_CLIENT = {
   name: "Fictional Test Client",
@@ -39,7 +39,7 @@ const FICTIONAL_WHITEBOARD_PAGE = {
 
 /**
  * Build a complete fictional offline appointment draft.
- * @param {object} [overrides] â€” properties to override in the returned draft
+ * @param {object} [overrides] — properties to override in the returned draft
  * @returns {object} a deterministic draft suitable for offline-capability tests
  */
 export function buildFictionalOfflineDraft(overrides = {}) {
@@ -69,7 +69,7 @@ export { FICTIONAL_CLIENT, FICTIONAL_STAFF, FICTIONAL_APP_TYPE };
 /**
  * Assert that every client-facing string in a draft or fixture contains
  * only approved synthetic values.
- * @param {object} draft â€” the draft to validate
+ * @param {object} draft — the draft to validate
  */
 export function assertFictionalStrings(draft) {
   const fields = [
@@ -91,7 +91,7 @@ export function assertFictionalStrings(draft) {
 
 /**
  * Validates draft structure meets the v2.7.0-alpha.1 shape.
- * @param {object} draft â€” the draft to validate
+ * @param {object} draft — the draft to validate
  */
 export function assertDraftShape(draft) {
   const required = [

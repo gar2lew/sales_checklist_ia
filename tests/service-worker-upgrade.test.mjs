@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2\.7\.0-alpha\.21';/, "date and package-download hotfix must advance from v2.7.0-alpha.21 to v2.7.0-alpha.22");
+assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.22';/, "date and package-download hotfix must advance from v2.7.0-alpha.21 to v2.7.0-alpha.22");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -51,7 +51,7 @@ const context = {
 };
 
 vm.runInNewContext(source, context, { filename: "service-worker.js" });
-assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install"]);
+assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install", "message"]);
 
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });

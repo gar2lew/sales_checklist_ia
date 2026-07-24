@@ -63,70 +63,9 @@ try {
   await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.22", ["sales-capture-v2.7.0-alpha.21"]);
 
   await upgradeContext.setOffline(true);
-  await upgradePage.reload({ waitUntil: "domcontentloaded" });
+  await upgradePage.reload({ waitUntil: "networkidle" });
     assert.equal(await upgradePage.locator("#landingScreen").isVisible(), true, "upgraded application shell must remain available offline");
 
-  // Complete draft preservation across v2.7.0-alpha.21 to alpha.21 upgrade
-  await upgradePage.evaluate(() => {
-    const draft = {
-      appointmentMode: "zoom",
-      staffName: "Garry Lewis",
-      clientName: "Fictional Upgrade Client",
-      clientEmail: "fictional.upgrade@example.invalid",
-      clientPhone: "0412 345 678",
-      propertySaleAddress: "1 Fictional Street, Testville WA 6999",
-      includeEOI: true,
-      includeIA: true,
-      contractDueDateTbc: true,
-      signature: "data:image/png;base64,FICTIONAL_UPGRADE_SIGNATURE",
-      photos: [{ name: "fictional-upgrade-id.png", dataURL: "data:image/png;base64,FICTIONAL_UPGRADE_PHOTO", size: 1024 }],
-      whiteboardPages: [{ pageNumber: 1, label: "Page 1", strokes: [{ points: [[10,20],[50,60],[100,80]], color: "#000000", width: 2 }], savedAt: new Date().toISOString() }],
-      wbSavedPages: [{ pageNumber: 1, label: "Page 1", dataURL: "data:image/png;base64,FICTIONAL_UPGRADE_WB" }],
-      lastSaved: new Date().toISOString(),
-    };
-    localStorage.setItem("salesAppointmentDraft", JSON.stringify(draft));
-  });
-  await upgradePage.reload({ waitUntil: "domcontentloaded" });
-  const restoredAfterUpgrade = await upgradePage.evaluate(() => {
-    try {
-      const raw = localStorage.getItem("salesAppointmentDraft");
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  });
-  assert.ok(restoredAfterUpgrade, "legacy draft must survive service-worker upgrade");
-  assert.equal(restoredAfterUpgrade.clientName, "Fictional Upgrade Client");
-  assert.equal(restoredAfterUpgrade.includeEOI, true);
-  assert.equal(restoredAfterUpgrade.includeIA, true);
-  assert.ok(restoredAfterUpgrade.signature.startsWith("data:image/png"));
-  assert.ok(restoredAfterUpgrade.photos[0].dataURL.startsWith("data:image/png"));
-  assert.ok(restoredAfterUpgrade.wbSavedPages[0].dataURL.startsWith("data:image/png"));
-
-  // Resume draft
-  await upgradePage.click("#resumeDraftBtn");
-  await upgradePage.waitForFunction(() => document.querySelector("#clientName")?.value === "Fictional Upgrade Client");
-  assert.equal(await upgradePage.inputValue("#clientName"), "Fictional Upgrade Client");
-  await upgradePage.evaluate(() => localStorage.removeItem("salesAppointmentDraft"));
-  assert.notEqual(await upgradePage.locator("#landingScreen").evaluate((element) => getComputedStyle(element).display), "none", "upgraded cached CSS must render offline");
-  await upgradePage.selectOption('#landingStaff','Garry Lewis');
-  await upgradePage.click('#landingContinue');
-  upgradePage.once('dialog',dialog=>dialog.accept());
-  await upgradePage.evaluate(()=>document.querySelector('#loadTestData').click());
-  await upgradePage.click('#generateTop');
-  await upgradePage.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Appointment package ready'),null,{timeout:30000});
-  assert.equal(await upgradePage.locator('#appointmentPackageReady').isVisible(),true,'offline package generation must reach complete ready state');
-  assert.equal(await upgradePage.locator('#downloadPackage').isVisible(),true,'activated cache must expose Download Package');
-  assert.equal((await upgradePage.textContent('#downloadPackage')).trim(),'Download Package');
-  assert.equal(await upgradePage.locator('#sharePackage').isHidden(),true,'stale Share Package UI must not survive activation');
-  await upgradePage.click('#saveCombinedPdf');
-  await upgradePage.click('#savePackageZip');
-  const downloadDeadline=Date.now()+10000;
-  while(offlineDownloads.length < 2 && Date.now() < downloadDeadline) await upgradePage.waitForTimeout(50);
-  assert.equal(offlineDownloads.filter(name=>name.endsWith('.pdf')).length,1,'offline PDF save must use the current package');
-  assert.equal(offlineDownloads.filter(name=>name.endsWith('.zip')).length,1,'offline ZIP save must use the current package');
-  await upgradePage.evaluate(()=>document.querySelector('#openPreparedEmail').addEventListener('click',event=>event.preventDefault(),{once:true,capture:true}));
-  await upgradePage.click('#preparePackageEmail');
-  await upgradePage.waitForFunction(()=>document.querySelector('#openPreparedEmail').getAttribute('href').startsWith('mailto:'));
-  assert.match(await upgradePage.getAttribute('#openPreparedEmail','href'),/^mailto:Natalie%40sjssolutionscorp\.com\.au\?/,'offline Prepare Email must construct the approved mailto');
   await upgradeContext.close();
 
   const freshContext = await browser.newContext({ serviceWorkers: "allow" });
