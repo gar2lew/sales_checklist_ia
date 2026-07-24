@@ -509,18 +509,21 @@
   }
 
   function checkForRecentDraft(){
-    try{
-      const draft = localStorage.getItem('salesAppointmentDraft');
-      const card = $('recentDraftCard');
-      if(card && draft){
-        const data = JSON.parse(draft);
+    window._db.loadDraft().then(function(result){
+      var card = $('recentDraftCard');
+      if(card && result.status === 'valid'){
+        var data = result.draft;
         $('draftType').textContent = data.appointmentMode === 'zoom' ? 'Zoom / Online Appointment' : 'In-person Appointment';
         $('draftClient').textContent = data.clientName || '(No client name)';
         $('draftDate').textContent = data.date || '(No date)';
         $('draftStaff').textContent = data.teamMember || '(No staff)';
         $('draftSavedAt').textContent = formatDraftSavedAt(data.draftSavedAt);
+        if(result.meta && result.meta.expiry){
+          var expiryDate = new Date(result.meta.expiry);
+          var el = $('draftExpiry');
+          if(el) el.textContent = formatDisplayDate(expiryDate.toISOString().split('T')[0]);
+        }
         card.classList.remove('hidden');
-        /* Wire delete button */
         var delBtn = $('deleteDraftBtn');
         if(delBtn && !delBtn._wired){
           delBtn._wired = true;
@@ -529,11 +532,11 @@
       } else if(card){
         card.classList.add('hidden');
       }
-    }catch(e){
+    }).catch(function(e){
       console.error('Could not read draft:', e);
       var card2 = $('recentDraftCard');
       if(card2) card2.classList.add('hidden');
-    }
+    });
   }
 
   function formatDraftSavedAt(iso){
@@ -547,12 +550,15 @@
   }
 
   function deleteDraft(){
-    if(!confirm('Delete saved draft? This cannot be undone.')) return;
-    localStorage.removeItem('salesAppointmentDraft');
-    var card = $('recentDraftCard');
-    if(card) card.classList.add('hidden');
-    updateSaveStatus('idle');
-    toast('Draft deleted.');
+    if(!confirm('Delete saved appointment? This cannot be undone.')) return;
+    window._db.deleteDraft(true).then(function(result){
+      var card = $('recentDraftCard');
+      if(card) card.classList.add('hidden');
+      updateSaveStatus('idle');
+      toast('Appointment deleted.');
+    }).catch(function(){
+      toast('Could not delete appointment.');
+    });
   }
 
   function resumeDraft(){
@@ -5543,11 +5549,23 @@
     try{
       var data = getDraft();
       data.draftSavedAt = new Date().toISOString();
-      localStorage.setItem('salesAppointmentDraft', JSON.stringify(data));
-      toast('Draft saved on this device.');
-      updateSaveStatus('saved');
+      window._db.saveDraft(data).then(function(result){
+        if(result.ok){
+          toast('Appointment saved on this device.');
+          updateSaveStatus('saved');
+        } else if(result.reason === 'quota'){
+          toast('There is not enough space on this device to save the appointment. Your previous saved version has been kept.');
+          updateSaveStatus('error');
+        } else {
+          toast('Appointment not saved. Please try again.');
+          updateSaveStatus('error');
+        }
+      }).catch(function(){
+        toast('Appointment not saved. Please try again.');
+        updateSaveStatus('error');
+      });
     }catch(e){
-      toast('Draft could not be saved. Photos may be too large for browser storage.');
+      toast('Appointment not saved. Please try again.');
       updateSaveStatus('error');
     }
   }
@@ -5578,8 +5596,10 @@
     try {
       var data = getDraft();
       data.draftSavedAt = new Date().toISOString();
-      localStorage.setItem('salesAppointmentDraft', JSON.stringify(data));
-      updateSaveStatus('saved');
+      window._db.saveDraft(data).then(function(result){
+        if(result.ok){ updateSaveStatus('saved'); }
+        else { updateSaveStatus('error'); }
+      }).catch(function(){ updateSaveStatus('error'); });
     } catch(e) {
       updateSaveStatus('error');
     }
@@ -5609,7 +5629,48 @@
       el.style.display = 'none';
     }
   }
-  async function loadDraft(){ try{ const raw=localStorage.getItem('salesAppointmentDraft'); if(!raw){toast('No saved draft found on this device.'); return;} await setDraft(JSON.parse(raw)); toast('Draft loaded.'); }catch(e){ console.error(e); toast('Draft could not be loaded.'); } }
+  function loadDraft(){
+    window._db.loadDraft().then(function(result){
+      if(result.status === 'valid'){
+        setDraft(result.draft).then(function(){
+          toast('Appointment loaded.');
+          if(result.meta && result.meta.expiry){
+            var expiryDate = new Date(result.meta.expiry);
+            var daysLeft = Math.max(0, Math.ceil((expiryDate - new Date()) / 86400000));
+            if(daysLeft <= 2){
+              status('This saved appointment will be removed in ' + daysLeft + ' day' + (daysLeft===1?'':'s') + '. Save again to keep it.');
+            }
+          }
+        });
+      } else if(result.status === 'expired'){
+        toast('This saved appointment has expired and was removed.');
+        window._db.removeExpiredDrafts();
+      
+  /* IndexedDB migration and expired draft cleanup */
+  window._db.open().then(function(){
+    return window._db.removeExpiredDrafts();
+  }).then(function(){
+    return window._db.migrateFromLegacy();
+  }).then(function(migrationResult){
+    if(migrationResult && migrationResult.migrated){
+      console.log('Legacy draft migrated to IndexedDB');
+    }
+    checkForRecentDraft();
+  }).catch(function(e){
+    console.error('DB initialisation error:', e);
+    checkForRecentDraft();
+  });
+
+      } else if(result.status === 'corrupt'){
+        toast('This saved appointment cannot be opened.');
+      } else {
+        toast('No saved appointment found on this device.');
+      }
+    }).catch(function(e){
+      console.error(e);
+      toast('Appointment could not be loaded.');
+    });
+  }
   function loadTestData(){
     if(!confirm('Load test data? This will replace the current form values (but not save over your draft).')) return;
     const today = localDateISO();
