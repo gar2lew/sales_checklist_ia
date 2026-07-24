@@ -239,10 +239,10 @@ try {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await waitForCurrentCache(page);
   await page.evaluate(async () => Promise.all((await caches.keys()).map((name) => caches.delete(name))));
-  assert.ok(await page.evaluate(() => localStorage.getItem('salesAppointmentDraft')));
+  assert.ok(await page.evaluate(async () => { var r = await window._db.loadDraft(); return r.status === 'valid'; }));
   await context.setOffline(true);
   await assert.rejects(page.reload({ waitUntil: 'domcontentloaded', timeout: 10_000 }));
-  assert.ok(await page.evaluate(() => localStorage.getItem('salesAppointmentDraft')).catch(() => true));
+  assert.ok(await page.evaluate(async () => { try { var r = await window._db.loadDraft(); return r.status === 'valid'; } catch(e) { return true; } }));
   record('Cache cleared while draft storage retained', 'PARTIAL', 'Draft data remains but app cannot boot offline', 'Navigation fails; local draft persists for later online recovery', 'Operational access blocked until reconnection');
   await context.setOffline(false);
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
@@ -278,7 +278,7 @@ try {
   await page.fill('#clientName', 'Quota Test Client');
   await page.click('#saveDraft');
   assert.equal(await page.textContent('#saveStatus'), 'Save failed');
-  assert.equal(await page.evaluate(() => localStorage.getItem('salesAppointmentDraft')), null);
+  assert.equal(await page.evaluate(async () => { var r = await window._db.loadDraft(); return r.status; }), 'missing');
   record('Storage quota failure', 'PARTIAL', 'No false saved state and clear failure feedback', 'Save failed status and explanatory toast shown', 'Appointment is unsaved until storage pressure is resolved');
   await context.close();
   activeBrowsers.delete(context);

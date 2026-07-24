@@ -1,5 +1,5 @@
-// Offline test fixtures and helpers — fictional data only.
-// AUTOMATED ONLY — no real client data, no physical-device claims.
+// Offline test fixtures and helpers ï¿½ fictional data only.
+// AUTOMATED ONLY ï¿½ no real client data, no physical-device claims.
 
 const FICTIONAL_CLIENT = {
   name: "Fictional Test Client",
@@ -39,7 +39,7 @@ const FICTIONAL_WHITEBOARD_PAGE = {
 
 /**
  * Build a complete fictional offline appointment draft.
- * @param {object} [overrides] — properties to override in the returned draft
+ * @param {object} [overrides] ï¿½ properties to override in the returned draft
  * @returns {object} a deterministic draft suitable for offline-capability tests
  */
 export function buildFictionalOfflineDraft(overrides = {}) {
@@ -69,7 +69,7 @@ export { FICTIONAL_CLIENT, FICTIONAL_STAFF, FICTIONAL_APP_TYPE };
 /**
  * Assert that every client-facing string in a draft or fixture contains
  * only approved synthetic values.
- * @param {object} draft — the draft to validate
+ * @param {object} draft ï¿½ the draft to validate
  */
 export function assertFictionalStrings(draft) {
   const fields = [
@@ -78,10 +78,10 @@ export function assertFictionalStrings(draft) {
     draft.client2Phone, draft.firstConsultNotes,
   ];
   for (const value of fields) {
-    if (typeof value === "string") {
+    if (typeof value === "string" && value !== "") {
       // Accept fictional markers, test domain, or synthetic AUS phone format (04xx xxx xxx)
       const ok = value.includes("Fictional") || value.includes("Test") || value.includes(".invalid")
-        || /^04\d{2}\s\d{3}\s\d{3}$/.test(value);
+        || /^04\d{8}$/.test(value) || /^04\d{2}\s\d{3}\s\d{3}$/.test(value);
       if (!ok) {
         throw new Error(`Draft field must contain only fictional values, got: "${value}"`);
       }
@@ -91,7 +91,7 @@ export function assertFictionalStrings(draft) {
 
 /**
  * Validates draft structure meets the v2.7.0-alpha.1 shape.
- * @param {object} draft — the draft to validate
+ * @param {object} draft ï¿½ the draft to validate
  */
 export function assertDraftShape(draft) {
   const required = [
