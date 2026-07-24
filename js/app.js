@@ -593,7 +593,15 @@
     deactivateValidation();
   }
   function enterAppointment(){
-    var staff = ($('landingStaff').value || '').trim();
+    /* If a saved appointment exists, offer choices before starting */
+    if(window._db && window._db.loadDraft){
+      window._db.loadDraft().then(function(result){
+        if(result.status === 'valid'){
+          _showNewAppointmentDialog();
+        } else if(result.status === 'corrupt'){
+          _showCorruptDraftDialog(result.meta);
+        } else {
+var staff = ($('landingStaff').value || '').trim();
     if(!staff) return;
     var activeBtn = document.querySelector('.mode-card.active');
     var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
@@ -607,6 +615,69 @@
     applyAppointmentMode();
     $('backToStart').style.display = '';
     status('Staff: '+staff+' | Mode: '+appointmentMode);
+        }
+      }).catch(function(){
+var staff = ($('landingStaff').value || '').trim();
+    if(!staff) return;
+    var activeBtn = document.querySelector('.mode-card.active');
+    var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
+    appointmentMode = selectedMode;
+    setControlValue('teamMember', staff);
+    if(generatedOutputChanged) clearGenerated();
+    preserveDraftDropdownValue('staff', staff);
+    localStorage.setItem("salesAppointmentLastStaff", staff);
+    $('landingScreen').classList.add('hidden');
+    applyAppointmentMode();
+    $('backToStart').style.display = '';
+    status('Staff: '+staff+' | Mode: '+appointmentMode);
+      });
+    } else {
+var staff = ($('landingStaff').value || '').trim();
+    if(!staff) return;
+    var activeBtn = document.querySelector('.mode-card.active');
+    var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
+    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
+    appointmentMode = selectedMode;
+    setControlValue('teamMember', staff);
+    if(generatedOutputChanged) clearGenerated();
+    preserveDraftDropdownValue('staff', staff);
+    localStorage.setItem("salesAppointmentLastStaff", staff);
+    $('landingScreen').classList.add('hidden');
+    applyAppointmentMode();
+    $('backToStart').style.display = '';
+    status('Staff: '+staff+' | Mode: '+appointmentMode);
+    }
+  }
+
+  function _showNewAppointmentDialog(){
+    var choice = confirm('A saved appointment exists on this device. Choose OK to continue working on it, or Cancel to see more options.');
+    if(choice){ resumeDraft(); return; }
+    var choice2 = confirm('Start a new appointment and keep the saved one? Choose OK to start new and keep it, or Cancel to delete it and start new.');
+    if(choice2){ _startNewAppointment(); return; }
+    var delConfirm = confirm('Delete the saved appointment and start a new one? This cannot be undone.');
+    if(delConfirm){
+      window._db.deleteDraft(true).then(function(){
+        updateSaveStatus('idle');
+        _startNewAppointment();
+      });
+    }
+  }
+
+  function _startNewAppointment(){
+    var staff = $('landingStaff').value;
+    var mode = document.querySelector('.mode-card.active')?.dataset?.mode || 'inPerson';
+    startAppointment(staff, mode);
+  }
+
+  function _showCorruptDraftDialog(meta){
+    var choice = confirm('This saved appointment cannot be opened. Choose OK to keep it and contact support, or Cancel to delete it and start new.');
+    if(!choice){
+      window._db.deleteDraft(true).then(function(){
+        updateSaveStatus('idle');
+        checkForRecentDraft();
+      });
+    }
   }
   function backToStart(){
     $('landingScreen').classList.remove('hidden');
@@ -4999,7 +5070,7 @@
       renderPackageReady('ready');
       status('Appointment package ready.');
       toast('Appointment package ready.');
-    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'PDF generation failed.'); }
+    }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'This document is not available on the device yet. Connect to the internet, reopen the app and try again.'); }
     finally{
       packageGenerationInProgress=false;
       setPackageGenerationDisabled(false);
@@ -5156,7 +5227,7 @@
     currentGeneratedAt = generatedAt;
 
     if(!canReusePdf) await buildPdf(generatedAt,revision);
-    if(revision !== documentRevision || !await validPdfBlob(lastPdfBlob)) throw new Error('Combined PDF generation failed.');
+    if(revision !== documentRevision || !await validPdfBlob(lastPdfBlob)) throw new Error('Combined This document is not available on the device yet. Connect to the internet, reopen the app and try again.');
 
     const individualPdfs = await buildIndividualPdfs(revision);
     if(revision !== documentRevision || !await validIndividualPdfs(individualPdfs)) throw new Error('Individual document generation failed.');
@@ -5699,6 +5770,34 @@
     refreshAllUI();
     toast('Test data loaded.');
   }
+  
+  /* Complete Handover and Clear Draft */
+  function completeHandoverAndClear(){
+    if(!confirm('Have you downloaded and checked the final PDF and ZIP files?')) return;
+    if(!confirm('This will remove the saved appointment and uploaded documents from the app. Files already downloaded to your device will not be removed. Continue?')) return;
+    window._db.deleteDraft(true).then(function(){
+      _resetFormSilent();
+      toast('Appointment cleared. Downloaded files remain on your device.');
+    }).catch(function(){ toast('Could not clear appointment.'); });
+  }
+
+  function _resetFormSilent(){
+    fields.forEach(function(id){
+      var el = $(id);
+      if(!el) return;
+      if(el.type==='checkbox') el.checked = (id==='includeFullPhotos'||id==='compressPhotos'||id==='iaApplySignature1'||id==='iaApplySignature2');
+      else { if(id==='iaForm') el.value='perth'; else el.value=''; }
+    });
+    photos.length = 4;
+    photos.forEach(function(_,i){ removePhoto(i); });
+    clearSig(); clearSig2();
+    if(typeof wbReset !== 'undefined') wbReset();
+    cancelAutosave(); updateSaveStatus('idle');
+    packageReadyHasBeenShown = false;
+    renderPackageReady('idle');
+    returnToLanding();
+  }
+
   function resetForm(){
     if(!confirm('Clear all entered information, photos, and signature?')) return;
     fields.forEach(id=>{
