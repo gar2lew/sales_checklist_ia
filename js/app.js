@@ -375,6 +375,69 @@
     const t=$('toast'); t.textContent=msg; t.classList.add('show');
     clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),3200);
   }
+
+  /* Connection status */
+  var _connectionOnline = navigator.onLine;
+  var _reconnectTimer = null;
+  var _readinessChecked = false;
+
+  function updateConnectionStatus(){
+    var el = $('connectionStatus');
+    if(!el) return;
+    el.className = 'connection-status';
+    if(!navigator.onLine){
+      el.textContent = 'Working without internet';
+      el.classList.add('offline');
+    } else if(!_readinessChecked){
+      el.textContent = 'Online';
+      el.classList.add('online');
+    } else {
+      el.textContent = 'Online';
+      el.classList.add('online');
+    }
+  }
+
+  function requestOfflineReadiness(){
+    if(!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    var channel = new MessageChannel();
+    channel.port1.onmessage = function(event){
+      if(event.data && event.data.type === 'OFFLINE_READINESS'){
+        _readinessChecked = true;
+        if(!event.data.ready && event.data.missingAssets && event.data.missingAssets.length > 0){
+          status('Some application files are not available on this device. Connect to the internet, reopen the app and try again.');
+        }
+      }
+    };
+    navigator.serviceWorker.controller.postMessage({type:'GET_OFFLINE_READINESS'}, [channel.port2]);
+  }
+
+  window.addEventListener('online', function(){
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = setTimeout(function(){
+      updateConnectionStatus();
+      status('Your internet connection has returned.');
+      requestOfflineReadiness();
+    }, 500);
+  });
+
+  window.addEventListener('offline', function(){
+    updateConnectionStatus();
+    status('Working without an internet connection. Save your appointment regularly.');
+  });
+
+  // Check readiness when service worker takes control
+  if(navigator.serviceWorker){
+    navigator.serviceWorker.ready.then(function(){
+      if(navigator.serviceWorker.controller){
+        requestOfflineReadiness();
+      }
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      requestOfflineReadiness();
+    });
+  }
+
+  updateConnectionStatus();
   function status(msg){ $('status').textContent = msg; }
   function addAriaDescription(el,descriptionId){
     if(!el || !descriptionId) return;

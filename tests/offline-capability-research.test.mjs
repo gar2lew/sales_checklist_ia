@@ -46,7 +46,7 @@ const record = (scenario, status, expected, actual, dataLossRisk = 'None observe
 };
 
 async function waitForCurrentCache(page) {
-  await page.waitForFunction(async () => (await caches.keys()).includes('sales-capture-v2.7.0-alpha.21'));
+  await page.waitForFunction(async () => (await caches.keys()).includes('sales-capture-v2.7.0-alpha.22'));
 }
 
 async function openInstalledContext(options = {}) {
@@ -97,7 +97,7 @@ try {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await waitForCurrentCache(page);
   const cachedAssets = await page.evaluate(async () => {
-    const cache = await caches.open('sales-capture-v2.7.0-alpha.21');
+    const cache = await caches.open('sales-capture-v2.7.0-alpha.22');
     return (await cache.keys()).map((request) => new URL(request.url).pathname).sort();
   });
   assert.ok(cachedAssets.includes('/index.html'));
@@ -212,7 +212,7 @@ try {
   await page.click('#landingContinue');
   await loadFictionalData(page);
   const deletedTemplate = await page.evaluate(async () => {
-    const cache = await caches.open('sales-capture-v2.7.0-alpha.21');
+    const cache = await caches.open('sales-capture-v2.7.0-alpha.22');
     return cache.delete('/templates/rendered/client-review-page-1.jpg');
   });
   assert.equal(deletedTemplate, true);

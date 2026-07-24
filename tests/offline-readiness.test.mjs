@@ -31,7 +31,7 @@ const browser = await chromium.launch({ headless: true });
 
 async function waitForCurrentCache(page) {
   await page.waitForFunction(
-    async () => (await caches.keys()).includes('sales-capture-v2.7.0-alpha.21')
+    async () => (await caches.keys()).includes('sales-capture-v2.7.0-alpha.22')
   );
 }
 
@@ -45,7 +45,7 @@ try {
   await waitForCurrentCache(page);
 
   const cachedAssets = await page.evaluate(async () => {
-    const cache = await caches.open('sales-capture-v2.7.0-alpha.21');
+    const cache = await caches.open('sales-capture-v2.7.0-alpha.22');
     return (await cache.keys()).map((r) => new URL(r.url).pathname).sort();
   });
 
@@ -66,7 +66,7 @@ try {
   // 3. Clean-install atomicity: all declared APP_SHELL entries are present
   const manifestAssets = await page.evaluate(async () => {
     // Read from the service worker's APP_SHELL constant indirectly via cache
-    const cache = await caches.open('sales-capture-v2.7.0-alpha.21');
+    const cache = await caches.open('sales-capture-v2.7.0-alpha.22');
     return (await cache.keys()).map((r) => new URL(r.url).pathname);
   });
   const declaredShell = [
@@ -86,9 +86,9 @@ try {
 
   // 5. Cache version isolation
   const cacheNames = await page.evaluate(async () => await caches.keys());
-  assert.ok(cacheNames.includes('sales-capture-v2.7.0-alpha.21'));
+  assert.ok(cacheNames.includes('sales-capture-v2.7.0-alpha.22'));
   assert.ok(!cacheNames.includes('sales-capture-v2.7.0-alpha.20'), 'Old cache version must be cleaned');
-  console.log('PASS cache version is isolated to v2.7.0-alpha.21');
+  console.log('PASS cache version is isolated to v2.7.0-alpha.22');
 
   // 6. navigator.onLine is true (not a readiness signal alone)
   const online = await page.evaluate(() => navigator.onLine);

@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v2.7.0-alpha.21';
+const CACHE_VERSION = 'v2.7.0-alpha.22';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -91,3 +91,28 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'GET_OFFLINE_READINESS') {
+    caches.open(CACHE_NAME).then(cache => {
+      return Promise.all(APP_SHELL.map(url => cache.match(url).then(r => ({ url, cached: !!r }))));
+    }).then(results => {
+      const missing = results.filter(r => !r.cached).map(r => r.url);
+      event.ports[0].postMessage({
+        type: 'OFFLINE_READINESS',
+        cacheVersion: CACHE_VERSION,
+        ready: missing.length === 0,
+        missingAssets: missing
+      });
+    }).catch(() => {
+      event.ports[0].postMessage({
+        type: 'OFFLINE_READINESS',
+        cacheVersion: CACHE_VERSION,
+        ready: false,
+        missingAssets: [],
+        error: 'Could not check cache'
+      });
+    });
+  }
+});
+
