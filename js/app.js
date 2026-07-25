@@ -5701,9 +5701,11 @@ var staff = ($('landingStaff').value || '').trim();
     }
   }
   function loadDraft(){
+    document.documentElement.dataset.draftRestoreState = 'loading';
     window._db.loadDraft().then(function(result){
       if(result.status === 'valid'){
         setDraft(result.draft).then(function(){
+          document.documentElement.dataset.draftRestoreState = 'restored';
           toast('Appointment loaded.');
           if(result.meta && result.meta.expiry){
             var expiryDate = new Date(result.meta.expiry);
@@ -5714,6 +5716,7 @@ var staff = ($('landingStaff').value || '').trim();
           }
         });
       } else if(result.status === 'expired'){
+        document.documentElement.dataset.draftRestoreState = 'failed';
         toast('This saved appointment has expired and was removed.');
         window._db.removeExpiredDrafts();
       
@@ -5733,12 +5736,15 @@ var staff = ($('landingStaff').value || '').trim();
   });
 
       } else if(result.status === 'corrupt'){
+        document.documentElement.dataset.draftRestoreState = 'failed';
         toast('This saved appointment cannot be opened.');
       } else {
+        document.documentElement.dataset.draftRestoreState = 'failed';
         toast('No saved appointment found on this device.');
       }
     }).catch(function(e){
       console.error(e);
+      document.documentElement.dataset.draftRestoreState = 'failed';
       toast('Appointment could not be loaded.');
     });
   }

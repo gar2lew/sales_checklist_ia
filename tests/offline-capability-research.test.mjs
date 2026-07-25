@@ -170,6 +170,7 @@ try {
   page = await context.newPage();
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.click('#resumeDraftBtn');
+  await page.waitForFunction(() => document.documentElement.dataset.draftRestoreState === 'restored', null, { timeout: 5000 });
   await page.waitForFunction(() => document.querySelector('#firstConsultNotes').value.includes('offline Zoom'));
   await page.waitForFunction(
     () => document.querySelectorAll('.wb-saved-thumbnail').length === 1,
@@ -197,6 +198,7 @@ try {
   await context.setOffline(false);
   await page.reload({ waitUntil: 'networkidle' });
   await page.click('#resumeDraftBtn');
+  await page.waitForFunction(() => document.documentElement.dataset.draftRestoreState === 'restored', null, { timeout: 5000 });
   assert.equal(await page.inputValue('#firstConsultNotes'), 'Fictional offline Zoom notes');
   record('Reconnect with saved draft', 'PASS', 'Draft remains intact after network returns', 'Saved Zoom draft reloaded after reconnection');
 
@@ -210,6 +212,7 @@ try {
   await page.selectOption('#landingStaff', 'Garry Lewis');
   await page.click('[data-mode="zoom"]');
   await page.click('#landingContinue');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#mainApp')).display !== 'none');
   await loadFictionalData(page);
   const deletedTemplate = await page.evaluate(async () => {
     const cache = await caches.open('sales-capture-v2.7.0-alpha.22');
@@ -275,6 +278,7 @@ try {
   });
   await page.selectOption('#landingStaff', 'Garry Lewis');
   await page.click('#landingContinue');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#mainApp')).display !== 'none');
   await page.fill('#clientName', 'Quota Test Client');
   await page.click('#saveDraft');
   assert.equal(await page.textContent('#saveStatus'), 'Save failed');
