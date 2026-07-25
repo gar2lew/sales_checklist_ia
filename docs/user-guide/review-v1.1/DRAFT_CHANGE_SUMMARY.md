@@ -1,4 +1,4 @@
-ï»¿# Change Summary: Field Guide v1.1.0 DRAFT FOR REVIEW
+# Change Summary: Field Guide v1.1.0 DRAFT FOR REVIEW
 
 **Previous version:** 1.0.0
 **Draft version:** 1.1.0 DRAFT FOR REVIEW
@@ -8,7 +8,7 @@
 
 ### New Sections
 - About This Guide (section 3)
-- Before You Leave â€” pre-appointment checklist (section 5)
+- Before You Leave — pre-appointment checklist (section 5)
 - Preparing to Work Without Internet (section 7)
 - Working Without an Internet Connection (section 8)
 - When Your Internet Connection Returns (section 9)
@@ -16,9 +16,9 @@
 - Opening a Saved Appointment (section 19)
 
 ### Expanded Sections
-- Installing the App â€” now covers Windows Chrome, Android Chrome, iPhone Safari, iPad Safari
-- Common Mistakes â€” expanded to include offline-related mistakes
-- Troubleshooting â€” expanded with connection and saved appointment issues
+- Installing the App — now covers Windows Chrome, Android Chrome, iPhone Safari, iPad Safari
+- Common Mistakes — expanded to include offline-related mistakes
+- Troubleshooting — expanded with connection and saved appointment issues
 
 ### Renamed for Plain English
 - "Draft" renamed to "Saved Appointment" throughout
@@ -27,12 +27,12 @@
 - Technical terms removed from all staff-facing text
 
 ### New Callouts
-- REQUIRED â€” mandatory actions
-- IMPORTANT â€” key information
-- TIP â€” helpful suggestions
-- WARNING â€” risks to be aware of
-- DO NOT PROCEED â€” stop conditions
-- EXPECTED RESULT â€” what should happen after following instructions
+- REQUIRED — mandatory actions
+- IMPORTANT — key information
+- TIP — helpful suggestions
+- WARNING — risks to be aware of
+- DO NOT PROCEED — stop conditions
+- EXPECTED RESULT — what should happen after following instructions
 
 ### Structural Changes
 - Page count no longer fixed at 17

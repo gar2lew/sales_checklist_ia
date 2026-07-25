@@ -225,7 +225,7 @@ If a saved appointment exists, you will see three choices:
 
 ## In-Person Appointments
 
-[SCREENSHOT: In-person workspace]
+![In-person workspace](screenshots/01-app-opening.png)
 
 Complete each section in order:
 
@@ -251,7 +251,7 @@ The sale details appear in the final documents.
 
 ## Zoom Appointments
 
-[SCREENSHOT: Zoom workspace]
+![Zoom workspace](screenshots/01-app-opening.png)
 
 Zoom appointments include everything in an in-person appointment, plus:
 
@@ -263,7 +263,7 @@ Zoom appointments include everything in an in-person appointment, plus:
 
 ## Using the Zoom Whiteboard
 
-[SCREENSHOT: Zoom whiteboard]
+![Zoom whiteboard](screenshots/12-zoom-whiteboard.png)
 
 The whiteboard helps you draw and explain concepts during Zoom consultations.
 

@@ -1,0 +1,325 @@
+[
+  {
+    "filename": "01-app-opening.png",
+    "guide_section": "various",
+    "caption": "01 App Opening",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "02-online-status.png",
+    "guide_section": "various",
+    "caption": "02 Online Status",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "03-staff-selection.png",
+    "guide_section": "various",
+    "caption": "03 Staff Selection",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "04-appointment-type.png",
+    "guide_section": "various",
+    "caption": "04 Appointment Type",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "05-in-person-workflow.png",
+    "guide_section": "various",
+    "caption": "05 In Person Workflow",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "06-sale-details.png",
+    "guide_section": "various",
+    "caption": "06 Sale Details",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "07-save-appointment.png",
+    "guide_section": "various",
+    "caption": "07 Save Appointment",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "08-appointment-saved.png",
+    "guide_section": "various",
+    "caption": "08 Appointment Saved",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "09-open-saved-appointment.png",
+    "guide_section": "various",
+    "caption": "09 Open Saved Appointment",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "10-new-appointment-choices.png",
+    "guide_section": "various",
+    "caption": "10 New Appointment Choices",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "11-zoom-workflow.png",
+    "guide_section": "various",
+    "caption": "11 Zoom Workflow",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "12-zoom-whiteboard.png",
+    "guide_section": "various",
+    "caption": "12 Zoom Whiteboard",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "13-identification-upload.png",
+    "guide_section": "various",
+    "caption": "13 Identification Upload",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "14-signature-capture.png",
+    "guide_section": "various",
+    "caption": "14 Signature Capture",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "15-offline-status.png",
+    "guide_section": "various",
+    "caption": "15 Offline Status",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "16-reconnection.png",
+    "guide_section": "various",
+    "caption": "16 Reconnection",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "17-create-final-documents.png",
+    "guide_section": "various",
+    "caption": "17 Create Final Documents",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "18-download-package.png",
+    "guide_section": "various",
+    "caption": "18 Download Package",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  },
+  {
+    "filename": "19-clean-start-screen.png",
+    "guide_section": "various",
+    "caption": "19 Clean Start Screen",
+    "annotations": [],
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "scale": 1,
+    "browser": "Playwright Chromium 1.61.1",
+    "application": "2.7.0-alpha.1",
+    "dataset": "review-v1.1-fictional-client",
+    "captured": "2026-07-25T12:10:14.018932",
+    "source": "Playwright automation",
+    "validation": "PASS"
+  }
+]
