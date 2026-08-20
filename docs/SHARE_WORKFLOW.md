@@ -4,22 +4,26 @@
 
 The share workflow allows staff to send generated PDFs via email. It uses the Web Share API when file sharing is supported, and falls back to downloading the PDF and opening a pre-filled `mailto:` link.
 
+In zoom mode, the same share workflow applies to the compiled booklet PDF. **Download Package** additionally generates a ZIP containing individual documents.
+
 ## Entry points
 
-All three actions are available as buttons (top toolbar and bottom footer):
+All actions are available as buttons (top toolbar and bottom footer):
 
 | Button | Handler | ID attributes |
 |--------|---------|---------------|
 | Generate PDF | `generatePdfOnly()` | `generateTop`, `generateBottom` |
 | Download PDF | `downloadPdf()` | `downloadTop`, `downloadBottom` |
+| Download Package | `downloadPackage()` | `downloadPackageTop`, `downloadPackageBottom` |
 | Share PDF | `sharePdf()` | `shareTop`, `shareBottom` |
 
 ## Generate PDF
 
 1. Calls `buildPdf()` which runs the full pipeline: validation, rendering, PDF assembly.
-2. Calls `refreshPreview()` to update the preview panel.
-3. Sets status to `"PDF ready: {filename} ({size} MB). Use Download PDF or Share PDF."`
-4. Enables Download and Share buttons via `updateActionButtons()`.
+2. In zoom mode, uses `zoomOutputPlan()` for page layout and draws zoom-specific pages.
+3. Calls `refreshPreview()` to update the preview panel.
+4. Sets status to `"PDF ready: {filename} ({size} MB). Use Download PDF or Share PDF."`
+5. Enables Download and Share buttons via `updateActionButtons()`.
 
 ## Download PDF
 
@@ -27,6 +31,38 @@ All three actions are available as buttons (top toolbar and bottom footer):
 2. Calls `downloadBlob(lastPdfBlob, lastPdfName || pdfFileName())` which creates a temporary anchor element with `URL.createObjectURL(blob)` and clicks it programmatically.
 3. Shows toast: `"PDF download started."`
 4. On validation failure: shows `"Please fix the highlighted fields."`
+5. In zoom mode, the filename format is: `Sales Appointment - Zoom - {clients} - {staff} - {date}.pdf`
+
+## Download Package
+
+**In-person mode:**
+
+1. Generates the compiled PDF.
+2. Builds individual PDFs for each document group (EOI, IA, photos).
+3. Creates a ZIP containing all individual PDFs.
+4. Downloads both the compiled PDF and the ZIP.
+5. ZIP filename: `{clientNames} - Separated Appointment Documents - {date}.zip`
+
+**Zoom mode:**
+
+1. Generates the compiled booklet PDF.
+2. Builds individual PDFs for each zoom document (Cover, First Consultation, Client Review, optional EOI, optional IA).
+3. Creates a ZIP with unique filenames for each document.
+4. Downloads both the compiled PDF and the ZIP.
+5. ZIP filename: `{clientNames} - Zoom Appointment Documents - {date}.zip`
+
+**Individual zoom document filenames in ZIP:**
+
+| Document | Filename |
+|----------|----------|
+| Compiled booklet | `Sales Appointment - Zoom - {clients} - {staff} - {date}.pdf` |
+| First Consultation | `First Consultation - {clients} - {staff} - {date}.pdf` |
+| Client Review | `Client Review Assessment - {clients} - {staff} - {date}.pdf` |
+| Standard EOI | `EOI - {clients} - {staff} - {date}.pdf` |
+| La Vida EOI | `La Vida EOI - {clients} - {staff} - {date}.pdf` |
+| IA | `IA - {clients} - {staff} - {date}.pdf` |
+
+Standard EOI and La Vida EOI use distinct filenames to avoid ZIP collisions.
 
 ## Share PDF
 
@@ -61,7 +97,7 @@ Platform failure → fall back to download + mailto.
 
 ## Default To / CC
 
-From `CONFIG.share` (Section A of `index.html`):
+From `CONFIG.share` (Section A of `js/app.js`):
 
 ```javascript
 share: {
@@ -98,6 +134,8 @@ Regards,
 - `date`: `formatDisplayDate(date field)` in DD/MM/YYYY
 - `formsIncluded`: `"EOI+IA"`, `"EOI"`, `"IA"`, or `"PDF"` based on checkbox state
 
+In zoom mode, the same email template is used. The compiled booklet filename reflects the zoom workflow.
+
 ## Browser limitations around attachments
 
 - **mailto: cannot attach files.** The `mailto:` protocol does not support file attachments. The fallback path tells staff to attach the downloaded PDF manually.
@@ -119,4 +157,4 @@ Regards,
 | iPhone | Safari | Yes | No |
 | Android | Chrome | Yes | No |
 
-**Note:** All platforms fall back gracefully to download + mailto when file sharing is unavailable.
+**Note:** All platforms fall back gracefully to download + mailto when file sharing is unavailable. In zoom mode, Download Package provides a ZIP as an additional option.

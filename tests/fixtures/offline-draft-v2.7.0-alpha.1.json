@@ -1,0 +1,61 @@
+{
+  "appointmentMode": "zoom",
+  "staffName": "Garry Lewis",
+  "clientName": "Fictional Test Client",
+  "clientEmail": "fictional.test@example.invalid",
+  "clientPhone": "0412 345 678",
+  "propertySaleAddress": "1 Fictional Street, Testville WA 6999",
+  "client2Name": "Fictional Client 2",
+  "client2Email": "fictional.client2@example.invalid",
+  "client2Phone": "0499 999 999",
+  "crmId": "FICTIONAL-001",
+  "salePrice": "500000",
+  "contractDueDate": "2026-12-31",
+  "contractDueDateTbc": true,
+  "includeEOI": true,
+  "includeIA": true,
+  "firstConsultNotes": "Fictional offline appointment notes for v2.7.0-alpha.1 legacy draft.",
+  "signature": "data:image/png;base64,FICTIONAL_SIGNATURE_PLACEHOLDER",
+  "photos": [
+    {
+      "name": "fictional-id.png",
+      "dataURL": "data:image/png;base64,FICTIONAL_PHOTO_PLACEHOLDER",
+      "size": 1024
+    }
+  ],
+  "whiteboardPages": [
+    {
+      "pageNumber": 1,
+      "label": "Page 1",
+      "strokes": [
+        {
+          "points": [
+            [
+              10,
+              20
+            ],
+            [
+              50,
+              60
+            ],
+            [
+              100,
+              80
+            ]
+          ],
+          "color": "#000000",
+          "width": 2
+        }
+      ],
+      "savedAt": "2026-07-24T12:00:00.000Z"
+    }
+  ],
+  "wbSavedPages": [
+    {
+      "pageNumber": 1,
+      "label": "Page 1",
+      "dataURL": "data:image/png;base64,FICTIONAL_WB_PAGE_PLACEHOLDER"
+    }
+  ],
+  "lastSaved": "2026-07-24T12:00:00.000Z"
+}

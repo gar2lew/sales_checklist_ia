@@ -11,6 +11,8 @@ Drafts are saved to `localStorage` under the key `salesAppointmentDraft`. They a
 
 ## What data gets saved
 
+### Common fields (both modes)
+
 | Data | How | Format |
 |------|-----|--------|
 | All text/select/checkbox fields | Read from DOM via `getDraft()` | Key-value pairs matching field IDs |
@@ -21,6 +23,33 @@ Drafts are saved to `localStorage` under the key `salesAppointmentDraft`. They a
 | Additional docs count | `additionalDocsCount` field | Number |
 | Next appointment | `formatNextAppointment()` | Formatted string like `"01/07/2026 10:00 AM"` |
 | EOI ID attached flag | `eoiIdAttached` | Set to `""` (empty) |
+
+### Zoom-only fields (v2.0+)
+
+| Data | Field ID | Format |
+|------|----------|--------|
+| Appointment mode | `appointmentMode` | `"inPerson"` or `"zoom"` |
+| Goal type | `firstConsultGoalType` | `"investment"`, `"home"`, `"smsf"`, `"wealth"`, `"retirement"`, `"other"` |
+| Annual income | `firstConsultAnnualIncome` | String |
+| Existing mortgage | `firstConsultExistingMortgage` | String |
+| Savings | `firstConsultSavings` | String |
+| Super balance | `firstConsultSuper` | String |
+| Investment properties | `firstConsultInvestmentProperties` | String |
+| Borrowing capacity | `firstConsultBorrowingCapacity` | String |
+| First consult notes | `firstConsultNotes` | String |
+| Recommended strategy | `clientReviewStrategy` | String |
+| Recommended builder | `clientReviewBuilder` | String |
+| Recommended developer | `clientReviewDeveloper` | String |
+| Recommended broker | `clientReviewBroker` | String |
+| Recommended conveyancer | `clientReviewConveyancer` | String |
+| Recommended property | `clientReviewProperty` | String |
+| Estimated timeline | `clientReviewTimeline` | String |
+| Next actions | `clientReviewNextActions` | String |
+| Include Standard EOI | `zoomIncludeStandardEOI` | Boolean |
+| Include La Vida EOI | `zoomIncludeLaVidaEOI` | Boolean |
+| Include IA | `zoomIncludeIA` | Boolean |
+
+A total of **19 zoom-specific fields** are stored alongside the existing common fields.
 
 ## What does NOT get saved
 
@@ -53,6 +82,17 @@ Drafts are saved to `localStorage` under the key `salesAppointmentDraft`. They a
   - `date`, `iaDate`, `eoiDate` — restored as DD/MM/YYYY display format via `formatDisplayDate()`
   - If `eoiNextApptDate` is missing but `eoiNextAppointment` string contains a date, the date is extracted and set
 
+## Appointment mode restoration
+
+When loading a draft:
+1. If `data.appointmentMode` exists, set `appointmentMode` to its value
+2. Hide the landing screen
+3. Set `backToStart` button visibility
+4. Populate the landing staff field from `teamMember`
+5. Call `applyAppointmentMode()` to toggle visibility classes
+
+Drafts **without** `appointmentMode` (v1.x legacy) default to `"inPerson"`.
+
 ## Old draft compatibility
 
 `setDraft()` handles several legacy draft formats:
@@ -65,6 +105,7 @@ Drafts are saved to `localStorage` under the key `salesAppointmentDraft`. They a
 6. **Corrupt JSON** — `loadDraft()` wraps `JSON.parse()` in try/catch and shows "Draft could not be loaded." toast
 7. **Missing `additionalDocsCount`** — defaults to 0 if not present
 8. **Old `iaProperty` → `eoiSaleAddress`** — if `eoiSaleAddress` is undefined but `iaProperty` has a value, it's copied
+9. **Missing `appointmentMode`** — defaults to `"inPerson"` (v2.0+)
 
 ## localStorage size limitations
 

@@ -15,123 +15,202 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 </head>
 <body>
-  <!-- Landing Screen -->
-  <div class="landing-screen" id="landingScreen">
-    <div class="landing-container">
-      <div class="landing-left">
-        <div class="landing-logo-wrap">
-          <img src="icons/asg_logo_white.png" alt="Amplify Solutions Group" class="landing-logo" onerror="this.style.display='none';var p=this.parentNode;if(p){var f=p.querySelector('.landing-logo-fallback');if(f)f.style.display='block'}">
-          <div class="landing-logo-fallback">ASG | AMPLIFY SOLUTIONS GROUP</div>
-        </div>
-        <h1 class="landing-heading">Sales Appointment<br>Capture</h1>
-        <p class="landing-tagline">Professional. Compliant. Complete.</p>
-        <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
-        <div class="landing-benefits">
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M12 4L6 10L3 7" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 2L13 4v5c0 3-2.2 5.5-5 6-2.8-.5-5-3-5-6V4l5-2z" stroke="#D4AF37" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            <div><strong>Compliant</strong><span>Built for Australian standards</span></div>
-          </div>
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 2h8a1 1 0 011 1v11l-5-3-5 3V3a1 1 0 011-1z" stroke="#D4AF37" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 6.5h5M5.5 9h5" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round"/></svg>
-            <div><strong>Complete</strong><span>All documents in one place</span></div>
-          </div>
-          <div class="benefit-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="7" width="8" height="7" rx="1.5" stroke="#D4AF37" stroke-width="1.3"/><path d="M10.5 7V5a2.5 2.5 0 00-5 0v2" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="10.5" r=".8" fill="#D4AF37"/></svg>
-            <div><strong>Secure</strong><span>Your data is always protected</span></div>
-          </div>
-        </div>
-        <div class="landing-version">Version 1.7.0</div>
-      </div>
-      <div class="landing-right">
-        <div class="landing-session">Secure session</div>
-        <div class="landing-right-content">
-          <h2 class="landing-form-title">Start New Appointment</h2>
-          <p class="landing-subtitle">Select your name and enter client details to begin.</p>
-          <form class="landing-form" id="landingForm">
-            <div class="landing-field">
-              <label for="landingStaff">Staff Member <span class="required">*</span></label>
-              <div class="landing-custom-select" id="landingStaffWrapper">
-                <button type="button" class="landing-select-trigger" id="landingStaffTrigger" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="landing-select-avatar" id="landingAvatar" style="display:none"></span>
-                  <span class="landing-select-value" id="landingStaffValue">— Choose your name —</span>
-                  <svg class="landing-select-arrow" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#737887" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
-                </button>
-                <ul class="landing-select-menu" id="landingStaffMenu" role="listbox" aria-label="Staff members" style="display:none">
-                  <li role="option" data-value="Blake">Blake</li>
-                  <li role="option" data-value="Joe">Joe</li>
-                  <li role="option" data-value="Natalie">Natalie</li>
-                  <li role="option" data-value="Mike">Mike</li>
-                  <li role="option" data-value="Josh">Josh</li>
-                  <li role="option" data-value="Sam">Sam</li>
-                </ul>
-                <select id="landingStaff" aria-hidden="true" style="display:none">
-                  <option value="">— Choose your name —</option>
-                  <option value="Blake">Blake</option>
-                  <option value="Joe">Joe</option>
-                  <option value="Natalie">Natalie</option>
-                  <option value="Mike">Mike</option>
-                  <option value="Josh">Josh</option>
-                  <option value="Sam">Sam</option>
-                </select>
+  <!-- LANDING SCREEN ========================================================= -->
+  <div id="landingScreen" class="landing-screen">
+    <div class="landing-outer">
+      <div class="landing-container">
+        <section class="landing-left" aria-labelledby="landingHeading">
+          <svg class="landing-curve" viewBox="0 0 130 1000" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0,0 C70,220 70,780 0,1000 L0,1000 L0,0 Z" fill="#06152B"></path>
+            <path d="M0,0 C70,220 70,780 0,1000" stroke="#C9A45C" stroke-width="2" fill="none"></path>
+          </svg>
+          <svg class="landing-waves" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-50 120 C120 80 280 160 460 100"></path>
+            <path d="M-50 170 C120 130 280 210 460 150"></path>
+            <path d="M-50 220 C120 180 280 260 460 200"></path>
+            <path d="M-50 420 C140 380 260 470 460 410"></path>
+            <path d="M-50 470 C140 430 260 520 460 460"></path>
+          </svg>
+          <div class="landing-left-content">
+            <div class="landing-logo-wrap" aria-label="Amplify Solutions Group">
+              <div class="landing-logo-row">
+                <span class="landing-logo-asg">ASG</span>
+                <span class="landing-logo-sep" aria-hidden="true"></span>
+                <span class="landing-logo-sub"><span>AMPLIFY</span><span>SOLUTIONS</span><span>GROUP</span></span>
+              </div>
+              <div class="landing-logo-line" aria-hidden="true"></div>
+            </div>
+            <h1 class="landing-heading" id="landingHeading">Sales Appointment<br>Capture</h1>
+            <p class="landing-tagline">Professional. Compliant. Complete.</p>
+            <p class="landing-desc">Capture every detail, generate compliant documents, and deliver premium client experiences.</p>
+            <div class="landing-benefits">
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                <div class="benefit-text"><strong>Compliant</strong><span>Built for Australian standards</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+                <div class="benefit-text"><strong>Complete</strong><span>All documents in one place</span></div>
+              </div>
+              <div class="benefit-item">
+                <span class="benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                <div class="benefit-text"><strong>Secure</strong><span>Your data remains on this device</span></div>
               </div>
             </div>
-            <div class="landing-field">
-              <label for="landingClient1">Client 1 Name <span class="required">*</span></label>
-              <input type="text" id="landingClient1" class="landing-input" placeholder="Enter client 1 full name" autocomplete="off">
+          </div>
+          <div class="landing-version" data-app-version-label>Version 2.7.0-alpha.1</div>
+        </section>
+
+        <section class="landing-right" aria-labelledby="landingFormTitle">
+          <div class="landing-security-badge">
+            <span class="security-badge-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <div class="security-badge-text"><strong>Secure &amp; Professional</strong><span>Your information is encrypted and protected</span></div>
+          </div>
+          <div class="landing-right-content">
+            <p class="landing-welcome">WELCOME</p>
+            <h2 class="landing-form-title" id="landingFormTitle">Start New Appointment</h2>
+            <div class="landing-divider" aria-hidden="true"><span></span><i class="landing-divider-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></i><span></span></div>
+            <p class="landing-subtitle">Select your name to auto-fill staff details, then enter client names to begin.</p>
+
+            <div class="landing-card-body">
+              <div class="landing-field">
+                <label for="landingStaff">Your Name <span class="required">*</span></label>
+                <div class="landing-input-shell" id="landingStaffControl">
+                  <span class="landing-input-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                  <select id="landingStaff" aria-label="Your Name">
+                    <option value="" disabled selected>Choose your name</option>
+                  </select>
+                </div>
+                <div class="landing-staff-configuration hidden" id="landingStaffConfiguration" role="status">
+                  <span>No staff members are configured on this device.</span>
+                  <button type="button" class="btn secondary" id="configureStaffFromLanding" aria-controls="settingsOverlay">Open Global Settings</button>
+                </div>
+              </div>
+              <div class="landing-field">
+                <label>Appointment Type</label>
+                <div class="mode-cards">
+                  <button type="button" class="mode-card active" data-mode="inPerson">
+                    <span class="mode-card-icon" aria-hidden="true">👤</span>
+                    <span class="mode-card-title">In-person</span>
+                  </button>
+                  <button type="button" class="mode-card" data-mode="zoom">
+                    <span class="mode-card-icon" aria-hidden="true">🖥</span>
+                    <span class="mode-card-title">Zoom</span>
+                  </button>
+                </div>
+                <p class="mode-card-hint">Face-to-face appointment</p>
+              </div>
+              <div id="recentDraftCard" class="recent-draft-card hidden">
+                <div class="recent-draft-header"><span class="recent-draft-dot"></span>Recent draft available</div>
+                <div class="recent-draft-body">
+                  <div class="recent-draft-grid">
+                    <div class="recent-draft-item"><span class="rd-label">Type:</span><span class="rd-value" id="draftType"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Client:</span><span class="rd-value" id="draftClient"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Date:</span><span class="rd-value" id="draftDate"></span></div>
+                    <div class="recent-draft-item"><span class="rd-label">Staff:</span><span class="rd-value" id="draftStaff"></span></div>
+                    <div class="recent-draft-item recent-draft-saved-at"><span class="rd-label">Saved:</span><span class="rd-value" id="draftSavedAt"></span></div>
+                  </div>
+                  <div class="recent-draft-footer">
+                    <button id="resumeDraftBtn" class="btn secondary recent-draft-btn">Resume Draft</button>
+                    <button id="deleteDraftBtn" class="btn ghost-danger recent-draft-btn">Delete Draft</button>
+                  </div>
+                </div>
+              </div>
+              <button id="landingContinue" class="btn primary landing-continue" disabled><span id="continueButtonText">Start Appointment</span> <span aria-hidden="true">→</span></button>
             </div>
-            <div class="landing-field">
-              <label for="landingClient2">Client 2 Name <span class="hint-mild">optional</span></label>
-              <input type="text" id="landingClient2" class="landing-input" placeholder="Enter client 2 full name (optional)" autocomplete="off">
+                        <div class="landing-info-box">
+              <div class="landing-info-header"><span class="landing-info-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><strong>What happens next?</strong></div>
+              <p>You'll be guided through the appointment process step-by-step and able to generate all required documents at the end.</p>
             </div>
-            <button type="submit" class="landing-start-btn" id="landingStartBtn" disabled>Start Appointment</button>
-          </form>
-        </div>
-        <div class="landing-version landing-version-right">Version 1.7.0</div>
+            <div class="landing-footer">
+              <p class="landing-footer-version"><span aria-hidden="true">🔒</span> Sales Appointment Capture <span data-app-version-label>Version 2.7.0-alpha.1</span></p>
+              <p class="landing-footer-copyright">&copy; 2025 Amplify Solutions Group. All rights reserved.</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
 
-  <div class="app" id="mainApp" style="display:none">
+  <div class="app" id="mainApp">
     <header class="appHeader stickyHeader">
       <div class="headerInner">
         <div class="headerBrand">
           <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
           <div class="brandText">
             <span class="brandTitle">Sales Appointment Capture</span>
-            <span class="brandVersion" data-app-version-label>Version 1.6.5</span>
+            <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
-          <div class="statusBadge">Status: <span id="status">Ready.</span></div>
+          <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
+          <div class="statusBadge">Status: <span id="status" role="status" aria-live="polite" aria-atomic="true">Ready.</span> <span id="connectionStatus" class="connection-status" role="status" aria-live="polite">Online</span></div>
         </div>
         
         <div class="headerActions">
-          <div class="actionGroup">
-            <button class="btn toolbar-btn" id="backToStart" title="Change Staff / Clients">↩ Change Staff / Clients</button>
+          <div class="actionGroup actionGroup-appointment">
             <button class="btn toolbar-btn" id="saveDraft" title="Save Draft">💾 Save Draft</button>
             <button class="btn toolbar-btn" id="loadDraft" title="Load Draft">↩ Load Draft</button>
-            <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
+            <span class="save-status" id="saveStatus" role="status" aria-live="polite"></span>
           </div>
 
-          <div class="actionGroup">
-            <button class="btn toolbar-btn primary" id="generateTop">Generate PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadTop" disabled>Download PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="downloadPackageTop" disabled>Download Package</button>
-            <button class="btn toolbar-btn ghost-dark" id="shareTop" disabled>Share PDF</button>
-            <button class="btn toolbar-btn ghost-dark" id="previewTop">↻ Refresh Preview</button>
+          <div class="actionGroup actionGroup-output">
+            <button class="btn toolbar-btn primary" id="generateTop">Generate Appointment Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadTop" disabled>Download PDF</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="downloadPackageTop" disabled>Download Package</button>
+            <button class="btn toolbar-btn ghost-dark legacy-output-action" id="shareTop" disabled>Share PDF</button>
           </div>
           
-          <div class="actionGroup">
-            <button class="btn toolbar-btn" id="openSettings">Settings</button>
+          <div class="actionGroup actionGroup-admin">
+            <div class="workspaceSecondaryActions" id="workspaceSecondaryActions">
+              <button type="button" class="btn toolbar-btn secondaryActionsTrigger" id="secondaryActionsTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="secondaryActionMenu">More actions</button>
+              <div class="secondaryActionMenu" id="secondaryActionMenu">
+                <button class="btn toolbar-btn" id="loadTestData" title="Load Test Data">🧪 Load Test Data</button>
+                <button class="btn toolbar-btn" id="openSettings">Settings</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </header>
 
+    <!-- Consultation Progress Timeline -->
+    <nav class="progress-timeline" id="progressTimeline" aria-label="Consultation progress">
+      <ol class="timeline-steps zoom-only" id="timelineZoom" aria-label="Zoom appointment steps">
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="firstConsultSection" data-tl-label="Discovery"><span class="tl-circle">2</span><span class="tl-label">Discovery</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="fcFinancial" data-tl-label="Financial"><span class="tl-circle">3</span><span class="tl-label">Financial</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="crProfessionalTeam" data-tl-label="Professional"><span class="tl-circle">4</span><span class="tl-label">Professional</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="crNextActions" data-tl-label="Strategy"><span class="tl-circle">5</span><span class="tl-label">Strategy</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomWorkspaceSection" data-tl-label="Workspace"><span class="tl-circle">6</span><span class="tl-label">Workspace</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomOutputsSection" data-tl-label="Outputs"><span class="tl-circle">7</span><span class="tl-label">Outputs</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomPackagePreview" data-tl-label="Ready"><span class="tl-circle">8</span><span class="tl-label">Ready</span></button></li>
+      </ol>
+      <ol class="timeline-steps in-person-only" id="timelineInPerson" aria-label="In-person appointment steps">
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="eoiDetailsCard" data-tl-label="EOI"><span class="tl-circle">2</span><span class="tl-label">EOI</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="iaDetailsCard" data-tl-label="IA"><span class="tl-circle">3</span><span class="tl-label">IA</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="clientIdSection" data-tl-label="ID Docs"><span class="tl-circle">4</span><span class="tl-label">ID Docs</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="signaturesSection" data-tl-label="Signatures"><span class="tl-circle">5</span><span class="tl-label">Signatures</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="checklistCard" data-tl-label="Checklist"><span class="tl-circle">6</span><span class="tl-label">Checklist</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">7</span><span class="tl-label">Ready</span></button></li>
+      </ol>
+    </nav>
+
     <div class="grid">
-      <main>
         <section class="card appointment-summary-card full" id="appointmentSummaryCard">
           <div class="summary-card-header">
             <span>Appointment Summary</span>
-            <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+            <div class="summary-card-header-actions">
+              <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+              <button type="button" class="btn small summary-disclosure" id="summaryDisclosure" aria-expanded="false" aria-controls="summaryDetails">Show details</button>
+            </div>
+          </div>
+          <div class="summary-details" id="summaryDetails">
+          <div class="progress-badges">
+            <span id="appointmentBadge" class="badge badge-incomplete">Incomplete</span>
+            <span id="eoiBadge" class="badge badge-not-required">Not Required</span>
+            <span id="iaBadge" class="badge badge-not-required">Not Required</span>
+            <span id="photoBadge" class="badge badge-incomplete">Incomplete</span>
+            <span id="signatureBadge" class="badge badge-incomplete">Incomplete</span>
           </div>
           <div class="summary-card-body">
             <div class="summary-card-col">
@@ -165,10 +244,46 @@
               <span class="summary-card-item" data-target="signaturesSection"><span id="label-signatures">0 / 2 Captured</span></span>
             </div>
           </div>
+          <!-- Zoom summary (shown when appointmentMode === 'zoom') -->
+          <div class="summary-card-body zoom-only" id="zoomSummaryBody">
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">APPOINTMENT</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomApptType"></span>Zoom / Online</span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomStaff"></span><span id="zoomSumStaff">Staff</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">CLIENTS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomClient1"></span><span id="zoomSumClient1">Client 1</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomClient2"></span><span id="zoomSumClient2">Client 2</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">RECOMMENDATIONS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomBuilder"></span><span id="zoomSumBuilder">Builder</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomDeveloper"></span><span id="zoomSumDeveloper">Developer</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PROFESSIONALS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomBroker"></span><span id="zoomSumBroker">Broker</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomConveyancer"></span><span id="zoomSumConveyancer">Conveyancer</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">PROPERTY</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomProperty"></span><span id="zoomSumProperty">Property</span></span>
+            </div>
+            <div class="summary-card-col">
+              <div class="summary-card-col-title">OUTPUTS</div>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomEOI"></span><span id="zoomSumEOI">EOI</span></span>
+              <span class="summary-card-item"><span class="summary-card-icon circle" id="indicator-zoomIA"></span><span id="zoomSumIA">IA</span></span>
+            </div>
+          </div>
+          </div>
         </section>
 
-        <section class="card">
+      <div class="workspaceContent">
+      <main>
+        <section class="card" id="appointmentInfoSection">
           <h2>1. Appointment & client information</h2>
+          <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
             <div class="fields three">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
@@ -196,14 +311,267 @@
               <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com"></div>
             </div>
           </div>
-          <div class="toggleRow" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
+          <div class="toggleRow in-person-only" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeEOI"> Include EOI form</label>
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeIA"> Include IA form</label>
           </div>
         </section>
 
-        <section class="card" id="eoiDetailsCard">
+        <!-- ZOOM SECTION 2: Discovery Conversation ================================= -->
+        <section class="card zoom-only" id="firstConsultSection" data-collapsible="true">
+          <h2>Discovery Conversation</h2>
+          <span class="section-summary hidden" id="sectionSummary-firstConsultSection"></span>
+          <p class="hint">Understand the client's goals and capture key discussion points.</p>
+          <div class="fields two" style="margin-bottom:12px">
+            <div id="zoomFirstConsultTemplateControl">
+              <label for="zoomFirstConsultTemplate">First Consult Template</label>
+              <select id="zoomFirstConsultTemplate">
+                <option value="brisbane">Brisbane</option>
+                <option value="perth">Perth</option>
+              </select>
+            </div>
+          </div>
+          <div class="subsection">
+            <h3>Client Goals</h3>
+            <p class="hint">Why are they looking at property? Select their primary objective.</p>
+            <div class="optionGrid">
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="investment" id="fcGoalInvestment"> Investment</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="home" id="fcGoalHome"> Home</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="smsf" id="fcGoalSmsf"> SMSF</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="wealth" id="fcGoalWealth"> Wealth Creation</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="retirement" id="fcGoalRetirement"> Retirement</label>
+              <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label for="fcPreferredSuburbs">Preferred Suburbs</label>
+              <input id="fcPreferredSuburbs" type="text" placeholder="Preferred suburbs or areas">
+            </div>
+          </div>
+          <div class="subsection">
+            <h3>Consultation Notes</h3>
+            <label for="firstConsultNotes">Notes</label>
+            <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Capture key discussion points and client objectives from the initial discovery meeting."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Additional Notes</h3>
+            <label for="fcAdditionalNotes">Additional notes</label>
+            <textarea id="fcAdditionalNotes" class="zoom-notes" placeholder="Any additional observations or follow-up items."></textarea>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 3: Financial Position ===================================== -->
+        <section class="card zoom-only" id="fcFinancial" data-collapsible="true">
+          <h2>Financial Position</h2>
+          <span class="section-summary hidden" id="sectionSummary-fcFinancial"></span>
+          <p class="hint">Current financial position — enter approximate figures.</p>
+          <div class="fields two zoom-fin-grid">
+            <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
+            <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
+            <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
+            <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
+            <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
+            <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
+            <div><label for="fcMinBudget">Min Budget</label><input id="fcMinBudget" type="text" placeholder="$"></div>
+            <div><label for="fcMaxBudget">Max Budget</label><input id="fcMaxBudget" type="text" placeholder="$"></div>
+          </div>
+	        </section>
+
+	        <!-- ZOOM SECTION 5: Professional Team ====================================== -->
+        <section class="card zoom-only" id="crProfessionalTeam" data-collapsible="true">
+          <h2>Professional Team</h2>
+          <span class="section-summary hidden" id="sectionSummary-crProfessionalTeam"></span>
+          <p class="hint">Select preferred partners for this appointment.</p>
+          <div class="fields two">
+            <div id="clientReviewBuilderControl">
+              <label for="clientReviewBuilder">Recommended Builder</label>
+              <select id="clientReviewBuilder"><option value="">Select builder</option></select>
+            </div>
+            <div id="clientReviewDeveloperControl">
+              <label for="clientReviewDeveloper">Recommended Developer</label>
+              <select id="clientReviewDeveloper"><option value="">Select developer</option></select>
+            </div>
+          </div>
+          <div class="fields two" style="margin-top:16px">
+            <div id="clientReviewBrokerControl">
+              <label for="clientReviewBroker">Recommended Finance Broker</label>
+              <select id="clientReviewBroker"><option value="">Select broker</option></select>
+            </div>
+            <div id="clientReviewConveyancerControl">
+              <label for="clientReviewConveyancer">Recommended Conveyancer</label>
+              <select id="clientReviewConveyancer"><option value="">Select conveyancer</option></select>
+            </div>
+          </div>
+          <div class="subsection" style="margin-top:16px">
+            <h3>Recommended Property</h3>
+            <div class="fields two">
+              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 6: Next Actions =========================================== -->
+        <section class="card zoom-only" id="crNextActions" data-collapsible="true">
+          <h2>Strategy & Next Actions</h2>
+          <span class="section-summary hidden" id="sectionSummary-crNextActions"></span>
+          <p class="hint">Document the recommended strategy, timeline, and next steps for this client.</p>
+          <div class="subsection">
+            <h3>Recommended Strategy</h3>
+            <label for="clientReviewStrategy">Strategy details</label>
+            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Next Steps</h3>
+            <label for="clientReviewNextActions">Next steps</label>
+            <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
+          </div>
+          <div class="subsection">
+            <h3>Timeline & Schedule</h3>
+            <div class="fields two">
+              <div id="clientReviewTimelineControl">
+                <label for="clientReviewTimeline">Estimated Timeline</label>
+                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
+              </div>
+              <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date"></div>
+              <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes"></div>
+              <div><label for="crInspections">Property Inspections</label><input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 7: Consultation Workspace ==================================== -->
+        <section class="card zoom-only" id="zoomWorkspaceSection" data-collapsible="true">
+          <div class="workspace-header">
+            <h2>Consultation Workspace</h2>
+          </div>
+          <span class="section-summary hidden" id="sectionSummary-zoomWorkspaceSection"></span>
+          <div class="workspace-toolbar" role="toolbar" aria-label="Whiteboard tools">
+            <button class="wb-tool-btn wb-active" id="wbDrawBtn" aria-label="Draw tool" title="Draw">
+              <span class="wb-tool-icon">✏</span>
+              <span class="wb-tool-label">Draw</span>
+            </button>
+            <button class="wb-tool-btn" disabled aria-label="Text tool" title="Coming in Phase 7C">
+              <span class="wb-tool-icon">📝</span>
+              <span class="wb-tool-label">Text</span>
+            </button>
+            <button class="wb-tool-btn" disabled aria-label="Shapes tool" title="Coming in Phase 7C">
+              <span class="wb-tool-icon">⬜</span>
+              <span class="wb-tool-label">Shapes</span>
+            </button>
+            <button class="wb-tool-btn" id="wbTemplateBtn" aria-label="Sketch templates" title="Open sketch templates">
+              <span class="wb-tool-icon">📐</span>
+              <span class="wb-tool-label">Templates</span>
+            </button>
+            <span class="wb-separator" role="separator"></span>
+            <button class="wb-tool-btn" id="wbUndoBtn" aria-label="Undo" title="Undo last stroke">
+              <span class="wb-tool-icon">↶</span>
+              <span class="wb-tool-label">Undo</span>
+            </button>
+            <button class="wb-tool-btn" id="wbRedoBtn" aria-label="Redo" title="Redo last undone stroke">
+              <span class="wb-tool-icon">↷</span>
+              <span class="wb-tool-label">Redo</span>
+            </button>
+            <span class="wb-separator" role="separator"></span>
+            <button class="wb-tool-btn" id="wbEraserBtn" aria-label="Eraser tool" title="Eraser">
+              <span class="wb-tool-icon">🧹</span>
+              <span class="wb-tool-label">Eraser</span>
+            </button>
+            <button class="wb-tool-btn" id="wbClearBtn" aria-label="Clear page" title="Clear current page">
+              <span class="wb-tool-icon">🗑</span>
+              <span class="wb-tool-label">Clear</span>
+            </button>
+            <span class="wb-separator" role="separator"></span>
+            <button class="wb-tool-btn" id="wbNewPageBtn" aria-label="New page" title="Add a new whiteboard page">
+              <span class="wb-tool-icon">➕</span>
+              <span class="wb-tool-label">New Page</span>
+            </button>
+            <button class="wb-tool-btn" id="wbSavePageBtn" aria-label="Save page" title="Save current page to saved pages list">
+              <span class="wb-tool-icon">💾</span>
+              <span class="wb-tool-label">Save Page</span>
+            </button>
+            <span class="wb-separator" role="separator"></span>
+            <span class="wb-page-counter" id="wbPageCounter">Page 1 / 1</span>
+          </div>
+          <div class="wb-templates-picker" id="wbTemplatePicker" role="dialog" aria-label="Choose a sketch template" hidden>
+            <div class="wb-picker-header">
+              <span>Sketch Templates</span>
+              <button class="wb-picker-close" id="wbPickerClose" aria-label="Close template picker">✕</button>
+            </div>
+            <div class="wb-picker-grid">
+              <button class="wb-template-opt" data-template="borrowing">
+                <span class="wb-tpl-icon">💰</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Borrowing Capacity</span><span class="wb-tpl-desc">Calculate borrowing capacity</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="cashflow">
+                <span class="wb-tpl-icon">📊</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Cashflow</span><span class="wb-tpl-desc">Map income and expenses</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="smsf">
+                <span class="wb-tpl-icon">🏛️</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">SMSF Structure</span><span class="wb-tpl-desc">SMSF entity diagram</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="trust">
+                <span class="wb-tpl-icon">📜</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Trust Structure</span><span class="wb-tpl-desc">Trust entity diagram</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="propertyJourney">
+                <span class="wb-tpl-icon">🏡</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Property Journey</span><span class="wb-tpl-desc">Purchase timeline</span></span>
+              </button>
+              <button class="wb-template-opt" data-template="blank">
+                <span class="wb-tpl-icon">📄</span>
+                <span class="wb-tpl-info"><span class="wb-tpl-name">Custom Blank Page</span><span class="wb-tpl-desc">Clean whiteboard page</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace-canvas-wrap" role="region" aria-label="Whiteboard workspace">
+            <canvas id="whiteboardCanvas"></canvas>
+          </div>
+
+          <div class="workspace-saved-pages" role="region" aria-label="Saved whiteboard pages">
+            <h3 class="workspace-saved-title">Saved Pages</h3>
+            <div id="wbSavedPagesContainer">
+              <p class="workspace-empty" id="wbSavedEmpty">No whiteboard pages created. Future pages will appear here.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 8: Appointment Outputs ==================================== -->
+        <section class="card zoom-only" id="zoomOutputsSection" data-collapsible="true">
+          <h2>Appointment Outputs</h2>
+          <span class="section-summary hidden" id="sectionSummary-zoomOutputsSection"></span>
+          <p class="hint">Select which documents to include when generating the appointment PDF and package.</p>
+          <div class="toggleRow zoom-checkboxes">
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeLaVidaEOI"> Include La Vida EOI</label>
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeIA"> Include IA</label>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION: Package Preview ======================================== -->
+        <section class="card zoom-only" id="zoomPackagePreview" data-collapsible="true">
+          <h2>Package Preview</h2>
+          <p class="hint">Estimated document and package size based on current selections.</p>
+          <div id="packagePreviewContent">
+            <p class="preview-placeholder">Fill in the form to see a live preview of your package.</p>
+          </div>
+        </section>
+
+        <!-- ZOOM SECTION 5: Attachments ========================================= -->
+        <section class="card zoom-only" id="zoomAttachmentsSection" data-collapsible="true">
+          <h2>5. Attachments</h2>
+          <p class="hint">Generated documents will appear here once available.</p>
+          <div class="fields two" style="margin-top:12px">
+            <div class="attachment-placeholder"><div class="attachment-label">First Consult PDF</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">Client Review PDF</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">EOI</div><div class="attachment-status">Not generated yet</div></div>
+            <div class="attachment-placeholder"><div class="attachment-label">IA</div><div class="attachment-status">Not generated yet</div></div>
+          </div>
+        </section>
+
+        <section class="card in-person-only" id="eoiDetailsCard" data-collapsible="true">
           <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <span class="section-summary hidden" id="sectionSummary-eoiDetailsCard"></span>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 details are filled from the appointment details. Use this section as the source for sale/property details.</p>
 
           <div id="eoiFormContent">
@@ -286,10 +654,10 @@
                 <div><label for="eoiPriceHouse">House Price</label><input id="eoiPriceHouse" type="text" placeholder="$"></div>
                 <div><label for="eoiPriceTotal">H/L Total</label><input id="eoiPriceTotal" type="text" placeholder="$"></div>
               </div>
-              <div class="fields two" style="margin-top:12px">
+              <div class="fields two sale-finance-grid" style="margin-top:12px">
                 <div>
-                  <label for="eoiFinancePercent">Percentage of Finance</label>
-                  <select id="eoiFinancePercent">
+                  <label for="client1FinancePercentage">Client 1 Percentage of Finance</label>
+                  <select id="client1FinancePercentage">
                     <option value="">Select %</option>
                     <option value="10%">10%</option>
                     <option value="20%">20%</option>
@@ -302,7 +670,24 @@
                     <option value="90%">90%</option>
                   </select>
                 </div>
-                <div class="fields two" style="gap:12px; margin: 0; padding: 0">
+                <div id="client2FinancePercentageField">
+                  <label for="client2FinancePercentage">Client 2 Percentage of Finance</label>
+                  <select id="client2FinancePercentage">
+                    <option value="">Select %</option>
+                    <option value="10%">10%</option>
+                    <option value="20%">20%</option>
+                    <option value="30%">30%</option>
+                    <option value="40%">40%</option>
+                    <option value="50%">50%</option>
+                    <option value="60%">60%</option>
+                    <option value="70%">70%</option>
+                    <option value="80%">80%</option>
+                    <option value="90%">90%</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sale-schedule-grid" id="saleDetailsSchedule">
+                <div class="in-person-next-appointment" id="inPersonNextAppointmentGroup" role="group" aria-label="Next Appointment">
                   <div><label for="eoiNextApptDate">Next Appointment Date</label><input id="eoiNextApptDate" type="date" autocomplete="off"></div>
                   <div>
                     <label for="eoiNextApptTime">Next Appointment Time</label>
@@ -332,7 +717,14 @@
                     </select>
                   </div>
                 </div>
+                <div class="contract-due-date-section" id="contractDueDateField" role="group" aria-labelledby="contractDueDateLabel">
+                  <label id="contractDueDateLabel" for="contractDueDate">Contract Due Date</label>
+                  <input id="contractDueDate" type="date" aria-describedby="contractDueDateHint">
+                  <label class="contract-due-tbc" for="contractDueDateTbc"><input id="contractDueDateTbc" type="checkbox"> <span>To Be Confirmed</span></label>
+                  <span class="hint" id="contractDueDateHint">Choose a date or mark it as To Be Confirmed before final generation.</span>
+                </div>
               </div>
+              <input type="hidden" id="eoiFinancePercent" value="">
               <!-- Keep hidden/legacy field for draft compatibility -->
               <input type="hidden" id="eoiNextAppointment" value="">
               <input type="hidden" id="eoiIdAttached" value="">
@@ -373,8 +765,9 @@
           </div>
         </section>
 
-        <section class="card" id="iaDetailsCard">
+        <section class="card in-person-only" id="iaDetailsCard" data-collapsible="true">
           <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
+          <span class="section-summary hidden" id="sectionSummary-iaDetailsCard"></span>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
           <div id="iaFormContent">
             <div class="fields">
@@ -421,8 +814,9 @@
           </div>
         </section>
 
-        <section class="card" id="clientIdSection">
+        <section class="card in-person-only" id="clientIdSection">
           <h2>4. Client ID Documents</h2>
+          <span class="section-summary hidden" id="sectionSummary-clientIdSection"></span>
           <p class="hint">Tap a box to take a photo or choose from the gallery. Attached images are automatically added as full-page ID/photo pages in the final PDF.</p>
           <div class="photos" id="photos"></div>
 
@@ -453,8 +847,9 @@
           </div>
         </section>
 
-        <section class="card" id="signaturesSection">
+        <section class="card in-person-only" id="signaturesSection">
           <h2>5. Signatures & Notes</h2>
+          <span class="section-summary hidden" id="sectionSummary-signaturesSection"></span>
           <p class="hint">Capture final signatures and add any additional notes for this appointment.</p>
           
           <div style="margin-bottom:12px"><label for="notes">Additional Notes</label><textarea id="notes" placeholder="Any appointment notes, exceptions, or next steps..."></textarea></div>
@@ -484,7 +879,7 @@
           </div>
         </section>
 
-        <section class="card">
+        <section class="card in-person-only" id="checklistCard">
           <h2>6. Pre-departure Checklist / Final Reminder</h2>
           <p class="hint">Verify that all required steps have been completed before generating the final PDF.</p>
           <div class="checklist">
@@ -493,14 +888,21 @@
             <label class="check"><input id="item3" type="checkbox"><span>IA form details are completed and the correct Perth/Brisbane template is selected, if required</span></label>
             <label class="check"><input id="item4" type="checkbox"><span>Clear photos of all client ID documents have been taken</span></label>
           </div>
-          <p class="legal" style="margin-top:20px">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | <span data-app-version-label>Version 1.6.5</span></p>
+          <p class="legal" style="margin-top:20px">Privacy note: this file does not upload client details or images anywhere. The PDF is generated on the staff member's device. Store and send the PDF according to your company's client data and ID-document handling policy. | <span data-app-version-label>Version 1.6.2</span></p>
         </section>
       </main>
 
       <aside class="previewWrap">
         <section class="card">
-          <h2>Output preview</h2>
-          <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.</p>
+          <div class="previewHeading">
+            <h2>Output preview</h2>
+            <button type="button" class="btn toolbar-btn" id="previewTop">↻ Refresh Preview</button>
+          </div>
+          <p class="hint">Preview of the first output page. The staff checklist is not included in the generated PDF.
+            <label class="region-toggle-label" style="display:block;margin-top:4px">
+              <input type="checkbox" id="showFieldRegions"> Show field regions
+            </label>
+          </p>
           <div class="toggleRow" style="justify-content:space-between;margin-bottom:10px">
             <button type="button" class="btn small" id="previewPrev">Previous</button>
             <span class="hint" id="previewPageLabel" style="margin:0">No output pages</span>
@@ -538,9 +940,14 @@
               <ul id="sumMissingList" class="missingList"></ul>
             </div>
           </div>
-          <div class="paper" id="previewPaper" style="display:none">Click “Refresh Preview”</div>
+          <div class="paper" id="previewPaper" style="display:none">
+            Click "Refresh Preview"
+            <canvas id="previewOverlay" aria-hidden="true"></canvas>
+          </div>
+          <div class="mapped-fields-list hidden" id="mappedFieldsList" role="list" aria-label="Fields on this preview page"></div>
         </section>
       </aside>
+      </div>
     </div>
   </div>
 
@@ -579,10 +986,10 @@
           <div class="fields">
             <div>
               <label for="staffMode">Staff Member field type</label>
-              <select id="staffMode">
-                <option value="text">Free-text input</option>
+              <select id="staffMode" disabled aria-describedby="staffModeHint">
                 <option value="select">Dropdown/select</option>
               </select>
+              <p class="hint" id="staffModeHint">Appointment staff must be selected from configured active staff members.</p>
               <div class="adminList" id="staffOptionsList"></div>
               <div class="adminActions">
                 <button type="button" class="btn small" id="addStaffOption">Add option</button>
@@ -603,7 +1010,6 @@
             <div>
               <label for="solicitorMode">Solicitor / Conveyancer field type</label>
               <select id="solicitorMode">
-                <option value="text">Free-text input</option>
                 <option value="select">Dropdown/select</option>
               </select>
               <div class="adminList" id="solicitorOptionsList"></div>
@@ -664,10 +1070,41 @@
         </div>
       </div>
       <div class="settingsVersion" style="margin-top:18px;text-align:right;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px">
-        <span data-app-version-label>Version 1.6.5</span>
+        <span data-app-version-label>Version 1.6.2</span>
       </div>
     </section>
   </div>
+
+  <section class="appointment-package-ready hidden" id="appointmentPackageReady" aria-labelledby="appointmentPackageReadyTitle">
+    <div class="package-ready-heading">
+      <div>
+        <h2 id="appointmentPackageReadyTitle">Appointment Package Ready</h2>
+        <p id="appointmentPackageReadyDescription">Your combined PDF and document ZIP are ready.</p>
+      </div>
+      <p class="package-ready-notice" id="packageReadyNotice" role="status" aria-live="polite"></p>
+    </div>
+    <dl class="package-ready-files">
+      <div><dt>Combined PDF</dt><dd id="packageReadyPdfName"></dd></div>
+      <div><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
+    </dl>
+    <div class="package-ready-actions">
+      <button type="button" class="btn primary" id="downloadPackage" disabled>Download Package</button>
+      <button type="button" class="btn" id="saveCombinedPdf" disabled>Save Combined PDF</button>
+      <button type="button" class="btn" id="savePackageZip" disabled>Save ZIP</button>
+      <button type="button" class="btn" id="preparePackageEmail" disabled>Prepare Email</button>
+    </div>
+    <div class="package-download-status" id="packageDownloadStatus" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <strong id="packageDownloadStatusTitle"></strong>
+      <span id="packageDownloadStatusInstruction"></span>
+    </div>
+    <button type="button" class="legacy-output-action" id="sharePackage" disabled hidden tabindex="-1" aria-hidden="true"></button>
+  </section>
+
+  <section class="hidden" id="shareEmailFallback" aria-hidden="true">
+    <span id="shareEmailFallbackTitle"></span>
+    <a id="openPreparedEmail" href="#" hidden tabindex="-1" aria-hidden="true"></a>
+    <button type="button" id="dismissPreparedEmail" hidden disabled tabindex="-1" aria-hidden="true"></button>
+  </section>
 
   <div class="footerBar">
     <div class="footerInner">
@@ -679,16 +1116,16 @@
         <button class="btn" id="saveDraftBottom" title="Save Draft">
           <span class="btn-icon">💾</span><span class="btn-text">Save Draft</span>
         </button>
-        <button class="btn dark" id="generateBottom" title="Generate PDF">
-          <span class="btn-icon">⚡</span><span class="btn-text">Generate PDF</span>
+        <button class="btn dark" id="generateBottom" title="Generate Appointment Package">
+          <span class="btn-icon">⚡</span><span class="btn-text">Generate Appointment Package</span>
         </button>
-        <button class="btn" id="downloadBottom" disabled title="Download PDF">
+        <button class="btn legacy-output-action" id="downloadBottom" disabled title="Download PDF">
           <span class="btn-icon">📥</span><span class="btn-text">Download PDF</span>
         </button>
-        <button class="btn" id="downloadPackageBottom" disabled title="Download Package">
+        <button class="btn legacy-output-action" id="downloadPackageBottom" disabled title="Download Package">
           <span class="btn-icon">📦</span><span class="btn-text">Download Package</span>
         </button>
-        <button class="btn" id="shareBottom" disabled title="Share PDF">
+        <button class="btn legacy-output-action" id="shareBottom" disabled title="Share PDF">
           <span class="btn-icon">📤</span><span class="btn-text">Share PDF</span>
         </button>
       </div>
@@ -696,7 +1133,8 @@
   </div>
   <div class="toast" id="toast"></div>
 
-<script src="/js/app.js"></script>
+<script src="/js/db.js"></script>
+  <script src="/js/app.js"></script>
 
 <script>
   // PWA offline support. The service worker caches this app so staff can open it without internet after their first online visit.

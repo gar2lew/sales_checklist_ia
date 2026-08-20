@@ -11,6 +11,8 @@ playwright-report/
 test-smoke/*.png
 test-smoke/*.pdf
 test-smoke/*.zip
+tmp/pdfs/
+/.tmp/docs-user-guide/
 
 # Local design/reference artefacts
 Landing Page DRAFT.png

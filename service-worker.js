@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v1.7.0';
+const CACHE_VERSION = 'v2.7.0-alpha.22';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -13,10 +13,28 @@ const APP_SHELL = [
   '/js/app.js',
   '/lavida-template-page-1.jpg',
   '/lavida-template-page-2.jpg',
+  '/templates/ia-perth-clean.jpg',
+  '/templates/ia-brisbane-clean.jpg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/asg_logo.png',
-  '/icons/asg_logo_white.png'
+  '/icons/landing.png',
+  '/templates/rendered/first-consult-brisbane-page-1.jpg',
+  '/templates/rendered/first-consult-brisbane-page-2.jpg',
+  '/templates/rendered/first-consult-brisbane-page-3.jpg',
+  '/templates/rendered/first-consult-brisbane-page-4.jpg',
+  '/templates/rendered/first-consult-brisbane-page-5.jpg',
+  '/templates/rendered/first-consult-brisbane-page-6.jpg',
+  '/templates/rendered/first-consult-perth-page-1.jpg',
+  '/templates/rendered/first-consult-perth-page-2.jpg',
+  '/templates/rendered/first-consult-perth-page-3.jpg',
+  '/templates/rendered/first-consult-perth-page-4.jpg',
+  '/templates/rendered/first-consult-perth-page-5.jpg',
+  '/templates/rendered/first-consult-perth-page-6.jpg',
+  '/templates/rendered/client-review-page-1.jpg',
+  '/templates/rendered/client-review-page-2.jpg',
+  '/templates/rendered/client-review-page-3.jpg',
+  '/templates/rendered/client-review-page-4.jpg'
 ];
 
 self.addEventListener('install', event => {
@@ -73,3 +91,28 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'GET_OFFLINE_READINESS') {
+    caches.open(CACHE_NAME).then(cache => {
+      return Promise.all(APP_SHELL.map(url => cache.match(url).then(r => ({ url, cached: !!r }))));
+    }).then(results => {
+      const missing = results.filter(r => !r.cached).map(r => r.url);
+      event.ports[0].postMessage({
+        type: 'OFFLINE_READINESS',
+        cacheVersion: CACHE_VERSION,
+        ready: missing.length === 0,
+        missingAssets: missing
+      });
+    }).catch(() => {
+      event.ports[0].postMessage({
+        type: 'OFFLINE_READINESS',
+        cacheVersion: CACHE_VERSION,
+        ready: false,
+        missingAssets: [],
+        error: 'Could not check cache'
+      });
+    });
+  }
+});
+

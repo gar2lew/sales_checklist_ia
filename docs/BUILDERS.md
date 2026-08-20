@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `EOI_BUILDERS` registry (defined in Section A of `index.html`) is the extension point for EOI template rendering. Each builder is an object with a standard interface. `outputPlan()` and `drawOutputPage()` dispatch through this registry, so adding a new builder requires **zero changes** to the PDF pipeline.
+The `EOI_BUILDERS` registry (defined in Section A of `js/app.js`) is the extension point for EOI template rendering. Each builder is an object with a standard interface. `outputPlan()` and `drawOutputPage()` dispatch through this registry, so adding a new builder requires **zero changes** to the PDF pipeline.
+
+In zoom mode, the same `EOI_BUILDERS` registry is used when `zoomIncludeStandardEOI` or `zoomIncludeLaVidaEOI` is checked. The zoom dispatch in `drawOutputPage()` creates a fresh builder reference per page and passes `eoiSubIndex` as the page index.
 
 ## Registry structure
 
@@ -37,18 +39,32 @@ const EOI_BUILDERS = {
 
 ### How the registry is used
 
-**In `outputPlan()`:**
+**In `outputPlan()` (in-person):**
 ```javascript
 const builder = EOI_BUILDERS[eoiTemplate] || EOI_BUILDERS.standard;
 const eoiPageCount = includeEOI ? builder.getPages() : 0;
 ```
 
-**In `drawOutputPage()`:**
+**In `drawOutputPage()` (in-person):**
 ```javascript
 const builder = EOI_BUILDERS[plan.eoiTemplate] || EOI_BUILDERS.standard;
 if (builder.ensureImages) await builder.ensureImages();
 return builder.drawPage(index - offset, index + 1, totalPages, scale);
 ```
+
+**In `drawOutputPage()` (zoom dispatch):**
+```javascript
+if(pageDef.id === 'eoi'){
+  await ensurePageLogo();
+  var bl = pageDef.builder || EOI_BUILDERS.standard;
+  if(bl.ensureImages) await bl.ensureImages();
+  return bl.drawPage(pageDef.eoiSubIndex, index + 1, totalPages, scale);
+}
+```
+
+The zoom dispatch stores a direct reference to the builder object in each page definition (`pageDef.builder`), bypassing the template string lookup used in in-person mode. This allows both Standard and La Vida EOI to be included independently in the same compiled booklet.
+
+The `eoiSubIndex` field tracks which sub-page within a multi-page EOI is being rendered (0 for first page, 1 for second page of La Vida).
 
 ## How Standard EOI works
 
@@ -140,7 +156,7 @@ Generate PDFs with the new builder selected. Verify:
 
 ## Where overlay coordinates live
 
-- **La Vida Homes:** `laVidaFieldRects` object (line ~3189). Each entry maps a field name to `[x1, y1, x2, y2]` source-image coordinates. Converted to canvas coordinates by `pdfRectToCanvas()`.
+- **La Vida Homes:** `laVidaFieldRects` object (Section M). Each entry maps a field name to `[x1, y1, x2, y2]` source-image coordinates. Converted to canvas coordinates by `pdfRectToCanvas()`.
 - **IA forms:** Coordinates are inline in `drawIAPage()` as arguments to `whiteOut()`, `drawTemplateLineValue()`, `overlayText()`, and `overlayFitText()`.
 
 ## Common risks when adding templates
@@ -151,3 +167,4 @@ Generate PDFs with the new builder selected. Verify:
 4. **Font availability** — All text uses system fonts (Arial). No custom fonts are embedded in PDFs.
 5. **Colour space** — Template images are JPEG. Ensure sufficient resolution for print (minimum 150 DPI at A4).
 6. **Page count mismatch** — If `getPages()` returns the wrong count, `drawOutputPage()` will skip pages or try to draw non-existent pages.
+7. **Zoom mode EOI dispatch** — When adding a new EOI builder used in zoom mode, verify the `zoomOutputPlan()` correctly creates one `pages` entry per sub-page (not per builder). Multi-page builders must push multiple entries with sequential `eoiSubIndex` values.
