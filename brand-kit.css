@@ -1,0 +1,619 @@
+/* ==========================================================================
+   Amplify Solutions Group — Premium Brand Kit
+   Portable design system for consistent UI across all apps
+   Version: 1.0.0
+   ==========================================================================
+   
+   USAGE:
+   1. Import this file: <link rel="stylesheet" href="brand-kit.css">
+   2. Apply classes to your HTML elements
+   3. Override --brand-* variables per-project if needed
+   
+   ========================================================================== */
+
+
+/* ── 1. Design Tokens ────────────────────────────────────────────────────── */
+
+:root {
+  /* Navy / Dark */
+  --brand-navy:       #071a33;
+  --brand-navy-soft:  #102744;
+  --brand-ink:        #172033;
+
+  /* Gold / Accent */
+  --brand-gold:       #c9a45c;
+  --brand-gold-hover: #d4b36f;
+  --brand-gold-dark:  #b8933a;
+  --brand-gold-soft:  #eadbb6;
+
+  /* Cream / Background */
+  --brand-cream:      #f3eee5;
+  --brand-ivory:      #fffdf8;
+  --brand-warm-white: #fdf9f1;
+
+  /* Borders */
+  --brand-line:       #ddd4c5;
+  --brand-line-soft:  #e5ddd0;
+
+  /* Text */
+  --brand-text:       #172033;
+  --brand-text-muted: #687386;
+  --brand-text-light: #546174;
+
+  /* Status */
+  --brand-success:    #2d8c5a;
+  --brand-success-bg: #edf7f1;
+  --brand-danger:     #b42318;
+  --brand-danger-bg:  #fff0ed;
+
+  /* Shadows */
+  --brand-shadow-sm:  0 2px 8px rgba(7,26,51,.04);
+  --brand-shadow-md:  0 10px 30px rgba(7,26,51,.065), 0 2px 8px rgba(7,26,51,.035);
+  --brand-shadow-lg:  0 12px 32px rgba(7,26,51,.1);
+  --brand-shadow-btn: 0 4px 14px rgba(201,164,92,.22);
+
+  /* Radius */
+  --brand-radius-sm:  8px;
+  --brand-radius-md:  12px;
+  --brand-radius-lg:  16px;
+  --brand-radius-xl:  24px;
+
+  /* Typography */
+  --brand-font-body:    'Inter', Arial, Helvetica, sans-serif;
+  --brand-font-heading: Georgia, 'Times New Roman', serif;
+}
+
+
+/* ── 2. Base Reset ───────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--brand-font-body);
+  color: var(--brand-text);
+  background-color: var(--brand-cream);
+  background-image: linear-gradient(180deg, var(--brand-cream) 0%, var(--brand-ivory) 44%, var(--brand-cream) 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+
+/* ── 3. Typography ───────────────────────────────────────────────────────── */
+
+.brand-heading {
+  font-family: var(--brand-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--brand-navy);
+  line-height: 1.25;
+}
+
+h1, .brand-heading-xl {
+  font-size: clamp(28px, 3vw, 40px);
+  font-family: var(--brand-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--brand-navy);
+  line-height: 1.2;
+}
+
+h2, .brand-heading-lg {
+  font-size: clamp(19px, 1.5vw, 23px);
+  font-family: var(--brand-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--brand-navy);
+  line-height: 1.3;
+}
+
+h3, .brand-heading-md {
+  font-size: 15px;
+  font-family: var(--brand-font-heading);
+  font-weight: 600;
+  color: var(--brand-navy);
+  line-height: 1.35;
+}
+
+.brand-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #24344a;
+}
+
+.brand-hint {
+  font-size: 13px;
+  color: var(--brand-text-muted);
+  line-height: 1.4;
+}
+
+.brand-legal {
+  font-size: 12px;
+  color: var(--brand-text-muted);
+  line-height: 1.45;
+}
+
+
+/* ── 4. Buttons ──────────────────────────────────────────────────────────── */
+
+.brand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  border: none;
+  border-radius: var(--brand-radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  min-height: 44px;
+}
+
+.brand-btn:hover {
+  transform: translateY(-1px);
+}
+
+.brand-btn:active {
+  transform: translateY(0);
+}
+
+.brand-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Primary — gold gradient */
+.brand-btn-primary {
+  background: linear-gradient(135deg, var(--brand-gold) 0%, var(--brand-gold-dark) 100%);
+  color: #07101d;
+  box-shadow: var(--brand-shadow-btn);
+}
+
+.brand-btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-gold-hover) 0%, var(--brand-gold) 100%);
+}
+
+/* Dark — navy */
+.brand-btn-dark {
+  background: var(--brand-navy);
+  color: #fff;
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.brand-btn-dark:hover {
+  background: var(--brand-navy-soft);
+}
+
+/* Ghost — transparent with border */
+.brand-btn-ghost {
+  background: transparent;
+  color: var(--brand-navy);
+  border: 1px solid var(--brand-line);
+}
+
+.brand-btn-ghost:hover {
+  background: rgba(201,164,92,.08);
+  border-color: rgba(201,164,92,.4);
+}
+
+/* Danger */
+.brand-btn-danger {
+  background: var(--brand-danger-bg);
+  color: #9f2d24;
+  border: 1px solid #f1c7c1;
+  box-shadow: none;
+}
+
+.brand-btn-danger:hover {
+  background: #fee4e2;
+}
+
+/* Small */
+.brand-btn-sm {
+  padding: 8px 12px;
+  font-size: 13px;
+  min-height: 36px;
+}
+
+
+/* ── 5. Cards ────────────────────────────────────────────────────────────── */
+
+.brand-card {
+  background: var(--brand-ivory);
+  border: 1px solid var(--brand-line);
+  border-top: 3px solid var(--brand-gold);
+  border-radius: var(--brand-radius-lg);
+  box-shadow: var(--brand-shadow-md);
+  padding: clamp(17px, 1.7vw, 24px);
+}
+
+.brand-card h2 {
+  color: var(--brand-navy);
+  font-family: var(--brand-font-heading);
+  font-size: clamp(19px, 1.5vw, 23px);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(201,164,92,.2);
+}
+
+/* Card without top accent */
+.brand-card-flat {
+  border-top: none;
+}
+
+/* Summary card — gold left border */
+.brand-card-summary {
+  border-left: 4px solid var(--brand-gold);
+  border-top: none;
+  padding: 14px 18px;
+}
+
+.brand-card-summary .brand-card-header {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #9a762f;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(201,164,92,.3);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+
+/* ── 6. Form Inputs ──────────────────────────────────────────────────────── */
+
+.brand-input {
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--brand-radius-md);
+  background: #fff;
+  color: var(--brand-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: inset 0 1px 2px rgba(7,26,51,.025);
+  min-height: 44px;
+}
+
+.brand-input:focus {
+  border-color: #b99246;
+  box-shadow: 0 0 0 4px rgba(201,164,92,.16);
+}
+
+.brand-input::placeholder {
+  color: #9da3ae;
+}
+
+textarea.brand-input {
+  min-height: 98px;
+  resize: vertical;
+}
+
+select.brand-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23687386' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.brand-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #24344a;
+  margin-bottom: 5px;
+}
+
+
+/* ── 7. Badges & Status ──────────────────────────────────────────────────── */
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.brand-badge-success {
+  background: var(--brand-success-bg);
+  color: var(--brand-success);
+  border: 1px solid #b9ddca;
+}
+
+.brand-badge-warning {
+  background: #fef3c7;
+  color: #b54708;
+  border: 1px solid #fedf89;
+}
+
+.brand-badge-neutral {
+  background: #f2f4f7;
+  color: #344054;
+  border: 1px solid #eaecf0;
+}
+
+.brand-badge-danger {
+  background: #fee4e2;
+  color: var(--brand-danger);
+  border: 1px solid #fec3c0;
+}
+
+/* Status badge — rounded rectangle */
+.brand-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.brand-status-success {
+  background: var(--brand-success-bg);
+  color: var(--brand-success);
+  border-color: #b9ddca;
+}
+
+.brand-status-warning {
+  background: #fff8e7;
+  color: #8a6728;
+  border-color: #ead7a4;
+}
+
+.brand-status-danger {
+  background: #fee4e2;
+  color: var(--brand-danger);
+  border-color: #fec3c0;
+}
+
+
+/* ── 8. Callout / Alert ──────────────────────────────────────────────────── */
+
+.brand-callout {
+  background: #f5f0e5;
+  border: 1px solid #ddcfb0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #243a55;
+}
+
+.brand-callout strong {
+  color: var(--brand-navy);
+}
+
+.brand-alert {
+  background: #fdf5d6;
+  border: 1px solid #f9ebbe;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #7d5a00;
+  font-size: 12px;
+}
+
+
+/* ── 9. Header ───────────────────────────────────────────────────────────── */
+
+.brand-header {
+  background-color: var(--brand-navy);
+  background-image: radial-gradient(circle at 88% -90%, rgba(201,164,92,.2), transparent 42%), linear-gradient(135deg, var(--brand-navy), #0b213e);
+  border-bottom: 2px solid rgba(201,164,92,.7);
+  box-shadow: 0 8px 24px rgba(7,26,51,.16);
+  padding: 8px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.brand-header-title {
+  font-family: var(--brand-font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.015em;
+}
+
+.brand-header-version {
+  font-size: 11px;
+  color: rgba(255,255,255,.52);
+}
+
+
+/* ── 10. Footer ──────────────────────────────────────────────────────────── */
+
+.brand-footer {
+  background: var(--brand-ivory);
+  border-top: 1px solid #d7c9af;
+  box-shadow: 0 -8px 28px rgba(7,26,51,.1);
+}
+
+
+/* ── 11. Checkbox / Radio Items ──────────────────────────────────────────── */
+
+.brand-check {
+  background: var(--brand-warm-white);
+  border: 1px solid #e2d5be;
+  border-radius: var(--brand-radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.brand-check:hover {
+  background: #f8f1e3;
+  border-color: #d4c4a0;
+}
+
+.brand-check.selected,
+.brand-check.is-selected {
+  background: #f5ecd8;
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(201,164,92,.12);
+}
+
+
+/* ── 12. Progress Timeline ───────────────────────────────────────────────── */
+
+.brand-timeline {
+  background: var(--brand-cream);
+  border-bottom: 1px solid var(--brand-line);
+  box-shadow: 0 4px 14px rgba(7,26,51,.06);
+  overflow-x: auto;
+}
+
+.brand-timeline-steps {
+  display: flex;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px;
+  min-width: max-content;
+}
+
+.brand-timeline-step {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.brand-timeline-step + .brand-timeline-step {
+  padding-left: 32px;
+}
+
+/* Connector lines */
+.brand-timeline-step + .brand-timeline-step::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 20px;
+  height: 2px;
+  background: #d5cab5;
+  transform: translateY(-50%);
+}
+
+.brand-tl-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.brand-tl-btn:hover {
+  background: rgba(201,164,92,.08);
+}
+
+.brand-tl-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  border: 2px solid #d5cab5;
+  color: var(--brand-text-muted);
+  background: var(--brand-ivory);
+  transition: all 0.2s ease;
+}
+
+.brand-tl-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--brand-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Timeline states */
+.brand-tl-complete .brand-tl-circle {
+  background: var(--brand-success);
+  border-color: var(--brand-success);
+  color: #fff;
+}
+.brand-tl-complete .brand-tl-label {
+  color: var(--brand-success);
+}
+.brand-tl-complete + .brand-timeline-step::before {
+  background: var(--brand-success);
+}
+
+.brand-tl-current .brand-tl-circle {
+  background: var(--brand-gold);
+  border-color: var(--brand-gold);
+  color: #fff;
+  box-shadow: 0 0 0 5px rgba(201,164,92,.2);
+}
+.brand-tl-current .brand-tl-label {
+  color: var(--brand-navy);
+  font-weight: 800;
+}
+.brand-tl-current + .brand-timeline-step::before {
+  background: var(--brand-gold);
+}
+
+
+/* ── 13. Utility Classes ─────────────────────────────────────────────────── */
+
+.brand-flex       { display: flex; }
+.brand-flex-col   { display: flex; flex-direction: column; }
+.brand-flex-wrap  { flex-wrap: wrap; }
+.brand-items-c    { align-items: center; }
+.brand-gap-xs     { gap: 4px; }
+.brand-gap-sm     { gap: 8px; }
+.brand-gap-md     { gap: 12px; }
+.brand-gap-lg     { gap: 16px; }
+
+.brand-text-gold  { color: var(--brand-gold); }
+.brand-text-navy  { color: var(--brand-navy); }
+.brand-text-muted { color: var(--brand-text-muted); }
+
+.brand-bg-cream   { background-color: var(--brand-cream); }
+.brand-bg-ivory   { background-color: var(--brand-ivory); }
+
+.brand-radius-sm  { border-radius: var(--brand-radius-sm); }
+.brand-radius-md  { border-radius: var(--brand-radius-md); }
+.brand-radius-lg  { border-radius: var(--brand-radius-lg); }
+
+.brand-shadow-sm  { box-shadow: var(--brand-shadow-sm); }
+.brand-shadow-md  { box-shadow: var(--brand-shadow-md); }
+.brand-shadow-lg  { box-shadow: var(--brand-shadow-lg); }
+
+.brand-w-full     { width: 100%; }
+.brand-max-w      { max-width: 1120px; margin: 0 auto; }
