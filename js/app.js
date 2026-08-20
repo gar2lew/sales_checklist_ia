@@ -475,7 +475,7 @@
     const staffOptions = staffOptionsForSelection(currentLandingVal);
     const options = staffOptions.map(option => '<option value="'+htmlEscape(option.name)+'">'+htmlEscape(option.name)+'</option>').join('');
     const disabled = staffOptions.length ? '' : ' disabled';
-    control.innerHTML = '<span class="landing-input-icon" aria-hidden="true">⌄</span><select id="landingStaff" aria-label="Your Name"'+disabled+'><option value="" disabled selected>Choose your name</option>'+options+'</select>';
+    control.innerHTML = '<span class="landing-input-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><select id="landingStaff" aria-label="Your Name"'+disabled+'><option value="" disabled selected>Choose your name</option>'+options+'</select>';
     if(currentLandingVal && staffRecordForValue(currentLandingVal)) $('landingStaff').value = staffRecordForValue(currentLandingVal).name;
     $('landingStaff').addEventListener('input', updateLandingContinue);
     $('landingStaff').addEventListener('change', updateLandingContinue);
@@ -494,7 +494,7 @@
   function updateContinueButtonText(){
     var activeBtn = document.querySelector('.mode-card.active');
     var mode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
-    var text = mode === 'zoom' ? 'Start Zoom Appointment' : 'Start In-person Appointment';
+    var text = mode === 'zoom' ? 'Start Zoom Appointment' : 'Start Appointment';
     $('continueButtonText').textContent = text;
   }
 
