@@ -1657,12 +1657,57 @@ html,body { background-color:#f3eee5; background-image:linear-gradient(180deg,#f
 #previewTop,.previewWrap .btn { border:1px solid #d8c9a7; background:#fffaf0; color:#071a33; box-shadow:none; }
 
 .app .btn { border-radius:11px; }
-.app .btn.primary,.app .btn.dark { background:#071a33; color:#fff; }
+.app .btn.dark { background:#071a33; color:#fff; }
 .app .btn.danger { color:#9f2d24; background:#fff0ed; border:1px solid #f1c7c1; }
 .footerBar { background:#fffdf8; border-top:1px solid #d7c9af; box-shadow:0 -8px 28px rgba(7,26,51,.1); }
 .footerInner .name { color:#546174; }
 .footerButtons .btn { border-color:#ddd4c5; background:#fffaf2; color:#071a33; }
 .footerButtons #generateBottom { background:#c9a45c; color:#07101d; border-color:#b28c43; }
+
+/* ── Premium progress timeline ── */
+.progress-timeline { background:#f3eee5; border-bottom:1px solid #ddd4c5; box-shadow:0 4px 14px rgba(7,26,51,.06); }
+.progress-timeline .tl-circle { border-color:#d5cab5; background:#fffdf8; }
+.progress-timeline .tl-current .tl-circle { background:var(--gold); border-color:var(--gold); color:#fff; box-shadow:0 0 0 5px rgba(201,164,92,.2); }
+.progress-timeline .tl-current .tl-label { color:#071a33; font-weight:800; }
+.progress-timeline .tl-complete .tl-circle { background:#2d8c5a; border-color:#2d8c5a; }
+.progress-timeline .tl-complete + .timeline-step::before { background:#2d8c5a; }
+.progress-timeline .timeline-step + .timeline-step::before { background:#d5cab5; }
+.progress-timeline .tl-current + .timeline-step::before { background:var(--gold); }
+.progress-timeline .tl-label { color:#687386; }
+
+/* ── Premium primary buttons ── */
+.app .btn.primary { background:linear-gradient(135deg,#c9a45c 0%,#b8933a 100%); color:#07101d; border:none; box-shadow:0 4px 14px rgba(201,164,92,.22); }
+.app .btn.primary:hover { background:linear-gradient(135deg,#d4b36f 0%,#c9a45c 100%); }
+.app .btn.dark { background:#071a33; color:#fff; }
+
+/* ── Premium card top accent ── */
+.workspaceContent .card,.previewWrap .card { border-top:3px solid #c9a45c; }
+.workspaceContent .card > h2,.previewHeading h2 { border-bottom:1px solid rgba(201,164,92,.2); padding-bottom:10px; }
+
+/* ── Premium checklist / radio cards ── */
+.check,.radioCard { background:#fdf9f1; border-color:#e2d5be; border-radius:14px; }
+.check:hover,.radioCard:hover { background:#f8f1e3; border-color:#d4c4a0; }
+.check.selected,.radioCard.selected { background:#f5ecd8; border-color:#c9a45c; box-shadow:0 0 0 3px rgba(201,164,92,.12); }
+
+/* ── Premium subsections ── */
+.subsection { border-top:2px solid rgba(201,164,92,.18); }
+.subsection h3,.photoGroupHeader { color:#071a33; font-family:Georgia,"Times New Roman",serif; font-weight:600; }
+.photoGroup { background:#fdf9f1; border-color:#e2d5be; }
+
+/* ── Premium logo ── */
+.appLogo { border-radius:8px; border:1px solid rgba(201,164,92,.35); padding:3px; background:rgba(255,255,255,.6); }
+
+/* ── Premium secondary actions trigger ── */
+.workspaceSecondaryActions { position:relative; }
+.secondaryActionsTrigger { border:1px solid rgba(201,164,92,.4); border-radius:10px; background:rgba(255,253,248,.65); color:#071a33; padding:7px 14px; font-weight:700; letter-spacing:.01em; backdrop-filter:blur(4px); transition:background .15s ease,border-color .15s ease; }
+.secondaryActionsTrigger:hover { background:rgba(201,164,92,.1); border-color:rgba(201,164,92,.6); }
+.secondaryActionMenu { background:#fffdf8; border:1px solid #ddd4c5; border-radius:12px; box-shadow:0 8px 24px rgba(7,26,51,.1); padding:4px; }
+.secondaryActionMenu .btn.toolbar-btn { border-radius:8px; padding:8px 12px; color:#071a33; font-weight:600; }
+.secondaryActionMenu .btn.toolbar-btn:hover { background:rgba(201,164,92,.1); }
+
+/* ── Premium callout ── */
+.callout { background:#f5f0e5; border-color:#ddcfb0; color:#243555; }
+.callout strong { color:#071a33; }
 @media (max-width:600px),(max-height:600px) and (max-width:1000px) {
   .stickyHeader { border-bottom-width:1px; box-shadow:0 5px 18px rgba(7,26,51,.14); }
   .actionGroup { border-radius:12px; }
