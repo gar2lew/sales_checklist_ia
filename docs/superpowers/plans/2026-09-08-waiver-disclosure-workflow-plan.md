@@ -22,7 +22,7 @@ Test-first implementation divided into 12 focused phases. Each phase:
 
 ## Phase 1: Waiver Template Characterisation & PDF Field/Render Tests
 
-**Objective:** Characterise the authoritative Waiver & Disclosure template (when provided) and establish PDF rendering test infrastructure.
+**Objective:** Characterise the authoritative Waiver & Disclosure template and establish PDF rendering test infrastructure.
 
 ### Files
 - `tests/waiver-template-characterisation.test.mjs` (new)
@@ -30,16 +30,18 @@ Test-first implementation divided into 12 focused phases. Each phase:
 
 ### Failing Tests First
 ```javascript
-// Template loads and has expected page count
-// Field overlay coordinates map to visible form fields
-// Signature positions align with signature lines
+// Template loads and has expected page count (6)
+// Page dimensions: 595.32 × 841.92 pts (A4)
+// No AcroForm fields present
+// Page 6 contains exactly 3 fill-in fields: CLIENT'S NAME, CLIENT'S SIGNATURE, DATE
+// Verified coordinates for each field
 // Generated PDF is valid (PDF header, correct page count)
 // Filename format matches specification
 ```
 
 ### Minimal Implementation
-- Add template image to `templates/` and `APP_SHELL`
-- Implement `drawWaiverPage()` with calibrated coordinates
+- Add `ASG-Disclosure-Waiver-2026.pdf` to `templates/` and `APP_SHELL` in `service-worker.js`
+- Implement `drawWaiverPage()` with calibrated coordinates (verified from PDF)
 - Add `ensureWaiverImage()` loader
 - Register in `outputPlan()` / `zoomOutputPlan()`
 
@@ -50,11 +52,16 @@ npm test -- tests/waiver-template-characterisation.test.mjs
 ```
 
 ### Acceptance Criteria
-- [ ] Template loads offline (cached)
-- [ ] All assumed fields map to actual template positions
-- [ ] 3 signatures render correctly (Client 1, Client 2, Witness)
+- [ ] Template loads offline (cached in service worker)
+- [ ] Page count = 6, dimensions = A4 (595.32 × 841.92)
+- [ ] No AcroForm fields detected
+- [ ] Page 6 field coordinates verified:
+    - Client 1 Name: label x=54, value x=59, y=599.71, width~301
+    - Client 1 Signature: label x=54, value x=59, y=537.55, width~307
+    - Client 1 Date: label x=54, value x=54, y=475.51, width~116
+- [ ] 2 signatures render correctly (Client 1, Client 2) — reusing existing `sig`/`sig2` canvases
 - [ ] PDF validates via `validPdfBlob()`
-- [ ] Page count confirmed (1 or 2)
+- [ ] Single page output (template page 6 only)
 
 ### Commit Message
 ```
@@ -62,7 +69,7 @@ test: characterise waiver and disclosure template
 ```
 
 ### Stop/Review Gate
-**Template must be provided and characterised before proceeding.** If template not available, phase completes with stub renderer and coordinate TODOs.
+Template characterised and coordinate tests passing. Product decisions on date behavior and Client 2 labels resolved.
 
 ---
 
@@ -131,8 +138,8 @@ Visual review of landing screen on mobile and desktop viewports.
 // - In-Person/Zoom sections hidden
 // - Client 1 required, Client 2 optional
 // - No EOI/IA/Photos/Checklist/Whiteboard in DOM or timeline
-// - outputPlan() returns waiver-only page plan
-// - validateBeforePdf() uses waiver-only rules
+// - outputPlan() returns waiver-only page plan (1 page)
+// - validateBeforePdf() uses waiver-only rules (Client 1 name/sig/date required; Client 2 conditional)
 // - buildPdf() generates single waiver PDF
 // - Filename: "{date} - {Client Names} - Waiver and Disclosure.pdf"
 // - Prepare Email uses waiver-specific template
@@ -183,7 +190,7 @@ Full end-to-end waiver-only flow verified on mobile and desktop.
 
 ### Files
 - `index.html` — checkbox in Appointment Info, waiver timeline step, waiver section
-- `js/app.js` — `updateEoiDetails()` → `updateWaiverDetails()`, timeline, validation, outputPlan
+- `js/app.js` — `updateWaiverDetails()`, timeline, validation, outputPlan
 - `tests/inperson-waiver-option.test.mjs` (new)
 
 ### Failing Tests First
@@ -191,21 +198,27 @@ Full end-to-end waiver-only flow verified on mobile and desktop.
 // Checkbox "Include Waiver & Disclosure" appears in Appointment Info
 // Default OFF — no waiver UI, no validation, no output impact
 // When checked:
-//   - Waiver timeline step appears at position 4 (after IA, before ID Docs)
-//   - Waiver section renders with pre-filled fields
-//   - waiverReadiness() validation runs
-//   - Generation fails if waiver incomplete
-//   - Combined PDF includes waiver after IA
-//   - ZIP includes standalone waiver PDF
-//   - Draft save/restore preserves waiver state
+  // - Waiver timeline step appears at position 4 (after IA, before ID Docs)
+  // - Waiver section renders with pre-filled fields (Client 1/2 name, date)
+  // - waiverReadiness() validation runs (Client 1 name/sig/date required; Client 2 conditional)
+  // - Generation fails if waiver incomplete
+  // - Combined PDF includes waiver after IA (single page 6)
+  // - ZIP includes standalone waiver PDF
+  // - Draft save/restore preserves waiver state
 // When unchecked after data entry:
-//   - Waiver data preserved in draft (per spec)
-//   - No validation, no output
+  // - Waiver data preserved in draft (per spec)
+  // - No validation, no output
 ```
 
 ### Minimal Implementation
 1. Add checkbox `#includeWaiver` in Appointment Info section (`index.html`)
-2. Add `waiverDetailsCard` section (in-person-only) with all waiver fields
+2. Add `waiverDetailsCard` section (in-person-only) with waiver fields:
+   - Client 1 Name (pre-filled from `clientName`)
+   - Client 1 Signature (uses existing `sig` canvas)
+   - Client 1 Date (defaults to appointment `date`)
+   - Client 2 Name (pre-filled from `client2Name`, conditional)
+   - Client 2 Signature (uses existing `sig2` canvas, conditional)
+   - Client 2 Date (defaults to appointment `date`, conditional)
 3. Add waiver timeline step (position 4) in `timelineInPerson`
 4. Implement `updateWaiverDetails()` toggling section visibility
 5. Implement `waiverReadiness()` validation function
@@ -256,17 +269,17 @@ Complete In-Person + Waiver flow verified with draft save/reopen offline.
 // Checkbox appears in Zoom Outputs section alongside EOI/IA checkboxes
 // Default OFF — no waiver UI, no validation, no output impact
 // When checked:
-//   - Waiver timeline step appears before Ready (position 8)
-//   - Waiver section renders (zoom-only)
-//   - zoomOutputPlan() includes waiver page
-//   - Combined booklet includes waiver at end
-//   - ZIP includes standalone waiver PDF
-//   - Draft save/restore preserves waiver state
+  // - Waiver timeline step appears before Ready (position 8)
+  // - Waiver section renders (zoom-only)
+  // - zoomOutputPlan() includes waiver page
+  // - Combined booklet includes waiver at end (single page 6)
+  // - ZIP includes standalone waiver PDF
+  // - Draft save/restore preserves waiver state
 ```
 
 ### Minimal Implementation
 1. Add `#zoomIncludeWaiver` checkbox in `zoomOutputsSection`
-2. Add `zoomWaiverDetailsCard` section (zoom-only)
+2. Add `zoomWaiverDetailsCard` section (zoom-only) with same fields as Phase 4
 3. Add waiver timeline step in `timelineZoom` (before Ready)
 4. Extend `zoomOutputPlan()` for waiver page
 5. Extend zoom validation in `validateBeforePdf()` / `structuredReadinessCheck()`
@@ -319,7 +332,7 @@ Complete Zoom + Waiver flow verified with draft save/reopen offline.
 
 ### Minimal Implementation
 1. Bump `DB_VERSION` to 2 in `js/db.js` (signals new structure)
-2. `getDraft()`: include full `waiver` object
+2. `getDraft()`: include full `waiver` object with fields and signatures
 3. `setDraft()`: restore `waiver` object, handle missing gracefully
 4. `loadDraft()`: existing logic handles schema version, expiry
 5. Verify `removeExpiredDrafts()` works with waiver drafts
@@ -361,18 +374,24 @@ Offline capability audit re-run with waiver drafts — all matrix scenarios pass
 
 ### Failing Tests First
 ```javascript
-// drawWaiverPage() renders all fields at correct coordinates
-// Three signatures render (Client 1, Client 2, Witness)
-// Combined PDF (In-Person): waiver after IA, before photos
-// Combined PDF (Zoom): waiver at end of booklet
-// Standalone waiver PDF: single page, correct filename
+// drawWaiverPage() renders all fields at verified coordinates
+// 2 signatures render (Client 1, Client 2) — reusing existing sig/sig2 canvases
+// Combined PDF (In-Person): waiver after IA, before photos (single page 6)
+// Combined PDF (Zoom): waiver at end of booklet (single page 6)
+// Standalone waiver PDF: single page 6, correct filename
 // Individual waiver PDF in ZIP: correct filename
 // validPdfBlob() passes for all waiver PDFs
 // Preview refresh shows waiver page
+// Client 2 block renders at offset Y position when Client 2 present
 ```
 
 ### Minimal Implementation
-1. Complete `drawWaiverPage()` with calibrated template coordinates
+1. Complete `drawWaiverPage()` with calibrated template coordinates:
+   - Load page 6 of `ASG-Disclosure-Waiver-2026.pdf` as template
+   - Overlay Client 1 fields at: Name (x=59, y=599.71), Signature (x=59, y=537.55), Date (x=54, y=475.51)
+   - If Client 2 present: overlay Client 2 fields at offset Y (e.g., y≈410 for Name, y≈350 for Signature, y≈285 for Date)
+   - Draw signatures from `sig`/`sig2` canvases scaled to signature line width (~307pts)
+   - Add generated footer
 2. Add waiver dispatch in `drawOutputPage()` for both modes
 3. Ensure `buildIndividualPdfs()` includes waiver group
 4. Verify preview works for waiver pages
@@ -386,11 +405,12 @@ npm test -- tests/waiver-pdf-generation.test.mjs
 
 ### Acceptance Criteria
 - [ ] Waiver page renders correctly in all contexts
-- [ ] Signatures align with template lines
+- [ ] Signatures align with template underscore lines
 - [ ] Combined PDF page order correct
 - [ ] Standalone PDF generates for waiver-only
 - [ ] Individual waiver PDF in ZIP
 - [ ] Preview navigation includes waiver pages
+- [ ] Client 2 block appears only when Client 2 name entered
 
 ### Commit Message
 ```
@@ -398,7 +418,7 @@ feat: complete Waiver & Disclosure PDF generation
 ```
 
 ### Stop/Review Gate
-PDF output visually verified against authoritative template (when available).
+PDF output visually verified against authoritative template.
 
 ---
 
@@ -412,8 +432,8 @@ PDF output visually verified against authoritative template (when available).
 
 ### Failing Tests First
 ```javascript
-// Combined PDF (In-Person + Waiver) includes waiver pages
-// Combined PDF (Zoom + Waiver) includes waiver pages
+// Combined PDF (In-Person + Waiver) includes waiver page
+// Combined PDF (Zoom + Waiver) includes waiver page
 // ZIP contains no duplicate Combined PDF
 // ZIP entry names unique (uniquePackageEntryNames)
 // ZIP filename unchanged
@@ -463,14 +483,14 @@ Download Package verified on multiple appointments with/without waiver.
 ### Failing Tests First
 ```javascript
 // Standalone waiver email:
-//   - To: CONFIG.share.to
-//   - CC: staff email or fallback
-//   - Subject: "Waiver & Disclosure - {Client Names} - {Property} - {date}"
-//   - Body: plain English, instructs manual PDF attachment
-//   - No ZIP reference
+  // - To: CONFIG.share.to
+  // - CC: staff email or fallback
+  // - Subject: "Waiver & Disclosure | {Client Names} | {date}"
+  // - Body: plain English, instructs manual PDF attachment
+  // - No ZIP reference
 // Combined appointment email with waiver:
-//   - Existing structure preserved
-//   - One added line: "Waiver & Disclosure is included in this package."
+  // - Existing structure preserved
+  // - One added line: "Waiver & Disclosure: Included"
 // Prepare Email button works in waiver-only Ready section
 ```
 
@@ -684,13 +704,17 @@ git status
 
 ## GO/NO-GO for Implementation
 
-**Current Status: NO-GO** — Authoritative Waiver & Disclosure template not found in repository.
+**Current Status: NO-GO** — Design review required before implementation.
 
 **Required for GO:**
-1. ✅ Research complete
+1. ✅ Research complete (authoritative template verified)
 2. ✅ Specification complete
 3. ✅ Implementation plan complete
-4. ❌ Authoritative template provided and characterised
+4. ✅ Authoritative template provided and characterised (`templates/ASG-Disclosure-Waiver-2026.pdf`)
 5. ❌ Design review approved
+6. ❌ Product decisions resolved:
+   - Date field behavior (auto-fill vs manual)
+   - Client 2 labels on page 6
+   - Legal review of clause 18 with two clients
 
-**Recommendation:** Proceed to design review with current deliverables. Implementation begins only after template is provided and design approved.
+**Recommendation:** Proceed to design review with current deliverables. Implementation begins after design review approval and product decisions resolved.

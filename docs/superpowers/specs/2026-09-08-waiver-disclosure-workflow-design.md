@@ -2,7 +2,7 @@
 
 **Date:** 08/09/2026  
 **Application:** Sales Appointment Capture v2.7.0-alpha.1  
-**Status:** Design Complete — Awaiting Authoritative Template  
+**Status:** Design Complete — Authoritative Template Verified  
 **Depends On:** `docs/waiver-disclosure/WAIVER_DISCLOSURE_RESEARCH.md`
 
 ---
@@ -19,7 +19,7 @@ Three appointment/document types on landing screen:
 
 - **Label:** "Include Waiver & Disclosure"
 - **Default:** OFF
-- **Location:** Appointment Info section, alongside "Include EOI form" / "Include IA form"
+- **Location:** Appointment Info section (In-Person) / Outputs section (Zoom), alongside "Include EOI form" / "Include IA form"
 - **When OFF:** Waiver completely hidden, no validation, no output, no email impact
 - **When ON:** Waiver stage revealed, fields required, signatures required, included in outputs
 
@@ -115,23 +115,20 @@ Landing → Select "In-Person Appointment" → Enter staff → Continue
 |-------|-----|----------|-------|
 | Client 1 Name | `waiverClient1Name` | Yes | Pre-filled from `clientName` |
 | Client 1 Signature | `waiverSignature1` | Yes | Uses existing `sig` canvas |
-| Client 1 Date | `waiverClient1Date` | Yes | Defaults to appointment `date` |
+| Client 1 Date | `waiverClient1Date` | Yes | Defaults to appointment `date` (product decision: auto-fill vs manual) |
 | Client 2 Name | `waiverClient2Name` | Conditional | Pre-filled from `client2Name`, required if Client 2 exists |
 | Client 2 Signature | `waiverSignature2` | Conditional | Uses existing `sig2` canvas |
 | Client 2 Date | `waiverClient2Date` | Conditional | Defaults to appointment `date` |
-| Witness Name | `waiverWitnessName` | Yes | Pre-filled from `teamMember` |
-| Witness Signature | `waiverWitnessSignature` | Yes | **NEW canvas** |
-| Witness Date | `waiverWitnessDate` | Yes | Defaults to appointment `date` |
-| Disclosure Acknowledgment | `waiverDisclosureAck` | Yes | Checkbox |
-| Property Address | `waiverPropertyAddress` | Yes | Pre-filled from `propertySaleAddress` |
+
+**Fields REMOVED (not in template):** Witness name/signature/date, Disclosure acknowledgment checkbox, Property address, Appointment date (separate)
 
 ### Validation Rules (In-Person + Waiver)
 
 | Condition | Behaviour |
 |-----------|-----------|
 | `includeWaiver` unchecked | Waiver completely ignored — no validation, no output |
-| `includeWaiver` checked + Client 2 name empty | Client 1 + Witness required; Client 2 fields hidden/optional |
-| `includeWaiver` checked + Client 2 name present | Client 1 + Client 2 + Witness all required |
+| `includeWaiver` checked + Client 2 name empty | Client 1 name, signature, date required; Client 2 fields hidden |
+| `includeWaiver` checked + Client 2 name present | Client 1 + Client 2 all required (name, signature, date each) |
 | Missing signature | Blocks final generation; draft saves allowed |
 | Draft save | All waiver state preserved (fields, signatures, checkbox) |
 | Draft reopen | Waiver state fully restored |
@@ -149,7 +146,7 @@ Landing → Select "In-Person Appointment" → Enter staff → Continue
 **Combined PDF Order:**
 1. EOI (if included)
 2. IA (if included)
-3. **Waiver & Disclosure** (NEW)
+3. **Waiver & Disclosure** (single page 6 with 1 or 2 client blocks)
 4. ID Photos
 
 **ZIP Contents:**
@@ -213,7 +210,7 @@ Identical to In-Person + Waiver, using Zoom validation pipeline.
 5. La Vida EOI (if selected)
 6. IA (if selected)
 7. Whiteboard (if any)
-8. **Waiver & Disclosure** (NEW)
+8. **Waiver & Disclosure** (single page 6 with 1 or 2 client blocks)
 
 **ZIP Contents:**
 - All existing individual Zoom documents
@@ -231,7 +228,7 @@ Landing → Select "Waiver & Disclosure" → Enter staff → Continue
 ### Simplified Timeline (3 Steps)
 
 1. **Client Details** — Client 1 (required), Client 2 (optional), Property Address, Date, Staff
-2. **Waiver & Disclosure** — All waiver fields + signatures + witness
+2. **Waiver & Disclosure** — Client 1 fields + Client 2 fields (if present) + signatures + dates
 3. **Ready** — Generate PDF, Download PDF, Prepare Email
 
 ### HTML Sections (waiver-only class)
@@ -244,7 +241,7 @@ Landing → Select "Waiver & Disclosure" → Enter staff → Continue
 
 <!-- Section 2: Waiver & Disclosure -->
 <section class="card waiver-only" id="waiverDetailsCard">
-  <!-- All waiver fields, signatures, witness -->
+  <!-- Client 1 name/signature/date, Client 2 name/signature/date (conditional) -->
 </section>
 
 <!-- Section 3: Ready -->
@@ -269,14 +266,11 @@ Landing → Select "Waiver & Disclosure" → Enter staff → Continue
 | Client 1 Name | Yes |
 | Client 1 Signature | Yes |
 | Client 1 Date | Yes |
-| Witness Name | Yes |
-| Witness Signature | Yes |
-| Witness Date | Yes |
-| Disclosure Acknowledgment | Yes |
-| Property Address | Yes |
-| Appointment Date | Yes |
-| Staff Name | Yes |
 | Client 2 Name | No (but if entered → Client 2 Signature + Date required) |
+| Client 2 Signature | Conditional (when Client 2 name present) |
+| Client 2 Date | Conditional (when Client 2 name present) |
+| Staff Name | Yes |
+| Appointment Date | Yes |
 
 ### Output
 
@@ -287,7 +281,7 @@ Landing → Select "Waiver & Disclosure" → Enter staff → Continue
 **Prepare Email:**
 - To: `CONFIG.share.to`
 - CC: Staff email or fallback
-- Subject: `Waiver & Disclosure - {Client Names} - {Property} - {date}`
+- Subject: `Waiver & Disclosure | {Client Names} | {date}`
 - Body: Plain English instructing staff to attach downloaded PDF
 - No ZIP attachment reference
 
@@ -309,18 +303,12 @@ data.waiver = {
   fields: {
     client1Name: fieldText('waiverClient1Name') || fieldText('clientName'),
     client2Name: fieldText('waiverClient2Name') || fieldText('client2Name'),
-    witnessName: fieldText('waiverWitnessName') || fieldText('teamMember'),
-    disclosureAcknowledged: isChecked('waiverDisclosureAck'),
-    propertyAddress: fieldText('waiverPropertyAddress') || fieldText('propertySaleAddress'),
-    appointmentDate: fieldText('waiverAppointmentDate') || fieldText('date'),
     client1Date: fieldText('waiverClient1Date') || fieldText('date'),
-    client2Date: fieldText('waiverClient2Date') || fieldText('date'),
-    witnessDate: fieldText('waiverWitnessDate') || fieldText('date')
+    client2Date: fieldText('waiverClient2Date') || fieldText('date')
   },
   signatures: {
     client1: hasSignature ? sig.toDataURL('image/png') : null,
-    client2: hasSignature2 ? sig2.toDataURL('image/png') : null,
-    witness: hasWaiverWitnessSignature ? waiverWitnessSig.toDataURL('image/png') : null
+    client2: hasSignature2 ? sig2.toDataURL('image/png') : null
   }
 };
 ```
@@ -332,36 +320,47 @@ Add to `fields` array in `js/app.js`:
 const fields = [
   // ...existing...
   'includeWaiver', 'zoomIncludeWaiver',
-  'waiverClient1Name', 'waiverClient2Name', 'waiverWitnessName',
-  'waiverDisclosureAck', 'waiverPropertyAddress', 'waiverAppointmentDate',
-  'waiverClient1Date', 'waiverClient2Date', 'waiverWitnessDate'
+  'waiverClient1Name', 'waiverClient2Name',
+  'waiverClient1Date', 'waiverClient2Date'
 ];
 ```
 
-### New Signature Canvas
-
-```html
-<canvas id="waiverWitnessSignature" width="900" height="150"></canvas>
-<button id="clearWaiverWitnessSignature" class="btn small">Clear</button>
-```
+**No new signature canvas needed** — reuses existing `sig` (Client 1) and `sig2` (Client 2).
 
 ---
 
 ## 7. PDF Generation
 
+### Template Coordinates (Verified from PDF)
+
+Page 6 (A4: 595.32 × 841.92 pts, origin bottom-left):
+
+| Field | Label X | Value X | Y (baseline) | Value Width | Font Size |
+|-------|---------|---------|--------------|-------------|-----------|
+| Client 1 Name | 54 | 59 | 599.71 | ~301 | 9.48pt |
+| Client 1 Signature | 54 | 59 | 537.55 | ~307 | 9.48pt |
+| Client 1 Date | 54 | 54 | 475.51 | ~116 | 9.48pt |
+
+**Client 2 block (Option A — same page, below Client 1):**
+- Place at Y ≈ 410 (below Client 1 Date at 475, leaving ~65pt gap)
+- Same X positions, same widths
+- Labels change to "CLIENT 2 NAME", "CLIENT 2 SIGNATURE", "DATE"
+
 ### New Renderer: `drawWaiverPage(pageNumber, totalPages, scale)`
 
-- Uses template image (when provided) or programmatic layout
-- Overlays all waiver fields at calibrated coordinates
-- Draws three signatures (Client 1, Client 2, Witness)
+- Loads `ASG-Disclosure-Waiver-2026.pdf` page 6 as template image
+- Overlays Client 1 fields at verified coordinates
+- If Client 2 present: overlays Client 2 fields at offset coordinates
+- Draws signatures from existing `sig`/`sig2` canvases scaled to signature line width
 - Includes generated footer
+- **Single page output** (page 6 of template)
 
 ### Output Plan Integration
 
 ```javascript
 // In outputPlan() for in-person:
 if (waiverIncluded) {
-  waiverPageCount = 1; // or 2 if template requires
+  waiverPageCount = 1;
   totalPages += waiverPageCount;
   groups.push({ id: 'waiver', pageOffset: offset, pageCount: waiverPageCount, getFilename: individualWaiverFilename });
   offset += waiverPageCount;
@@ -406,15 +405,19 @@ function buildWaiverOnlyEmailContent() {
   const client1 = fieldText('clientName') || '';
   const client2 = fieldText('client2Name') || '';
   const clientNames = client2 ? `${client1} & ${client2}` : client1 || 'Client';
-  const property = fieldText('propertySaleAddress') || 'Property';
   const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
 
-  const subject = `Waiver & Disclosure - ${clientNames} - ${property} - ${date}`;
+  const subject = `Waiver & Disclosure | ${clientNames} | ${date}`;
   const body = `Hi Natalie,
 
-Please find the signed Waiver & Disclosure for ${clientNames} regarding ${property} dated ${date}.
+Please find the completed Waiver & Disclosure for:
 
-Please attach the downloaded PDF to this email and send.
+${clientNames}
+
+Date:
+${date}
+
+Please attach the downloaded Waiver & Disclosure PDF before sending.
 
 Kind regards,
 
@@ -429,7 +432,7 @@ ${staffName}`;
 Modify `buildShareEmailContent()` to append:
 ```javascript
 if (waiverIncluded) {
-  body += '\n\nWaiver & Disclosure is included in this package.';
+  body += '\n\nWaiver & Disclosure: Included';
 }
 ```
 
@@ -446,7 +449,7 @@ function waiverReadiness() {
   const items = [];
   const hasClient2 = fieldText('client2Name') || fieldText('waiverClient2Name');
 
-  // Client 1
+  // Client 1 (always required)
   if (!fieldText('waiverClient1Name') && !fieldText('clientName'))
     items.push({ id: 'waiverClient1Name', message: 'Enter Client 1 name for Waiver.' });
   if (!hasSignature)
@@ -463,22 +466,6 @@ function waiverReadiness() {
     if (!fieldText('waiverClient2Date') && !fieldText('date'))
       items.push({ id: 'waiverClient2Date', message: 'Enter Client 2 date for Waiver.' });
   }
-
-  // Witness (always required)
-  if (!fieldText('waiverWitnessName') && !fieldText('teamMember'))
-    items.push({ id: 'waiverWitnessName', message: 'Enter witness name for Waiver.' });
-  if (!hasWaiverWitnessSignature)
-    items.push({ id: 'waiverWitnessSignature', message: 'Capture witness signature for Waiver.' });
-  if (!fieldText('waiverWitnessDate') && !fieldText('date'))
-    items.push({ id: 'waiverWitnessDate', message: 'Enter witness date for Waiver.' });
-
-  // Disclosure acknowledgment
-  if (!isChecked('waiverDisclosureAck'))
-    items.push({ id: 'waiverDisclosureAck', message: 'Acknowledge the Waiver & Disclosure.' });
-
-  // Property
-  if (!fieldText('waiverPropertyAddress') && !fieldText('propertySaleAddress'))
-    items.push({ id: 'waiverPropertyAddress', message: 'Enter property address for Waiver.' });
 
   return { included: true, ready: items.length === 0, items };
 }
@@ -570,7 +557,22 @@ Same pattern — adds waiver items to validation list.
 
 ---
 
-## 13. Acceptance Criteria
+## 13. Unresolved Product Decisions
+
+1. **Date field behavior:** The PDF shows "DATE: _____ / _____ / 20____" (DD/MM/YYYY). Should this be:
+   - Auto-filled from appointment `date`?
+   - Manually entered as signing date (may differ from appointment date)?
+   - One shared date for both clients, or separate dates per client?
+
+2. **Client 2 labels on page 6:** When Client 2 is present, should labels become:
+   - "CLIENT 1 NAME" / "CLIENT 2 NAME" etc. (explicit)?
+   - Or keep "CLIENT'S NAME" for first block and "CLIENT 2 NAME" for second?
+
+3. **Clause 18 wording:** "I, the Client, acknowledge..." — singular. With two clients, legal review recommended (clause 17.5 covers joint/several liability).
+
+---
+
+## 14. Acceptance Criteria
 
 ### Landing Screen
 - [ ] Three mode cards render in correct order
@@ -586,7 +588,7 @@ Same pattern — adds waiver items to validation list.
 - [ ] Waiver fields pre-fill from appointment data
 - [ ] Validation blocks generation when waiver enabled but incomplete
 - [ ] Draft save/restore preserves waiver state
-- [ ] Combined PDF includes waiver after IA
+- [ ] Combined PDF includes waiver after IA (single page 6 with 1 or 2 blocks)
 - [ ] ZIP includes standalone waiver PDF
 - [ ] Email mentions waiver inclusion
 
@@ -616,12 +618,12 @@ Same pattern — adds waiver items to validation list.
 
 ---
 
-## 14. Dependencies
+## 15. Dependencies
 
-**Blocking:** Authoritative Waiver & Disclosure PDF template must be provided to:
-1. Calibrate overlay coordinates for `drawWaiverPage()`
-2. Confirm exact field inventory
-3. Confirm page count (1 or 2 pages)
-4. Add template to `APP_SHELL` for offline caching
+**Blocking for Implementation:**
+1. Authoritative Waiver & Disclosure PDF template (✅ provided: `templates/ASG-Disclosure-Waiver-2026.pdf`)
+2. Calibrate overlay coordinates for `drawWaiverPage()` using verified coordinates
+3. Add template to `APP_SHELL` in `service-worker.js` for offline caching
+4. Product decisions on date behavior and Client 2 labels
 
-**Non-Blocking:** All other implementation can proceed with assumed field map.
+**Non-Blocking:** All other implementation can proceed with verified field map.

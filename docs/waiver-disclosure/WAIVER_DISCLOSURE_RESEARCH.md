@@ -2,68 +2,97 @@
 
 **Date:** 08/09/2026  
 **Application:** Sales Appointment Capture v2.7.0-alpha.1  
-**Status:** Research Complete — No Authoritative Template Found
+**Status:** Research Complete — Authoritative Template Verified
 
 ---
 
 ## 1. Authoritative Template Location
 
-**RESULT: NOT FOUND**
+**FOUND:** `templates/ASG-Disclosure-Waiver-2026.pdf`
 
-The repository was searched exhaustively for:
-- `waiver`, `Waiver`, `disclosure`, `Disclosure`
-- PDF/DOCX templates in `templates/`
-- Historical waiver-generation code
-- Form field maps
-- Signature overlays
+**SHA-256:** `1B2B4F5DFCD8DCDDC2E6A6062B0545BF4932C41A1B1EDEF93C5B5EB8EA3970AB`
 
-**No authoritative Waiver & Disclosure source document exists in this codebase.**
-
-The only "disclosure" references found relate to progressive disclosure UI patterns (collapsible sections), not a legal waiver document.
-
-**Action Required:** Product must provide the authoritative Waiver & Disclosure PDF/DOCX template before implementation can proceed. This research document assumes a standard two-client waiver structure based on the existing Client 1 / Client 2 conventions in the application.
-
----
-
-## 2. Field Inventory (Assumed — Pending Template)
-
-Since no template exists, the following is a **proposed field map** based on:
-- Existing Client 1 / Client 2 structure
-- IA form field patterns (closest analogous document)
-- Standard Australian waiver/disclosure conventions
-
-| Field Name | Page | Type | Required | Client | Source in App | Output Location | Signature | Date | Initials | Checkbox |
-|------------|------|------|----------|--------|---------------|-----------------|-----------|------|----------|----------|
-| Client 1 Full Name | 1 | Text | Yes | Client 1 | `clientName` | Waiver PDF | — | — | — | — |
-| Client 1 Signature | 1 | Canvas | Yes | Client 1 | `signature` | Waiver PDF | ✓ | — | — | — |
-| Client 1 Date | 1 | Date | Yes | Client 1 | `date` / waiver-specific | Waiver PDF | — | ✓ | — | — |
-| Client 2 Full Name | 1 | Text | No* | Client 2 | `client2Name` | Waiver PDF | — | — | — | — |
-| Client 2 Signature | 1 | Canvas | No* | Client 2 | `signature2` | Waiver PDF | ✓ | — | — | — |
-| Client 2 Date | 1 | Date | No* | Client 2 | `date` / waiver-specific | Waiver PDF | — | ✓ | — | — |
-| Witness Name | 1 | Text | Yes | Shared | Staff / `teamMember` | Waiver PDF | — | — | — | — |
-| Witness Signature | 1 | Canvas | Yes | Shared | Staff signature (new) | Waiver PDF | ✓ | — | — | — |
-| Witness Date | 1 | Date | Yes | Shared | `date` | Waiver PDF | — | ✓ | — | — |
-| Disclosure Acknowledgment | 1 | Checkbox | Yes | Both | New field | Waiver PDF | — | — | — | ✓ |
-| Property Address | 1 | Text | Yes | Shared | `propertySaleAddress` | Waiver PDF | — | — | — | — |
-| Appointment Date | 1 | Date | Yes | Shared | `date` | Waiver PDF | — | ✓ | — | — |
-
-*Client 2 fields required only if Client 2 name is entered.
-
-**Static text vs user-entered:** The waiver document body (legal text) is static template content. Only the fields above are user-entered.
+**Verified Properties:**
+- **Page count:** 6 pages
+- **Page dimensions:** 595.32 × 841.92 points (A4)
+- **Rotation:** 0° (all pages)
+- **AcroForm:** **No** — static/flattened PDF (created from Microsoft Word)
+- **XFA:** No
+- **Signatures:** No embedded signature fields
+- **Form widgets:** None — uses underscore lines for fill-in fields
+- **Text extraction:** Works — all legal text extractable
+- **Embedded fonts:** Yes (subset fonts from Word)
 
 ---
 
-## 3. Signature Map (Assumed)
+## 2. Verified Field Inventory
 
-| Signature | Role | Canvas Source | Applied To |
-|-----------|------|---------------|------------|
-| Signature 1 | Client 1 | Existing `sig` canvas | Waiver page |
-| Signature 2 | Client 2 | Existing `sig2` canvas | Waiver page (if Client 2 present) |
-| Witness | Staff | **New canvas required** | Waiver page |
+The **actual completion fields visible in the source document** (page 6 only):
+
+| Logical Name | Source Label | Page | X (pts) | Y (pts) | Width (pts) | Height (pts) | Type | Client | Required | Value Source | Validation |
+|--------------|--------------|------|---------|---------|-------------|--------------|------|--------|----------|--------------|------------|
+| `client1Name` | CLIENT'S NAME | 6 | 59 | 599.71 | ~301 | 9.48 | Text | Client 1 | Yes | `clientName` | Non-empty |
+| `client1Signature` | CLIENT'S SIGNATURE | 6 | 59 | 537.55 | ~307 | 9.48 | Signature | Client 1 | Yes | `signature` canvas | Non-empty canvas |
+| `client1Date` | DATE | 6 | 54 | 475.51 | ~116 | 9.48 | Date | Client 1 | Yes | `date` / waiver-specific | DD/MM/YYYY format |
+
+**Fields NOT present in the PDF (remove all prior assumptions):**
+- ❌ Witness name / Witness signature / Witness date
+- ❌ Property address field
+- ❌ Appointment date field (separate from signing date)
+- ❌ Disclosure acknowledgement checkbox
+- ❌ Client 2 fields (PDF has only ONE signing block)
+- ❌ Initials fields
+- ❌ Any other invented fields
+
+**Static text vs user-entered:** Pages 1–5 contain only legal wording (clauses 1–17). Page 6 contains clause 18 (acknowledgement) plus the three fill-in lines above. All legal text is static template content.
 
 ---
 
-## 4. Workflow Comparison
+## 3. Verified Signature Map
+
+| Signature ID | Role | Page | X (pts) | Y (pts) | Width (pts) | Height (pts) | Source Canvas | Required |
+|--------------|------|------|---------|---------|-------------|--------------|---------------|----------|
+| `client1Signature` | Client 1 | 6 | 59 | 537.55 | ~307 | ~18* | Existing `sig` (900×150) | Yes |
+
+*Signature line height estimated from font size; actual rendered signature scales to fit the underscore line.
+
+**No witness signature field exists in the template.**
+
+---
+
+## 4. Client 2 Signing Design Options
+
+The source PDF contains **one** acknowledgement/signature block. Client 2 is optional in the application. Three options evaluated:
+
+### Option A: Second block on page 6 (Recommended)
+- **Placement:** Below Client 1 block, above footer
+- **Page:** 6 (same page)
+- **Labels:** "CLIENT 1 NAME", "CLIENT 1 SIGNATURE", "CLIENT 1 DATE" / "CLIENT 2 NAME", "CLIENT 2 SIGNATURE", "CLIENT 2 DATE"
+- **Space available:** ~445 pts from Date (y=475) to footer (y=30) — sufficient for one more ~125pt block
+- **Legal text:** Unchanged — clause 18 says "I, the Client" (singular), but clause 17.5 addresses multiple clients: "If a party comprises two or more persons, the covenants... bind them jointly and each severally"
+- **Visual clarity:** Both clients visible on same page when printed
+- **Implementation risk:** Low — same page, same coordinate system
+- **Combined PDF:** Single waiver page with both blocks
+
+### Option B: Continuation page (page 7)
+- **Placement:** New page 7 with Client 2 block
+- **Legal text:** Would need to repeat clause 18 or reference page 6
+- **Visual clarity:** Client 2 on separate page
+- **Implementation risk:** Medium — new page generation, merge logic
+- **Combined PDF:** Two waiver pages
+
+### Option C: Two separate waiver documents
+- **Placement:** Two PDFs, one per client
+- **Legal text:** Each client signs their own copy
+- **Visual clarity:** Separate documents
+- **Implementation risk:** High — dual generation, naming, ZIP packaging
+- **Combined PDF:** Two separate waiver PDFs in ZIP
+
+**Recommendation: Option A** — lowest risk, preserves legal text integrity, single-page output, consistent with clause 17.5 (joint and several liability).
+
+---
+
+## 5. Workflow Comparison (Verified)
 
 | Aspect | In-Person + Waiver | Zoom + Waiver | Waiver Only |
 |--------|-------------------|---------------|-------------|
@@ -73,14 +102,14 @@ Since no template exists, the following is a **proposed field map** based on:
 | Client 2 | Optional | Optional | Optional |
 | EOI/IA | Optional (existing) | Optional (existing) | **Hidden** |
 | ID Photos | Required (existing) | N/A | **Hidden** |
-| Signatures | 1–2 (existing) + Witness | 1–2 (existing) + Witness | 1–2 + Witness |
+| Signatures | Client 1 (+ Client 2 if present) | Client 1 (+ Client 2 if present) | Client 1 (+ Client 2 if present) |
 | Output | Combined PDF + ZIP + standalone | Combined booklet + ZIP + standalone | **Single PDF only** |
 | Email | Existing + waiver mention | Existing + waiver mention | **Simplified Prepare Email** |
 | Offline | Full support | Full support | Full support |
 
 ---
 
-## 5. Storage Impact
+## 6. Storage Impact
 
 ### Current Draft Shape (IndexedDB via `js/db.js`)
 
@@ -106,24 +135,19 @@ waiver: {
   included: boolean,              // true when waiver checkbox checked or waiver-only mode
   mode: 'combined' | 'standalone', // distinguishes workflow
   fields: {
-    client1Name: string,
-    client2Name: string,
-    witnessName: string,
-    disclosureAcknowledged: boolean,
-    propertyAddress: string,
-    appointmentDate: string,
-    // waiver-specific dates if different from appointment date
-    client1Date: string,
-    client2Date: string,
-    witnessDate: string
+    client1Name: string,          // from clientName
+    client2Name: string,          // from client2Name (optional)
+    client1Date: string,          // signing date (DD/MM/YYYY)
+    client2Date: string           // signing date (optional, when Client 2 present)
   },
   signatures: {
-    client1: dataURL | null,
-    client2: dataURL | null,
-    witness: dataURL | null       // NEW: staff witness signature canvas
+    client1: dataURL | null,      // existing `sig` canvas
+    client2: dataURL | null       // existing `sig2` canvas (when Client 2 present)
   }
 }
 ```
+
+**Fields removed from prior assumption:** witnessName, witnessSignature, witnessDate, disclosureAcknowledged, propertyAddress, appointmentDate.
 
 **Migration:** No migration required. New fields default to `undefined`/`null`. Existing drafts load with `waiver: { included: false }` implicitly.
 
@@ -131,13 +155,13 @@ waiver: {
 
 ---
 
-## 6. Generation Impact
+## 7. Generation Impact
 
 ### PDF Pipeline Integration Points
 
 | Integration Point | Change Required |
 |-------------------|-----------------|
-| `outputPlan()` | Add waiver page(s) when `waiver.included === true` |
+| `outputPlan()` | Add waiver page when `waiver.included === true` |
 | `drawOutputPage()` | Dispatch to new `drawWaiverPage()` renderer |
 | `buildIndividualPdfs()` | Add waiver group to ZIP entries |
 | `zoomOutputPlan()` | Add waiver group when enabled in Zoom mode |
@@ -149,7 +173,7 @@ waiver: {
 1. EOI (if included)
 2. IA (if included)
 3. ID Photos
-4. **Waiver & Disclosure (NEW — inserted after IA, before photos)**
+4. **Waiver & Disclosure** (page 6 template with 1 or 2 client blocks)
 
 **Combined PDF (Zoom + Waiver):**
 1. Cover
@@ -158,19 +182,19 @@ waiver: {
 4. EOI (if included)
 5. IA (if included)
 6. Whiteboard (if any)
-7. **Waiver & Disclosure (NEW — at end)**
+7. **Waiver & Disclosure** (page 6 template with 1 or 2 client blocks)
 
 **ZIP Contents (Combined):**
 - All existing individual documents
-- `Waiver and Disclosure - {Client Names} - {date}.pdf` (NEW)
+- `Waiver and Disclosure - {Client Names} - {date}.pdf` (standalone waiver with both clients)
 
 **Standalone Waiver Only:**
 - Single PDF: `{date} - {Client Names} - Waiver and Disclosure.pdf`
-- **No ZIP** (unless supporting files proven necessary)
+- **No ZIP** (no supporting files required)
 
 ---
 
-## 7. Email Impact
+## 8. Email Impact
 
 ### Standalone Waiver Email
 
@@ -178,19 +202,19 @@ waiver: {
 |-----------|--------|
 | **To** | `CONFIG.share.to` (Natalie@sjssolutionscorp.com.au) |
 | **CC** | Staff email (if configured) or `CONFIG.share.cc` fallback |
-| **Subject** | `Waiver & Disclosure - {Client Names} - {Property} - {date}` |
-| **Body** | Plain English: "Please find the signed Waiver & Disclosure for {Client Names} regarding {Property} dated {date}. Attach the downloaded PDF and send." |
+| **Subject** | `Waiver & Disclosure | {Client Names} | {date}` |
+| **Body** | Plain English (see Email Design section) |
 | **Sign-off** | Staff name (`teamMember`) |
 | **Attachment** | Manual — email instructs staff to attach downloaded PDF |
 
 ### Combined Appointment Email (with Waiver)
 
 Existing email structure preserved. Add one line:
-> "Waiver & Disclosure is included in this package."
+> "Waiver & Disclosure: Included"
 
 ---
 
-## 8. Offline Impact
+## 9. Offline Impact
 
 | Requirement | Status | Implementation |
 |-------------|--------|----------------|
@@ -203,19 +227,19 @@ Existing email structure preserved. Add one line:
 | Generate PDF after reconnect | ✅ Supported | `buildPdf()` works offline with cached templates |
 | Prepare Email offline | ✅ Supported | `mailto:` link constructs offline |
 
+**Template caching:** Add `ASG-Disclosure-Waiver-2026.pdf` to `APP_SHELL` in `service-worker.js` for offline generation.
+
 **No second storage system.** Waiver data lives in the same IndexedDB draft.
 
 ---
 
-## 9. Privacy Impact
+## 10. Privacy Impact
 
 | Data Element | Sensitivity | Handling |
 |--------------|-------------|----------|
 | Client names | PII | Same as existing client fields |
 | Signatures | Biometric/PII | Same as existing signatures (PNG data URLs) |
-| Property address | PII | Same as existing property field |
-| Witness name/signature | Staff PII | New — stored only in draft, cleared on handover |
-| Disclosure checkbox | Low | Boolean flag |
+| Signing dates | Low | Same as existing date fields |
 
 **Confirmations:**
 - ✅ 7-day draft expiry applies to waiver data
@@ -227,7 +251,7 @@ Existing email structure preserved. Add one line:
 
 ---
 
-## 10. Regression Risks
+## 11. Regression Risks
 
 | Area | Risk Level | Mitigation |
 |------|------------|------------|
@@ -238,66 +262,37 @@ Existing email structure preserved. Add one line:
 | ZIP packaging | Low | Additional group appended to existing logic |
 | Draft save/load | Low | Optional `waiver` object; defaults handle legacy |
 | Email builder | Low | Additive string only |
-| Offline readiness | None | Uses existing cached assets; no new templates yet |
-| Service worker | None | No new cached assets until template provided |
+| Offline readiness | None | Uses existing cached assets; template added to APP_SHELL |
+| Service worker | Low | Cache version bump for new template |
 | Validation | Medium | New `waiverReadiness()` mirrors `eoiReadiness()` pattern |
 
 ---
 
-## 11. Open Questions
+## 12. Unresolved Product Decisions
 
-1. **Template Source:** What is the authoritative Waiver & Disclosure PDF/DOCX? (Blocking)
-2. **Witness Signature:** Does staff sign as witness on the waiver? If so, need new signature canvas.
-3. **Waiver-Specific Dates:** Can waiver dates differ from appointment date?
-4. **Client 2 Requirement:** In Waiver Only mode, is Client 2 truly optional or required in some cases?
-5. **Static Legal Text:** Does the waiver have variable clauses (checkboxes for specific disclosures)?
-6. **Initials Requirements:** Any page-by-page initials required?
-7. **Filename Convention:** Confirm exact format for standalone: `{date} - {Client Names} - Waiver and Disclosure.pdf`
-8. **ZIP for Standalone:** Confirmed not needed unless supporting files exist?
+1. **Date field:** The PDF shows "DATE: _____ / _____ / 20____" (DD/MM/YYYY). Should this be:
+   - Auto-filled from appointment `date`?
+   - Manually entered as signing date (may differ from appointment date)?
+   - One shared date for both clients, or separate dates per client?
+   - **Status:** Requires product decision
 
----
+2. **Client 2 labels:** When Client 2 is present, should page 6 labels become:
+   - "CLIENT 1 NAME" / "CLIENT 2 NAME" etc.?
+   - Or keep "CLIENT'S NAME" and add a second block with "CLIENT 2 NAME"?
+   - **Status:** Requires product decision (Option A recommended)
 
-## 12. Recommended Design Summary
-
-### Landing Screen
-- Add third mode card: **Waiver & Disclosure** (icon: 📋)
-- Order: In-Person, Zoom, Waiver & Disclosure
-
-### In-Person / Zoom
-- Add checkbox: **Include Waiver & Disclosure** (default OFF)
-- Location: Appointment Info section, near Include EOI/IA checkboxes
-- When checked: reveal Waiver stage in timeline (after IA, before ID Docs)
-
-### Waiver Only Mode
-- Simplified 3-section workflow:
-  1. **Client Details** (Client 1 required, Client 2 optional)
-  2. **Waiver & Disclosure** (fields + signatures + witness)
-  3. **Ready** (generate PDF, download, prepare email)
-- No EOI, IA, ID Photos, Checklist, Whiteboard
-
-### Timeline/UI Recommendation
-**Option 1: Extra timeline stage when selected** — Recommended.
-- Clear visual progress
-- Consistent with existing conditional stages (EOI, IA)
-- Minimal regression risk
-- Mobile-friendly (collapsible timeline steps)
-
-### Storage
-- Extend IndexedDB draft with `waiver` object
-- Schema version 2
-- No migration logic needed (defaults handle legacy)
-
-### Validation
-- `waiverReadiness()` function mirrors `eoiReadiness()`
-- Blocks final generation only (drafts can save incomplete)
-- Client 2 fields required only when Client 2 name entered
+3. **Clause 18 wording:** "I, the Client, acknowledge..." — singular. With two clients, does this need legal review?
+   - Clause 17.5 covers joint/several liability for multiple persons
+   - **Status:** Legal review recommended before implementation
 
 ---
 
 ## 13. Next Steps
 
-1. **Product provides authoritative Waiver & Disclosure template**
-2. **Map actual template fields** → replace assumed field inventory
-3. **Create specification document** (`docs/superpowers/specs/2026-09-08-waiver-disclosure-workflow-design.md`)
-4. **Create implementation plan** (`docs/superpowers/plans/2026-09-08-waiver-disclosure-workflow-plan.md`)
-5. **Characterization tests** for template PDF field overlay (once template available)
+1. ✅ **Product provided authoritative Waiver & Disclosure template**
+2. ✅ **Map actual template fields** → verified field inventory complete
+3. ✅ **Update specification document** (`docs/superpowers/specs/2026-09-08-waiver-disclosure-workflow-design.md`)
+4. ✅ **Update implementation plan** (`docs/superpowers/plans/2026-09-08-waiver-disclosure-workflow-plan.md`)
+5. **Characterization tests** for template PDF field overlay (see plan Phase 1)
+6. **Design review** with verified facts
+7. **Runtime implementation** after approval
