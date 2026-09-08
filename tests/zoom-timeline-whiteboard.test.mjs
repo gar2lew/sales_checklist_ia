@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { test, afterAll } from 'vitest';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
@@ -18,7 +19,8 @@ const server = createServer((request, response) => {
 await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
 
 const browser = await chromium.launch({ headless:true });
-try {
+test('zoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle, in-person boundary', async () => {
+  {
   const page = await browser.newPage({ viewport:{width:1688,height:1000} });
   await page.addInitScript(() => {
     const NativeResizeObserver = window.ResizeObserver;
@@ -38,7 +40,7 @@ try {
   await page.selectOption('#landingStaff','Garry Lewis');
   await page.click('#landingContinue');
 
-  await page.waitForFunction(() => document.querySelector('#whiteboardCanvas').width > 0);
+  await page.waitForFunction(() => document.querySelector('#mainApp').classList.contains('show-zoom') && document.querySelector('#whiteboardCanvas').width > 0);
   const timeline = await page.evaluate(() => {
     const list=document.querySelector('#timelineZoom');
     const nav=document.querySelector('#progressTimeline');
@@ -51,7 +53,7 @@ try {
       navHeight:nav.getBoundingClientRect().height
     };
   });
-  assert.deepEqual(timeline,{display:'flex',count:8,sameRow:true,fullWidthRows:false,navHeight:55});
+  assert.deepEqual(timeline,{display:'flex',count:9,sameRow:true,fullWidthRows:false,navHeight:55});
 
   const initialCanvas = await page.locator('#whiteboardCanvas').evaluate(canvas => ({
     width:canvas.width,
@@ -96,6 +98,7 @@ try {
     await mobile.click('.mode-card[data-mode="zoom"]');
     await mobile.selectOption('#landingStaff','Garry Lewis');
     await mobile.click('#landingContinue');
+    await mobile.waitForFunction(() => document.querySelector('#mainApp').classList.contains('show-zoom'));
     assert.equal(await mobile.locator('#timelineZoom').evaluate(list => getComputedStyle(list).display),'flex');
     assert.equal(await mobile.locator('#timelineZoom').evaluate(list => {
       const boxes=Array.from(list.children).map(item => item.getBoundingClientRect());
@@ -113,7 +116,10 @@ try {
   await inPerson.close();
 
   console.log('PASS Zoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle, and in-person boundary');
-} finally {
+  }
+});
+
+afterAll(async () => {
   await browser.close();
   await new Promise(resolveClose => server.close(resolveClose));
-}
+});

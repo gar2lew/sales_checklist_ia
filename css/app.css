@@ -832,11 +832,18 @@
        MODE VISIBILITY
        ========================================================================= */
     .zoom-only { display: none; }
+    .waiver-only { display: none; }
     .show-in-person .in-person-only { /* visible (default) */ }
     .show-in-person .zoom-only { display: none; }
+    .show-in-person .waiver-only { display: none; }
     .show-zoom .in-person-only { display: none; }
     .show-zoom .zoom-only { display: block; }
+    .show-zoom .waiver-only { display: none; }
     .show-zoom #timelineZoom { display: flex; }
+    .show-waiver .in-person-only { display: none; }
+    .show-waiver .zoom-only { display: none; }
+    .show-waiver .waiver-only { display: block; }
+    .show-waiver #timelineWaiver { display: flex; }
 
     /* Zoom attachment placeholders */
     .attachment-placeholder {

@@ -97,8 +97,12 @@
                     <span class="mode-card-icon" aria-hidden="true">🖥</span>
                     <span class="mode-card-title">Zoom</span>
                   </button>
+                  <button type="button" class="mode-card" data-mode="waiverOnly">
+                    <span class="mode-card-icon" aria-hidden="true">📋</span>
+                    <span class="mode-card-title">Waiver &amp; Disclosure</span>
+                  </button>
                 </div>
-                <p class="mode-card-hint">Face-to-face appointment</p>
+                <p class="mode-card-hint" id="modeCardHint">Face-to-face appointment</p>
               </div>
               <div id="recentDraftCard" class="recent-draft-card hidden">
                 <div class="recent-draft-header"><span class="recent-draft-dot"></span>Recent draft available</div>
@@ -182,16 +186,23 @@
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="crNextActions" data-tl-label="Strategy"><span class="tl-circle">5</span><span class="tl-label">Strategy</span></button></li>
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomWorkspaceSection" data-tl-label="Workspace"><span class="tl-circle">6</span><span class="tl-label">Workspace</span></button></li>
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomOutputsSection" data-tl-label="Outputs"><span class="tl-circle">7</span><span class="tl-label">Outputs</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomPackagePreview" data-tl-label="Ready"><span class="tl-circle">8</span><span class="tl-label">Ready</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="waiverSignatureSection" data-tl-label="Waiver"><span class="tl-circle">8</span><span class="tl-label">Waiver</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="zoomPackagePreview" data-tl-label="Ready"><span class="tl-circle">9</span><span class="tl-label">Ready</span></button></li>
       </ol>
       <ol class="timeline-steps in-person-only" id="timelineInPerson" aria-label="In-person appointment steps">
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="eoiDetailsCard" data-tl-label="EOI"><span class="tl-circle">2</span><span class="tl-label">EOI</span></button></li>
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="iaDetailsCard" data-tl-label="IA"><span class="tl-circle">3</span><span class="tl-label">IA</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="clientIdSection" data-tl-label="ID Docs"><span class="tl-circle">4</span><span class="tl-label">ID Docs</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="signaturesSection" data-tl-label="Signatures"><span class="tl-circle">5</span><span class="tl-label">Signatures</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="checklistCard" data-tl-label="Checklist"><span class="tl-circle">6</span><span class="tl-label">Checklist</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">7</span><span class="tl-label">Ready</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="waiverSignatureSection" data-tl-label="Waiver"><span class="tl-circle">4</span><span class="tl-label">Waiver</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="clientIdSection" data-tl-label="ID Docs"><span class="tl-circle">5</span><span class="tl-label">ID Docs</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="signaturesSection" data-tl-label="Signatures"><span class="tl-circle">6</span><span class="tl-label">Signatures</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="checklistCard" data-tl-label="Checklist"><span class="tl-circle">7</span><span class="tl-label">Checklist</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">8</span><span class="tl-label">Ready</span></button></li>
+      </ol>
+      <ol class="timeline-steps waiver-only" id="timelineWaiver" aria-label="Waiver &amp; Disclosure steps">
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="waiverSignatureSection" data-tl-label="Waiver &amp; Disclosure"><span class="tl-circle">2</span><span class="tl-label">Waiver &amp; Disclosure</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">3</span><span class="tl-label">Ready</span></button></li>
       </ol>
     </nav>
 
@@ -314,6 +325,32 @@
           <div class="toggleRow in-person-only" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeEOI"> Include EOI form</label>
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeIA"> Include IA form</label>
+            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeWaiver"> Include Waiver &amp; Disclosure</label>
+          </div>
+        </section>
+
+        <!-- WAIVER & DISCLOSURE SECTION 2: Signature ============================== -->
+        <section class="card" id="waiverSignatureSection" data-collapsible="true" style="display:none">
+          <h2>2. Waiver &amp; Disclosure</h2>
+          <span class="section-summary hidden" id="sectionSummary-waiverSignatureSection"></span>
+          <p class="hint">Enter the client details for the Waiver &amp; Disclosure form, then capture the signature below. The signing date is completed automatically when the client signs.</p>
+          <div class="subsection">
+            <h3>Client 1</h3>
+            <div class="fields two">
+              <div><label for="waiverClient1Name">Client 1 Name <span class="required">*</span></label><input id="waiverClient1Name" type="text" placeholder="Client 1 name"></div>
+              <div><label for="waiverClient1Date">Signing Date <span class="required">*</span></label><input id="waiverClient1Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+            </div>
+          </div>
+          <div class="subsection waiver-client2 hidden" id="waiverClient2Block">
+            <h3>Client 2</h3>
+            <div class="fields two">
+              <div><label for="waiverClient2Name">Client 2 Name</label><input id="waiverClient2Name" type="text" placeholder="Client 2 name"></div>
+              <div><label for="waiverClient2Date">Signing Date</label><input id="waiverClient2Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+            </div>
+          </div>
+          <div class="subsection">
+            <h3>Signatures</h3>
+            <div id="waiverPadsHost"></div>
           </div>
         </section>
 
@@ -545,6 +582,7 @@
             <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeStandardEOI"> Include Standard EOI</label>
             <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeLaVidaEOI"> Include La Vida EOI</label>
             <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeIA"> Include IA</label>
+            <label class="zoom-check-label"><input type="checkbox" id="zoomIncludeWaiver"> Include Waiver &amp; Disclosure</label>
           </div>
         </section>
 
@@ -856,24 +894,26 @@
 
           <div class="subsection">
             <h3>Signatures</h3>
-            <div class="sigWrap">
-              <canvas id="signature" width="900" height="150"></canvas>
-              <div class="sigTools">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-weight:800;font-size:13px">Signature 1 — <span id="sig1Client" style="font-weight:400;color:var(--muted)">Client 1</span></span>
-                  <span class="status-badge status-required" id="sig1Status">Required</span>
+            <div id="sigPadsHost">
+              <div class="sigWrap">
+                <canvas id="signature" width="900" height="150"></canvas>
+                <div class="sigTools">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-weight:800;font-size:13px">Signature 1 — <span id="sig1Client" style="font-weight:400;color:var(--muted)">Client 1</span></span>
+                    <span class="status-badge status-required" id="sig1Status">Required</span>
+                  </div>
+                  <button class="btn small danger" id="clearSignature">Clear signature 1</button>
                 </div>
-                <button class="btn small danger" id="clearSignature">Clear signature 1</button>
               </div>
-            </div>
-            <div class="sigWrap" style="margin-top:12px">
-              <canvas id="signature2" width="900" height="150"></canvas>
-              <div class="sigTools">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-weight:800;font-size:13px">Signature 2 — <span id="sig2Client" style="font-weight:400;color:var(--muted)">Client 2</span></span>
-                  <span class="status-badge status-optional" id="sig2Status">Optional</span>
+              <div class="sigWrap" style="margin-top:12px">
+                <canvas id="signature2" width="900" height="150"></canvas>
+                <div class="sigTools">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-weight:800;font-size:13px">Signature 2 — <span id="sig2Client" style="font-weight:400;color:var(--muted)">Client 2</span></span>
+                    <span class="status-badge status-optional" id="sig2Status">Optional</span>
+                  </div>
+                  <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
                 </div>
-                <button class="btn small danger" id="clearSignature2">Clear signature 2</button>
               </div>
             </div>
           </div>
@@ -1085,12 +1125,12 @@
     </div>
     <dl class="package-ready-files">
       <div><dt>Combined PDF</dt><dd id="packageReadyPdfName"></dd></div>
-      <div><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
+      <div class="zip-only" id="packageReadyZipRow"><dt>Document ZIP</dt><dd id="packageReadyZipName"></dd></div>
     </dl>
     <div class="package-ready-actions">
       <button type="button" class="btn primary" id="downloadPackage" disabled>Download Package</button>
       <button type="button" class="btn" id="saveCombinedPdf" disabled>Save Combined PDF</button>
-      <button type="button" class="btn" id="savePackageZip" disabled>Save ZIP</button>
+      <button type="button" class="btn zip-only" id="savePackageZip" disabled>Save ZIP</button>
       <button type="button" class="btn" id="preparePackageEmail" disabled>Prepare Email</button>
     </div>
     <div class="package-download-status" id="packageDownloadStatus" role="status" aria-live="polite" aria-atomic="true" hidden>

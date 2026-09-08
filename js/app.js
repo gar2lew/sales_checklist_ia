@@ -106,9 +106,10 @@
     'includeEOI','eoiTemplate','showEoiOverrides','eoiClient1Name','eoiClient1Mobile','eoiClient1Email','eoiClient1Address','eoiClient2Name','eoiClient2Mobile','eoiClient2Email','eoiClient2Address',
     'eoiCommonShares','eoiSaleType','eoiSaleAddress','eoiPriceLand','eoiPriceHouse','eoiPriceTotal','client1FinancePercentage','client2FinancePercentage','eoiFinancePercent','eoiNextAppointment','eoiNextApptDate','eoiNextApptTime','eoiIdAttached','eoiBranch','eoiDate','eoiStaffMember','eoiComments',
     'laVidaFinanceBrokerChoice','laVidaFinanceBrokerName','laVidaFinanceBrokerEmail','laVidaFinanceBrokerPhone','laVidaConveyancerChoice','laVidaConveyancerName','laVidaConveyancerEmail','laVidaConveyancerPhone',
-    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA','zoomFirstConsultTemplate','fcPreferredSuburbs','fcMinBudget','fcMaxBudget','fcAdditionalNotes','crInspections','crNextAppointmentDate','crScheduleNotes'
+    'notes','includeFullPhotos','compressPhotos','additionalDocsCount','item1','item2','item3','item4','firstConsultGoalType','firstConsultAnnualIncome','firstConsultExistingMortgage','firstConsultSavings','firstConsultSuper','firstConsultInvestmentProperties','firstConsultBorrowingCapacity','firstConsultNotes','clientReviewStrategy','clientReviewBuilder','clientReviewDeveloper','clientReviewBroker','clientReviewConveyancer','clientReviewProperty','clientReviewTimeline','clientReviewNextActions','zoomIncludeStandardEOI','zoomIncludeLaVidaEOI','zoomIncludeIA','zoomFirstConsultTemplate','fcPreferredSuburbs','fcMinBudget','fcMaxBudget','fcAdditionalNotes','crInspections','crNextAppointmentDate','crScheduleNotes',
+    'includeWaiver','zoomIncludeWaiver','waiverClient1Name','waiverClient2Name','waiverClient1Date','waiverClient2Date'
   ];
-  const dateFieldIds = ['date','eoiDate','iaDate'];
+  const dateFieldIds = ['date','eoiDate','iaDate','waiverClient1Date','waiverClient2Date'];
   const photoLabels = ['Client 1 ID Front', 'Client 1 ID Back', 'Client 2 ID Front', 'Client 2 ID Back'];
   const photos = photoLabels.map((label,i)=>({label, file:null, dataURL:null, img:null, rotation:0, name:''}));
   let hasSignature = false;
@@ -494,8 +495,12 @@
   function updateContinueButtonText(){
     var activeBtn = document.querySelector('.mode-card.active');
     var mode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
-    var text = mode === 'zoom' ? 'Start Zoom Appointment' : 'Start Appointment';
+    var text = mode === 'zoom' ? 'Start Zoom Appointment' : (mode === 'waiverOnly' ? 'Start Waiver & Disclosure' : 'Start Appointment');
     $('continueButtonText').textContent = text;
+    var hint = $('modeCardHint');
+    if(hint){
+      hint.textContent = mode === 'zoom' ? 'Online / video consultation' : (mode === 'waiverOnly' ? 'Waiver & Disclosure only' : 'Face-to-face appointment');
+    }
   }
 
   function updateLandingStaffFromStorage(){
@@ -513,7 +518,7 @@
       var card = $('recentDraftCard');
       if(card && result.status === 'valid'){
         var data = result.draft;
-        $('draftType').textContent = data.appointmentMode === 'zoom' ? 'Zoom / Online Appointment' : 'In-person Appointment';
+        $('draftType').textContent = data.appointmentMode === 'zoom' ? 'Zoom / Online Appointment' : (data.appointmentMode === 'waiverOnly' ? 'Waiver & Disclosure' : 'In-person Appointment');
         $('draftClient').textContent = data.clientName || '(No client name)';
         $('draftDate').textContent = data.date || '(No date)';
         $('draftStaff').textContent = data.teamMember || '(No staff)';
@@ -582,15 +587,37 @@
       target.insertAdjacentElement('afterend',field);
     }
   }
+  function relocateSignaturePads(){
+    var sigHost = $('sigPadsHost');
+    var waiverHost = $('waiverPadsHost');
+    if(!sigHost || !waiverHost) return;
+    if(appointmentMode === 'waiverOnly'){
+      if(sigHost.childElementCount > 0 && waiverHost.childElementCount === 0){
+        while(sigHost.firstChild){ waiverHost.appendChild(sigHost.firstChild); }
+      }
+    } else if(waiverHost.childElementCount > 0 && sigHost.childElementCount === 0){
+      while(waiverHost.firstChild){ sigHost.appendChild(waiverHost.firstChild); }
+    }
+  }
   function applyAppointmentMode(){
     var app = document.querySelector('.app');
-    app.classList.remove('show-in-person', 'show-zoom');
-    app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : 'show-in-person');
+    app.classList.remove('show-in-person', 'show-zoom', 'show-waiver');
+    app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : (appointmentMode === 'waiverOnly' ? 'show-waiver' : 'show-in-person'));
+    relocateSignaturePads();
+    updateWaiverDetails();
+    updateZipVisibility();
     placeContractDueDateField();
     updateSummaryCard();
     updatePackagePreview();
     updateTimeline();
     deactivateValidation();
+  }
+  function updateZipVisibility(){
+    var isWaiver = appointmentMode === 'waiverOnly';
+    var zipBtn = $('savePackageZip');
+    var zipRow = $('packageReadyZipRow');
+    if(zipBtn) zipBtn.classList.toggle('hidden', isWaiver);
+    if(zipRow) zipRow.classList.toggle('hidden', isWaiver);
   }
   function enterAppointment(){
     /* If a saved appointment exists, offer choices before starting */
@@ -752,6 +779,11 @@ var staff = ($('landingStaff').value || '').trim();
       requireField(zoomErrors,'teamMember','Enter the staff member.');
       requireField(zoomErrors,'clientName','Enter the client name.');
       requireContractDueDate(zoomErrors);
+      if(waiverIncluded()){
+        waiverReadiness().items.forEach(function(item){
+          if(!zoomErrors.some(function(e){return e.id === item.id;})) zoomErrors.push(item);
+        });
+      }
       zoomErrors.filter(function(e){return e.id;}).forEach(function(e){setFieldError(e.id,e.message);});
       if(zoomErrors.length){
         var f=zoomErrors[0];
@@ -769,7 +801,7 @@ var staff = ($('landingStaff').value || '').trim();
     requireValidDate(errors,'date','Enter the appointment date as DD/MM/YYYY.');
     requireField(errors,'teamMember','Enter the staff member.');
     requireField(errors,'clientName','Enter the client name.');
-    requireContractDueDate(errors);
+    if(appointmentMode !== 'waiverOnly') requireContractDueDate(errors);
 
     if (plan.includeEOI) {
       eoiReadiness().items.filter(item => !['date','teamMember','clientName'].includes(item.id)).forEach(item => {
@@ -796,6 +828,11 @@ var staff = ($('landingStaff').value || '').trim();
       if (!resolvedIaProperty) {
         errors.push({id: showIaOverrides ? 'iaProperty' : 'propertySaleAddress', message:'Enter the property sold address.'});
       }
+    }
+    if (waiverIncluded()) {
+      waiverReadiness().items.forEach(item => {
+        if(!errors.some(err => err.id === item.id)) errors.push(item);
+      });
     }
 
     errors.filter(err=>err.id).forEach(err=>setFieldError(err.id,err.message));
@@ -917,6 +954,22 @@ var staff = ($('landingStaff').value || '').trim();
   }
   function zoomWhiteboardFilename(){
     return 'Whiteboard Page.pdf';
+  }
+  function individualWaiverFilename(){
+    var c = clientNamesForFilename();
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'DD-MM-YYYY';
+    return 'Waiver and Disclosure - ' + c + ' - ' + d + '.pdf';
+  }
+  function waiverOnlyPdfFileName(){
+    var c = clientNamesForFilename();
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'DD-MM-YYYY';
+    return d + ' - ' + c + ' - Waiver and Disclosure.pdf';
+  }
+  function zoomWaiverFilename(){
+    var c = clientNamesForFilename();
+    var s = safePart(fieldText('teamMember'), 'Rep');
+    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'Date';
+    return 'Waiver and Disclosure - ' + c + ' - ' + s + ' - ' + d + '.pdf';
   }
 
   function individualPhotoFilename(photo, idx){
@@ -1094,6 +1147,19 @@ var staff = ($('landingStaff').value || '').trim();
     if(appointmentMode !== 'zoom') placeContractDueDateField();
     updateEoiOverrides();
   }
+  function updateWaiverDetails(){
+    const card = $('waiverSignatureSection');
+    if(card){
+      const insideInPerson = appointmentMode === 'inPerson' && isChecked('includeWaiver');
+      const insideZoom = appointmentMode === 'zoom' && isChecked('zoomIncludeWaiver');
+      const standalone = appointmentMode === 'waiverOnly';
+      card.style.display = (standalone || insideInPerson || insideZoom) ? 'block' : 'none';
+    }
+    const c2Block = $('waiverClient2Block');
+    if(c2Block){
+      c2Block.classList.toggle('hidden', !hasClient2());
+    }
+  }
   function eoiOwnership(){
     const selected = document.querySelector('input[name="eoiOwnership"]:checked');
     return selected ? selected.value : 'sole';
@@ -1121,9 +1187,31 @@ var staff = ($('landingStaff').value || '').trim();
     }
     return { included:true, ready:items.length === 0, items };
   }
-  // =========================================================================
-  // SECTION D: ADMIN SETTINGS MANAGEMENT
-  // =========================================================================
+  function waiverIncluded(){
+    if(appointmentMode === 'waiverOnly') return true;
+    if(appointmentMode === 'zoom') return isChecked('zoomIncludeWaiver');
+    return isChecked('includeWaiver');
+  }
+  function waiverReadiness(){
+    if(!waiverIncluded()) return { included:false, ready:true, items:[] };
+    const items = [];
+    const hasClient2 = fieldText('client2Name') || fieldText('waiverClient2Name');
+    if(!fieldText('waiverClient1Name') && !fieldText('clientName'))
+      items.push({ id:'waiverClient1Name', message:'Enter Client 1 name for Waiver.' });
+    if(!hasSignature)
+      items.push({ id:'waiverSignature1', message:'Capture Client 1 signature for Waiver.' });
+    if(!fieldText('waiverClient1Date') && !fieldText('date'))
+      items.push({ id:'waiverClient1Date', message:'Enter Client 1 date for Waiver.' });
+    if(hasClient2){
+      if(!fieldText('waiverClient2Name') && !fieldText('client2Name'))
+        items.push({ id:'waiverClient2Name', message:'Enter Client 2 name for Waiver.' });
+      if(!hasSignature2)
+        items.push({ id:'waiverSignature2', message:'Capture Client 2 signature for Waiver.' });
+      if(!fieldText('waiverClient2Date') && !fieldText('date'))
+        items.push({ id:'waiverClient2Date', message:'Enter Client 2 date for Waiver.' });
+    }
+    return { included:true, ready:items.length === 0, items };
+  }
   function loadAdminSettings(){
     try{
       const saved = JSON.parse(localStorage.getItem(adminSettingsKey) || 'null');
@@ -1171,12 +1259,15 @@ var staff = ($('landingStaff').value || '').trim();
     const panel=$('packageDownloadStatus');
     if(!panel) return;
     const fallback=kind === 'fallback';
+    const isWaiverOnly = appointmentMode === 'waiverOnly';
     panel.hidden=false;
     panel.classList.toggle('is-fallback',fallback);
     $('packageDownloadStatusTitle').textContent=fallback ? 'Separate downloads may be required' : 'Downloads started';
     $('packageDownloadStatusInstruction').textContent=fallback
       ? 'Your browser may require separate downloads. Tap Save Combined PDF and Save ZIP below.'
-      : 'Please tap Prepare Email and attach the Combined PDF and Document ZIP from your Downloads.';
+      : (isWaiverOnly
+          ? 'Please tap Prepare Email and attach the Waiver & Disclosure PDF from your Downloads.'
+          : 'Please tap Prepare Email and attach the Combined PDF and Document ZIP from your Downloads.');
     packageDownloadStatusPackage=appointmentPackage;
   }
   function setPackageGenerationDisabled(disabled){
@@ -1199,7 +1290,9 @@ var staff = ($('landingStaff').value || '').trim();
     const description=$('appointmentPackageReadyDescription');
     if(!ready || (packageDownloadStatusPackage && packageDownloadStatusPackage !== lastAppointmentPackage)) resetPackageDownloadStatus();
     if(title) title.textContent=stale ? 'Appointment Package Needs Regeneration' : 'Appointment Package Ready';
-    if(description) description.textContent=stale ? 'The appointment has changed since this package was generated.' : 'Your combined PDF and document ZIP are ready.';
+    if(description) description.textContent=stale
+      ? 'The appointment has changed since this package was generated.'
+      : (appointmentMode === 'waiverOnly' ? 'Your Waiver & Disclosure PDF is ready.' : 'Your combined PDF and document ZIP are ready.');
     if(ready && pdfName) pdfName.textContent=lastAppointmentPackage.filenames.combinedPdf;
     if(ready && zipName) zipName.textContent=lastAppointmentPackage.filenames.zip;
     if(notice) notice.textContent=stale ? 'Appointment details changed. Generate a new package to continue.' : '';
@@ -1426,6 +1519,7 @@ var staff = ($('landingStaff').value || '').trim();
       clearValidation();
       if(id==='includeIA' || id==='iaForm' || id==='showIaOverrides') { updateIaDetails(); updateIaOverrides(); }
       if(id==='includeEOI' || id==='showEoiOverrides') { updateEoiDetails(); updateEoiOverrides(); }
+      if(id==='includeWaiver' || id==='zoomIncludeWaiver' || id==='waiverClient1Name' || id==='waiverClient2Name' || id==='client2Name' || id==='waiverClient2Date') { updateWaiverDetails(); }
       if(id==='clientName' || id==='client2Name') syncClient2FinanceState();
       if(id==='client1FinancePercentage') syncFinanceCompatibility();
       if(id==='eoiTemplate') { updateLaVidaDetails(); applyLaVidaDefaults(false); }
@@ -1999,6 +2093,7 @@ var staff = ($('landingStaff').value || '').trim();
   updateDateDisplays();
   updateIaDetails();
   updateEoiDetails();
+  updateWaiverDetails();
   updateLaVidaDetails();
   updateActionButtons();
   clearGenerated();
@@ -2242,6 +2337,11 @@ var staff = ($('landingStaff').value || '').trim();
 
     if(appointmentMode === 'zoom'){
       var plan = zoomOutputPlan();
+      if(waiverIncluded()){
+        missing += waiverReadiness().items.filter(function(item){
+          return !['date','teamMember','clientName'].includes(item.id);
+        }).length;
+      }
       if(!plan.totalPages) return { ready: false, missing: missing + 1 };
       return { ready: (missing === 0), missing: missing };
     }
@@ -2264,6 +2364,11 @@ var staff = ($('landingStaff').value || '').trim();
       if(!iaAddr) missing++;
       if(!iaProp) missing++;
     }
+    if(waiverIncluded()){
+      missing += waiverReadiness().items.filter(function(item){
+        return !['date','teamMember','clientName'].includes(item.id);
+      }).length;
+    }
     return { ready: (missing === 0), missing: missing };
   }
 
@@ -2283,6 +2388,11 @@ var staff = ($('landingStaff').value || '').trim();
       if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
       if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
       if(!resolveContractDueDate().valid) items.push({id:'contractDueDate', message:'Select a Contract Due Date or choose To Be Confirmed.'});
+      if(waiverIncluded()){
+        waiverReadiness().items.forEach(function(item){
+          if(!items.some(function(existing){ return existing.id === item.id; })) items.push(item);
+        });
+      }
       return { ready: items.length === 0, missingCount: items.length, items: items };
     }
     /* In-person */
@@ -2291,7 +2401,7 @@ var staff = ($('landingStaff').value || '').trim();
     if(!fieldText('date')) items.push({id:'date', message:'Enter the appointment date.'});
     if(!fieldText('teamMember')) items.push({id:'teamMember', message:'Enter the staff member.'});
     if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
-    if(!resolveContractDueDate().valid) items.push({id:'contractDueDate', message:'Select a Contract Due Date or choose To Be Confirmed.'});
+    if(appointmentMode !== 'waiverOnly' && !resolveContractDueDate().valid) items.push({id:'contractDueDate', message:'Select a Contract Due Date or choose To Be Confirmed.'});
     if(plan2 && plan2.includeEOI){
       eoiReadiness().items.forEach(function(item){
         if(!items.some(function(existing){ return existing.id === item.id; })) items.push(item);
@@ -2306,6 +2416,11 @@ var staff = ($('landingStaff').value || '').trim();
       if(!iaNames) items.push({id: showIa ? 'iaClientNames' : 'clientName', message:'Enter the client name.'});
       if(!iaAddr) items.push({id: showIa ? 'iaAddress' : 'clientAddress', message:'Enter the client address.'});
       if(!iaProp) items.push({id: showIa ? 'iaProperty' : 'propertySaleAddress', message:'Enter the property sold address.'});
+    }
+    if(waiverIncluded()){
+      waiverReadiness().items.forEach(function(item){
+        if(!items.some(function(existing){ return existing.id === item.id; })) items.push(item);
+      });
     }
     return { ready: items.length === 0, missingCount: items.length, items: items };
   }
@@ -2409,7 +2524,7 @@ var staff = ($('landingStaff').value || '').trim();
   function updateTimelineAriaLabels(check){
     if(!check) check = structuredReadinessCheck();
     var isZoom = (appointmentMode === 'zoom');
-    var tl = isZoom ? $('timelineZoom') : $('timelineInPerson');
+    var tl = isZoom ? $('timelineZoom') : (appointmentMode === 'waiverOnly' ? $('timelineWaiver') : $('timelineInPerson'));
     if(!tl) return;
     var readyBtn = tl.querySelector('[data-tl-target="' + (isZoom ? 'zoomPackagePreview' : 'appointmentSummaryCard') + '"]');
     if(readyBtn){
@@ -2471,13 +2586,26 @@ var staff = ($('landingStaff').value || '').trim();
 
   function updateTimeline(){
     var isZoom = (appointmentMode === 'zoom');
+    var isWaiver = (appointmentMode === 'waiverOnly');
     var tlZoom = $('timelineZoom');
     var tlIp = $('timelineInPerson');
-    if(!tlZoom || !tlIp) return;
+    var tlWaiver = $('timelineWaiver');
+    if(!tlZoom || !tlIp || !tlWaiver) return;
 
     /* Show/hide correct timeline */
-    tlZoom.style.display = isZoom ? '' : 'none';
-    tlIp.style.display = isZoom ? 'none' : '';
+    if(isZoom){
+      tlZoom.style.display = '';
+      tlIp.style.display = 'none';
+      tlWaiver.style.display = 'none';
+    } else if(isWaiver){
+      tlZoom.style.display = 'none';
+      tlIp.style.display = 'none';
+      tlWaiver.style.display = '';
+    } else {
+      tlZoom.style.display = 'none';
+      tlIp.style.display = '';
+      tlWaiver.style.display = 'none';
+    }
 
     var steps;
     if(isZoom){
@@ -2489,13 +2617,21 @@ var staff = ($('landingStaff').value || '').trim();
         { el: tlZoom.querySelector('[data-tl-target="crNextActions"]'), complete: function(){ return fieldText('clientReviewStrategy') || fieldText('clientReviewNextActions') || fieldText('clientReviewProperty') || fieldText('clientReviewTimeline'); }, optional: false },
         { el: tlZoom.querySelector('[data-tl-target="zoomWorkspaceSection"]'), complete: function(){ return typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0; }, optional: true, isIncluded: function(){ return typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0; } },
         { el: tlZoom.querySelector('[data-tl-target="zoomOutputsSection"]'), complete: function(){ return true; /* FC + CR always included */ }, optional: false },
+        { el: tlZoom.querySelector('[data-tl-target="waiverSignatureSection"]'), complete: function(){ return waiverReadiness().ready; }, optional: true, isIncluded: function(){ return waiverReadiness().included; } },
         { el: tlZoom.querySelector('[data-tl-target="zoomPackagePreview"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
+      ];
+    } else if(isWaiver){
+      steps = [
+        { el: tlWaiver.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return fieldText('teamMember') && fieldText('clientName') && fieldText('date'); }, optional: false },
+        { el: tlWaiver.querySelector('[data-tl-target="waiverSignatureSection"]'), complete: function(){ return waiverReadiness().ready; }, optional: false },
+        { el: tlWaiver.querySelector('[data-tl-target="appointmentSummaryCard"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
       ];
     } else {
       steps = [
         { el: tlIp.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return fieldText('teamMember') && fieldText('clientName') && fieldText('date'); }, optional: false },
         { el: tlIp.querySelector('[data-tl-target="eoiDetailsCard"]'), complete: function(){ return eoiReadiness().ready; }, optional: true, isIncluded: function(){ return eoiReadiness().included; } },
         { el: tlIp.querySelector('[data-tl-target="iaDetailsCard"]'), complete: function(){ return isChecked('includeIA') && fieldText('iaForm'); }, optional: true, isIncluded: function(){ return isChecked('includeIA'); } },
+        { el: tlIp.querySelector('[data-tl-target="waiverSignatureSection"]'), complete: function(){ return waiverReadiness().ready; }, optional: true, isIncluded: function(){ return waiverReadiness().included; } },
         { el: tlIp.querySelector('[data-tl-target="clientIdSection"]'), complete: function(){ var ok = hasC1Photo(); if(hasClient2()) ok = ok && hasC2Photo(); return ok; }, optional: false },
         { el: tlIp.querySelector('[data-tl-target="signaturesSection"]'), complete: function(){ var ok = hasSignature; if(hasClient2()) ok = ok && hasSignature2; return ok; }, optional: false },
         { el: tlIp.querySelector('[data-tl-target="checklistCard"]'), complete: function(){ return isChecked('item1') || isChecked('item2') || isChecked('item3') || isChecked('item4'); }, optional: false },
@@ -3236,6 +3372,15 @@ var staff = ($('landingStaff').value || '').trim();
 
   // Signature pad
   const sig=$('signature'); const sctx=sig.getContext('2d'); let drawing=false;
+  /* Auto-populate the waiver signing date when a signature is captured.
+     Only fills blank fields so manually corrected dates are preserved. */
+  function autoFillSigningDate(dateId){
+    const el = $(dateId);
+    if(!el || (el.value || '').trim()) return;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    el.value = pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear();
+  }
   function clearSig(){
     if(hasSignature && !confirm('Are you sure you want to clear Signature 1?')) return;
     sctx.clearRect(0,0,sig.width,sig.height);
@@ -3243,7 +3388,7 @@ var staff = ($('landingStaff').value || '').trim();
     clearGenerated();
   }
   function pos(e){ const r=sig.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig.width/r.width, y:(e.clientY-r.top)*sig.height/r.height}; }
-  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); });
+  sig.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing=true; hasSignature=true; const p=pos(e); sctx.beginPath(); sctx.moveTo(p.x,p.y); sctx.lineWidth=4; sctx.lineCap='round'; sctx.lineJoin='round'; sctx.strokeStyle='#111'; sig.setPointerCapture(e.pointerId); clearGenerated(); updateWaiverDetails(); autoFillSigningDate('waiverClient1Date'); });
   sig.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); const p=pos(e); sctx.lineTo(p.x,p.y); sctx.stroke(); });
   sig.addEventListener('pointerup', e=>{ drawing=false; clearGenerated(); try{sig.releasePointerCapture(e.pointerId)}catch{} });
   sig.addEventListener('pointercancel', ()=>drawing=false);
@@ -3257,7 +3402,7 @@ var staff = ($('landingStaff').value || '').trim();
     clearGenerated();
   }
   function pos2(e){ const r=sig2.getBoundingClientRect(); return {x:(e.clientX-r.left)*sig2.width/r.width, y:(e.clientY-r.top)*sig2.height/r.height}; }
-  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); });
+  sig2.addEventListener('pointerdown', e=>{ e.preventDefault(); drawing2=true; hasSignature2=true; const p=pos2(e); sctx2.beginPath(); sctx2.moveTo(p.x,p.y); sctx2.lineWidth=4; sctx2.lineCap='round'; sctx2.lineJoin='round'; sctx2.strokeStyle='#111'; sig2.setPointerCapture(e.pointerId); clearGenerated(); updateWaiverDetails(); autoFillSigningDate('waiverClient2Date'); });
   sig2.addEventListener('pointermove', e=>{ if(!drawing2) return; e.preventDefault(); const p=pos2(e); sctx2.lineTo(p.x,p.y); sctx2.stroke(); });
   sig2.addEventListener('pointerup', e=>{ drawing2=false; clearGenerated(); try{sig2.releasePointerCapture(e.pointerId)}catch{} });
   sig2.addEventListener('pointercancel', ()=>drawing2=false);
@@ -3725,6 +3870,212 @@ var staff = ($('landingStaff').value || '').trim();
     return c;
   }
 
+  // =========================================================================
+  // SECTION: WAIVER & DISCLOSURE TEMPLATE PAGE DRAWING
+  // =========================================================================
+  const waiverTemplateSource = 'templates/ASG-Disclosure-Waiver-2026.pdf';
+  let waiverTemplateImage = null;
+
+  async function ensureWaiverTemplateImage(){
+    if(waiverTemplateImage) return waiverTemplateImage;
+    status('Loading Waiver & Disclosure template...');
+    waiverTemplateImage = await loadImage(waiverTemplateSource);
+    return waiverTemplateImage;
+  }
+
+  function drawWaiverPage(pageNumber, totalPages, scale=2){
+    const img = waiverTemplateImage;
+    if(!img) throw new Error('Waiver & Disclosure template has not loaded.');
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+    // The source waiver PDF is A4 ratio. Fit it onto the generated PDF page without distortion.
+    const imgAspect = img.width / img.height;
+    const pageAspect = W / H;
+    let dw, dh, dx, dy;
+    if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
+    else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    /* The rendered template image is top-down, but the characterisation coordinates
+       are PDF user space (bottom-left origin). Mirror y so overlays land on the
+       correct visual rows. */
+    const map = (sx, sy) => ({ x: dx + (sx / img.width) * dw, y: dy + ((img.height - sy) / img.height) * dh });
+    const maxW = sw => (sw / img.width) * dw;
+    function whiteOut(sx, sy, sw, sh){
+      const p1 = map(sx, sy); const p2 = map(sx + sw, sy + sh);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+    function overlayText(text, sx, sy, sw, font='700 12px Arial', lineHeight=14, maxLines=2){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, sy);
+      ctx.fillStyle = '#111';
+      ctx.font = font;
+      wrapText(ctx, text, p.x, p.y, maxW(sw), lineHeight, maxLines);
+    }
+    function overlayFitText(text, sx, sy, sw, weight='700', maxSize=12, minSize=8){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, sy);
+      const width = maxW(sw);
+      let size = maxSize;
+      ctx.fillStyle = '#111';
+      while(size > minSize){
+        ctx.font = `${weight} ${size}px Arial`;
+        if(ctx.measureText(text).width <= width) break;
+        size -= 0.5;
+      }
+      ctx.font = `${weight} ${size}px Arial`;
+      if(ctx.measureText(text).width <= width){
+        ctx.fillText(text, p.x, p.y);
+      } else {
+        wrapText(ctx, text, p.x, p.y, width, size + 2, 2);
+      }
+    }
+    function drawTemplateLineValue(text, sx, baselineSy, sw, options={}){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, baselineSy);
+      const padLeft = options.padLeft ?? 8;
+      const padRight = options.padRight ?? 12;
+      const width = Math.max(20, maxW(sw) - padLeft - padRight);
+      const weight = options.weight || '700';
+      const maxSize = options.maxSize || 10.5;
+      const minSize = options.minSize || 8.5;
+      const maxLines = options.maxLines || 2;
+
+      function linesForSize(size){
+        ctx.font = `${weight} ${size}px Arial`;
+        const words = text.replace(/\n/g, ' \n ').split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = '';
+        function pushLine(value){
+          if(value) lines.push(value);
+        }
+        for(const word of words){
+          if(word === '\n'){
+            pushLine(line);
+            line = '';
+            continue;
+          }
+          const candidate = line ? `${line} ${word}` : word;
+          if(ctx.measureText(candidate).width <= width){
+            line = candidate;
+            continue;
+          }
+          pushLine(line);
+          line = '';
+          if(ctx.measureText(word).width <= width){
+            line = word;
+            continue;
+          }
+          let chunk = '';
+          for(const ch of word){
+            const test = chunk + ch;
+            if(ctx.measureText(test).width > width && chunk){
+              pushLine(chunk);
+              chunk = ch;
+            } else {
+              chunk = test;
+            }
+          }
+          line = chunk;
+        }
+        pushLine(line);
+        return lines;
+      }
+
+      let size = maxSize;
+      let lines = [];
+      const lineGap = options.lineGap ?? 2;
+      let lineHeight = size + lineGap;
+      while(size >= minSize){
+        lines = linesForSize(size);
+        if(lines.length <= maxLines) break;
+        size -= 0.5;
+      }
+      size = Math.max(size, minSize);
+      ctx.font = `${weight} ${size}px Arial`;
+      const fittedLines = linesForSize(size);
+      const didTruncate = fittedLines.length > maxLines;
+      lines = fittedLines.slice(0, maxLines);
+      if(lines.length){
+        const lastIndex = lines.length - 1;
+        if(didTruncate && !lines[lastIndex].endsWith('...')) lines[lastIndex] = `${lines[lastIndex]}...`;
+        while(ctx.measureText(lines[lastIndex]).width > width && lines[lastIndex].length > 1){
+          lines[lastIndex] = `${lines[lastIndex].slice(0, -2)}...`;
+        }
+      }
+      lineHeight = size + lineGap;
+      const previousBaseline = ctx.textBaseline;
+      ctx.fillStyle = '#111';
+      ctx.textBaseline = 'alphabetic';
+      lines.forEach((line, index) => {
+        ctx.fillText(line, p.x + padLeft, p.y + (index * lineHeight));
+      });
+      ctx.textBaseline = previousBaseline;
+    }
+
+    // Client 1 fields (verified coordinates from PDF)
+    const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
+    const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
+    drawTemplateLineValue(client1Name, 59, 599.71, 301, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(client1Date, 54, 475.51, 116, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+
+    // Client 1 signature (waiver signature is captured on shared pads)
+    if(hasSignature){
+      const sigTop = 537.55 + 18; /* PDF Y of signature line top */
+      const p1 = map(59, sigTop);
+      const p2 = map(59 + 307, 537.55); /* PDF Y of signature line baseline */
+      ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+
+    // Client 2 fields (only if Client 2 is included)
+    const hasClient2 = fieldText('waiverClient2Name') || fieldText('client2Name');
+    if(hasClient2){
+      /* Client 2 block below Client 1 per approved layout:
+         Name baseline y=410, Signature y=347.84, Date y=285.80
+         (spacing mirrors the template's own row rhythm; row gap ~62pt). */
+      const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
+      const c2NameY = 410.00;
+      const c2SigY = 347.84;
+      const c2DateY = 285.80;
+      function drawC2Label(label, x, baselineY){
+        ctx.fillStyle = '#111';
+        ctx.font = '700 9.5px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(label, x, baselineY);
+        return ctx.measureText(label).width;
+      }
+
+      // Client 2 name (labelled, then value)
+      const c2NameLabelW = drawC2Label('CLIENT 2 NAME', 54, c2NameY);
+      drawTemplateLineValue(c2Name, 54 + c2NameLabelW, c2NameY, 301 - c2NameLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+
+      // Client 2 signature (labelled, then captured signature image)
+      if(hasSignature2){
+        const c2SigTop = c2SigY + 18;
+        const p1 = map(59, c2SigTop);
+        const p2 = map(59 + 307, c2SigY);
+        const c2SigLabelW = drawC2Label('CLIENT 2 SIGNATURE', 54, c2SigY);
+        const imgX = p1.x + c2SigLabelW + 8;
+        const imgW = (p2.x - p1.x) - c2SigLabelW - 8;
+        if(imgW > 20) ctx.drawImage(sig2, imgX, p1.y, imgW, p2.y - p1.y);
+      }
+
+      // Client 2 date (labelled, then value)
+      const c2DateLabelW = drawC2Label('DATE', 54, c2DateY);
+      drawTemplateLineValue(c2Date, 54 + c2DateLabelW, c2DateY, 116 - c2DateLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+    }
+
+    drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817);
+
+    return c;
+  }
+
   function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
     var W = 595, H = 842;
     var c = document.createElement('canvas');
@@ -4086,22 +4437,26 @@ var staff = ($('landingStaff').value || '').trim();
   // =========================================================================
   function outputPlan(){
     if(appointmentMode === 'zoom') return zoomOutputPlan();
+    if(appointmentMode === 'waiverOnly') return waiverOutputPlan();
     const includeIA = isChecked('includeIA');
     const selectedIA = includeIA ? ($('iaForm') ? $('iaForm').value : CONFIG.defaults.iaForm) : '';
     const includeEOI = isChecked('includeEOI');
+    const includeWaiver = isChecked('includeWaiver');
     const eoiTemplate = selectedEoiTemplateValue();
     const builder = EOI_BUILDERS[eoiTemplate] || EOI_BUILDERS.standard;
     const eoiPageCount = includeEOI ? builder.getPages() : 0;
     const selectedPhotos = photos.filter(p=>p.img);
-    const totalPages = eoiPageCount + (selectedIA ? 1 : 0) + selectedPhotos.length;
-    return { selectedIA, includeEOI, eoiTemplate, eoiPageCount, selectedPhotos, totalPages,
-      groups: buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos)
+    const waiverPageCount = includeWaiver ? 1 : 0;
+    const totalPages = eoiPageCount + (selectedIA ? 1 : 0) + waiverPageCount + selectedPhotos.length;
+    return { selectedIA, includeEOI, includeWaiver, eoiTemplate, eoiPageCount, selectedPhotos, waiverPageCount, totalPages,
+      groups: buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos, includeWaiver)
     };
   }
   function zoomOutputPlan(){
     var hasStdEOI = isChecked('zoomIncludeStandardEOI');
     var hasLaVidaEOI = isChecked('zoomIncludeLaVidaEOI');
     var hasIA = isChecked('zoomIncludeIA');
+    var hasWaiver = isChecked('zoomIncludeWaiver');
     var pages = [];
     var groups = [];
     var offset = 0;
@@ -4158,6 +4513,13 @@ var staff = ($('landingStaff').value || '').trim();
       offset++;
     }
 
+    /* Optional Waiver & Disclosure */
+    if(hasWaiver){
+      pages.push({id:'waiver'});
+      groups.push({id:'waiver', pageOffset:offset, pageCount:1, getFilename:zoomWaiverFilename});
+      offset++;
+    }
+
     /* Optional Whiteboard pages (saved pages only) */
     if(typeof wbSavedPages !== 'undefined' && wbSavedPages.length > 0){
       var wbCount = 0;
@@ -4173,7 +4535,20 @@ var staff = ($('landingStaff').value || '').trim();
 
     return { totalPages: offset, pages: pages, groups: groups };
   }
-  function buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos){
+
+  function waiverOutputPlan(){
+    const includeWaiver = true; // always true for waiver-only mode
+    const pages = [];
+    const groups = [];
+    let offset = 0;
+
+    pages.push({id:'waiver'});
+    groups.push({id:'waiver', pageOffset:offset, pageCount:1, getFilename:waiverOnlyPdfFileName});
+    offset += 1;
+
+    return { totalPages: offset, pages: pages, groups: groups };
+  }
+  function buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos, includeWaiver=false){
     const groups = [];
     let offset = 0;
     if (includeEOI && eoiPageCount > 0) {
@@ -4182,6 +4557,10 @@ var staff = ($('landingStaff').value || '').trim();
     }
     if (selectedIA) {
       groups.push({ id: 'ia', pageOffset: offset, pageCount: 1, getFilename: individualIaFilename });
+      offset += 1;
+    }
+    if (includeWaiver) {
+      groups.push({ id: 'waiver', pageOffset: offset, pageCount: 1, getFilename: individualWaiverFilename });
       offset += 1;
     }
     // Iterate original photos array to preserve index for naming
@@ -4238,6 +4617,20 @@ var staff = ($('landingStaff').value || '').trim();
         } catch(e) { /* image load failed, use fallback */ }
         return drawWhiteboardPage(pageDef.pageIdx, index+1, totalPages, scale, wbLoaded);
       }
+      if(pageDef.id === 'waiver'){
+        await ensureWaiverTemplateImage();
+        return drawWaiverPage(index+1, totalPages, scale);
+      }
+      return null;
+    }
+    if(appointmentMode === 'waiverOnly'){
+      var waiverPlan = waiverOutputPlan();
+      if(index >= waiverPlan.pages.length) return null;
+      var pageDef = waiverPlan.pages[index];
+      if(pageDef.id === 'waiver'){
+        await ensureWaiverTemplateImage();
+        return drawWaiverPage(index+1, totalPages, scale);
+      }
       return null;
     }
     const plan = outputPlan();
@@ -4254,6 +4647,13 @@ var staff = ($('landingStaff').value || '').trim();
       if(index === offset){
         await ensureIAImage(plan.selectedIA);
         return drawIAPage(plan.selectedIA, index + 1, totalPages, scale);
+      }
+      offset++;
+    }
+    if(plan.includeWaiver){
+      if(index === offset){
+        await ensureWaiverTemplateImage();
+        return drawWaiverPage(index + 1, totalPages, scale);
       }
       offset++;
     }
@@ -5322,9 +5722,24 @@ var staff = ($('landingStaff').value || '').trim();
     const nextAppointment = emailNextAppointment();
     const nextAppointmentBlock = nextAppointment ? `\n\nNext Appointment:\n${nextAppointment}` : '';
     const subject = `Sales Appointment Documents | ${clientNames} | ${date}`;
-    const body = `Hi Natalie,\n\nPlease find the completed sales appointment documents for the following appointment.\n\nClients:\n${clientNames}\n\nProperty:\n${property}\n\nAppointment Date:\n${date}\n\nContract Due Date:\n${contractDueDate.value}${nextAppointmentBlock}\n\nKind regards,\n\n${staffName}`;
+    const waiverLine = waiverIncluded() ? '\n\nWaiver & Disclosure: Included' : '';
+    const body = `Hi Natalie,\n\nPlease find the completed sales appointment documents for the following appointment.\n\nClients:\n${clientNames}\n\nProperty:\n${property}\n\nAppointment Date:\n${date}\n\nContract Due Date:\n${contractDueDate.value}${nextAppointmentBlock}${waiverLine}\n\nKind regards,\n\n${staffName}`;
     const fallbackBody = body;
     const fileName = lastPdfName || pdfFileName();
+    const cc = resolveShareCc(staffName);
+    return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc, ccDiagnostic:cc ? '' : 'No staff or fallback CC address is configured.' };
+  }
+
+  function buildWaiverOnlyEmailContent(){
+    const staffName = (fieldText('teamMember') || '').trim() || 'ASG Team';
+    const client1 = (fieldText('clientName') || '').trim();
+    const client2 = (fieldText('client2Name') || '').trim();
+    const clientNames = client2 ? `${client1} & ${client2}` : (client1 || 'Client');
+    const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
+    const subject = `Waiver & Disclosure | ${clientNames} | ${date}`;
+    const body = `Hi Natalie,\n\nPlease find the completed Waiver & Disclosure for:\n\n${clientNames}\n\nDate:\n${date}\n\nPlease attach the downloaded Waiver & Disclosure PDF before sending.\n\nKind regards,\n\n${staffName}`;
+    const fallbackBody = body;
+    const fileName = lastPdfName || waiverOnlyPdfFileName();
     const cc = resolveShareCc(staffName);
     return { subject, body, fallbackBody, fileName, staffName, to:CONFIG.share.to, cc, ccDiagnostic:cc ? '' : 'No staff or fallback CC address is configured.' };
   }
@@ -5348,9 +5763,10 @@ var staff = ($('landingStaff').value || '').trim();
   async function downloadReadyPackage(){
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
+    const isWaiverOnly = appointmentMode === 'waiverOnly';
     try{
       downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
-      downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
+      if(!isWaiverOnly) downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
       showPackageDownloadStatus('started',appointmentPackage);
       status('Downloads started.');
     }catch(err){
@@ -5373,6 +5789,10 @@ var staff = ($('landingStaff').value || '').trim();
   }
 
   async function saveReadyZip(){
+    if(appointmentMode === 'waiverOnly'){
+      status('The Waiver & Disclosure output is a single PDF — no ZIP download.');
+      return;
+    }
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
     try{
@@ -5387,7 +5807,7 @@ var staff = ($('landingStaff').value || '').trim();
   async function prepareReadyEmail(){
     const appointmentPackage=await currentReadyPackage();
     if(!appointmentPackage) return;
-    const email=buildShareEmailContent();
+    const email=appointmentMode === 'waiverOnly' ? buildWaiverOnlyEmailContent() : buildShareEmailContent();
     if(!email){ status('Please fix the highlighted fields.'); return; }
     const link=$('openPreparedEmail');
     if(!link) return;

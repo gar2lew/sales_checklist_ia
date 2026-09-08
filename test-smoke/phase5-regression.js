@@ -99,14 +99,14 @@ s.listen(0, async () => {
   });
   await p1.waitForTimeout(200);
 
-  /* Timeline: zoom renders 8 steps */
+  /* Timeline: zoom renders 9 steps (incl. optional Waiver) */
   const tlZoom1 = await p1.evaluate(() => {
     var tl = document.getElementById('timelineZoom');
     if(!tl) return { found: false };
     var steps = tl.querySelectorAll('.tl-step-btn');
     return { found: true, count: steps.length, display: tl.style.display || '' };
   });
-  chk('Zoom timeline has 8 steps', tlZoom1.found && tlZoom1.count === 8);
+  chk('Zoom timeline has 9 steps', tlZoom1.found && tlZoom1.count === 9);
   /* After filling fields, at least one step complete */
   const tlComp1 = await p1.evaluate(() => {
     var steps = document.querySelectorAll('#timelineZoom .timeline-step');
