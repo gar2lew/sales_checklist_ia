@@ -591,7 +591,8 @@
     var sigHost = $('sigPadsHost');
     var waiverHost = $('waiverPadsHost');
     if(!sigHost || !waiverHost) return;
-    if(appointmentMode === 'waiverOnly'){
+    var showInWaiver = appointmentMode === 'waiverOnly' || (appointmentMode === 'zoom' && isChecked('zoomIncludeWaiver'));
+    if(showInWaiver){
       if(sigHost.childElementCount > 0 && waiverHost.childElementCount === 0){
         while(sigHost.firstChild){ waiverHost.appendChild(sigHost.firstChild); }
       }
@@ -1245,6 +1246,9 @@ var staff = ($('landingStaff').value || '').trim();
     if(c2Block){
       c2Block.classList.toggle('hidden', !hasClient2());
     }
+    /* Zoom + waiver: relocate the shared pads into the waiver stage so they
+       are signable in the Zoom workflow; move them back when not in use. */
+    relocateSignaturePads();
   }
   function eoiOwnership(){
     const selected = document.querySelector('input[name="eoiOwnership"]:checked');
@@ -6508,7 +6512,8 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     setDraft: (data) => setDraft(data),
     getFieldsOnCurrentPage: () => getFieldsOnCurrentPage(),
     getOverlayCanvas: () => getOverlayCanvas(),
-    computeRegionCoords: (entry) => computeRegionCoords(entry)
+    computeRegionCoords: (entry) => computeRegionCoords(entry),
+    structuredReadinessCheck: () => structuredReadinessCheck()
   };
   refreshPreview();
 
