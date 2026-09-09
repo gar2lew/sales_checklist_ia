@@ -93,7 +93,7 @@ async function createDocx(path, options = {}) {
   zip.file('docProps/core.xml', '<core/>');
   zip.file('docProps/app.xml', '<app/>');
   zip.file('customXml/item1.xml', '<item/>');
-  zip.file('word/document.xml', `<document>Sales Appointment Capture ${Object.entries(metadata)
+  zip.file('word/document.xml', `<document>Client Appointment Checklist ${Object.entries(metadata)
     .map(([key, value]) => `${key}: ${options.metadataMismatch === key ? 'wrong' : value}`)
     .join(' ')} ${options.placeholder ? '{{PLACEHOLDER}}' : ''}</document>`);
   zip.file('word/_rels/document.xml.rels', options.external

@@ -185,7 +185,7 @@ def configure_content_section(document: Document):
     section.header.is_linked_to_previous = False
     section.footer.is_linked_to_previous = False
     header = section.header.paragraphs[0]
-    header.text = "ASG  |  SALES APPOINTMENT CAPTURE"
+    header.text = "ASG  |  CLIENT APPOINTMENT CHECKLIST"
     header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     header.runs[0].font.name = "Arial"
     header.runs[0].font.size = Pt(7.5)
@@ -430,7 +430,7 @@ def build_docx() -> None:
     configure_content_section(document)
     for index, (heading, body) in enumerate(sections):
         render_section(document, heading.strip(), body, first=index == 0)
-    document.core_properties.title = "Sales Appointment Capture — Staff User Guide"
+    document.core_properties.title = "Client Appointment Checklist — Staff User Guide"
     document.core_properties.subject = "ASG internal staff operating guide"
     document.core_properties.author = "Amplify Solutions Group"
     document.core_properties.comments = (

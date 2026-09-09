@@ -1,4 +1,4 @@
-# Sales Appointment Capture — User Guide
+# Client Appointment Checklist — User Guide
 
 **Version 1.6.2**
 
@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-Sales Appointment Capture is an offline-capable Progressive Web App (PWA) for capturing client appointments in the field. It runs entirely on your device — no data is uploaded to any server.
+Client Appointment Checklist is an offline-capable Progressive Web App (PWA) for capturing client appointments in the field. It runs entirely on your device — no data is uploaded to any server.
 
 **What it does:**
 

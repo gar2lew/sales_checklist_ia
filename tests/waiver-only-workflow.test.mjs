@@ -248,7 +248,7 @@ test('regression: in-person and zoom timelines and waiver toggles unchanged', as
   assert.ok(await visibleQuery(page, '.previewWrap'), 'preview visible for in-person');
   assert.equal(await page.textContent('#generateTop'), 'Generate Appointment Package', 'in-person generate label unchanged');
   assert.equal(await visibleQuery(page, '#includeWaiver'), true, 'waiver toggle present for in-person');
-  assert.equal(await page.textContent('#brandTitle'), 'Sales Appointment Capture', 'header brand title in-person');
+  assert.equal(await page.textContent('#brandTitle'), 'Client Appointment Checklist', 'header brand title in-person');
 
   await page.click('#backToStart');
   await page.click('.mode-card[data-mode="zoom"]');

@@ -1,4 +1,4 @@
-# Sales Appointment Capture — Architecture
+# Client Appointment Checklist — Architecture
 
 ## Overview
 

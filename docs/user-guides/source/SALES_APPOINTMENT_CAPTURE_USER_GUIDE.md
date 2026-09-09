@@ -1,4 +1,4 @@
-# Sales Appointment Capture
+# Client Appointment Checklist
 
 <!-- docs-automation:metadata:start -->
 **Application version:** 2.7.0-alpha.1<br>
@@ -18,7 +18,7 @@ This guide explains the complete staff workflow for in-person and Zoom sales app
 
 ## 1. Overview
 
-Sales Appointment Capture guides staff through appointment details, required forms, supporting evidence, signatures and final handover documents. The application is designed for desktop, tablet and mobile use.
+Client Appointment Checklist guides staff through appointment details, required forms, supporting evidence, signatures and final handover documents. The application is designed for desktop, tablet and mobile use.
 
 ### What the application produces
 
@@ -41,7 +41,7 @@ Sales Appointment Capture guides staff through appointment details, required for
 
 ## 2. Quick Start
 
-1. Open **Sales Appointment Capture**.
+1. Open **Client Appointment Checklist**.
 2. Select your name.
 3. Choose **In-person** or **Zoom**.
 4. Select **Continue**.

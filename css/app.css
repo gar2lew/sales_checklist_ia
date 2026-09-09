@@ -582,7 +582,9 @@
     /* scroll-margin so section scroll targets clear the sticky header + timeline */
     .card[id],
     #appointmentInfoSection,
-    #checklistCard {
+    #checklistCard,
+    #signature,
+    #signature2 {
       scroll-margin-top: var(--tl-offset);
     }
     .progress-timeline {

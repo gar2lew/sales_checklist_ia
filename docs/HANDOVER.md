@@ -1,4 +1,4 @@
-# Sales Appointment Capture — Developer Handover
+# Client Appointment Checklist — Developer Handover
 
 ## What the app does
 

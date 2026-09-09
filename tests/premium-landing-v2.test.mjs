@@ -58,7 +58,7 @@ async function inspectViewport(width,height,expectedLayout) {
   assert.equal(result.premiumStructure,true,`${width}x${height} has premium split-panel structure`);
   assert.ok(result.scrollWidth <= result.clientWidth,`${width}x${height} has no horizontal overflow`);
   assert.deepEqual(result.smallTargets,[],`${width}x${height} landing targets are at least 44px`);
-  assert.match(result.heading,/Sales Appointment\s*Capture/i);
+  assert.match(result.heading,/Client Appointment\s*Checklist/i);
   assert.equal(result.formTitle,'Start New Appointment');
   assert.equal(result.columns,expectedLayout === 'split' ? 2 : 1,`${width}x${height} uses ${expectedLayout} landing composition`);
   assert.equal(result.landingVisible,true,'landing remains the active entry surface before Continue');

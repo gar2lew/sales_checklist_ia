@@ -910,7 +910,7 @@ const metadataFixture = Object.freeze({
 
 function markdownWithMetadata(lineEnding = '\n') {
   return [
-    '# Sales Appointment Capture',
+    '# Client Appointment Checklist',
     '',
     '<!-- docs-automation:metadata:start -->',
     '**Application version:** old',
@@ -928,7 +928,7 @@ function markdownWithMetadata(lineEnding = '\n') {
 test('metadata replacement accepts exactly one marker pair and preserves guide body bytes', () => {
   const before = markdownWithMetadata();
   const after = replaceGeneratedMetadata(before, metadataFixture);
-  assert.equal(after.slice(0, after.indexOf('<!-- docs-automation:metadata:start -->')), '# Sales Appointment Capture\n\n');
+  assert.equal(after.slice(0, after.indexOf('<!-- docs-automation:metadata:start -->')), '# Client Appointment Checklist\n\n');
   assert.equal(after.slice(after.indexOf('<!-- docs-automation:metadata:end -->') + '<!-- docs-automation:metadata:end -->'.length), '\n\nHand-authored body.\n');
   assert.deepEqual(parseGeneratedMetadata(after), {
     'Application version': '2.7.0-alpha.1',
@@ -1054,7 +1054,7 @@ test('canonical guide contains one generated metadata block immediately below it
   );
   assert.equal((source.match(/docs-automation:metadata:start/g) ?? []).length, 1);
   assert.equal((source.match(/docs-automation:metadata:end/g) ?? []).length, 1);
-  assert.match(source, /^# Sales Appointment Capture\r?\n\r?\n<!-- docs-automation:metadata:start -->/);
+  assert.match(source, /^# Client Appointment Checklist\r?\n\r?\n<!-- docs-automation:metadata:start -->/);
   assert.deepEqual(parseGeneratedMetadata(source), {
     'Application version': '2.7.0-alpha.1',
     'Guide version': '1.0.0',

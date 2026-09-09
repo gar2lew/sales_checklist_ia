@@ -27,7 +27,7 @@ const path = require('path');
     await page.waitForLoadState('networkidle');
     const title = await page.title();
     console.log(`1. App loaded: ${title}`);
-    if (title !== 'Sales Appointment Capture') { console.log('   FAIL: wrong title'); failures++; }
+    if (title !== 'Client Appointment Checklist') { console.log('   FAIL: wrong title'); failures++; }
     
     // 2. Load test data
     page.once('dialog', d => d.accept());

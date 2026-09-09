@@ -1,6 +1,6 @@
-# Sales Appointment Capture PWA
+# Client Appointment Checklist PWA
 
-Offline-capable sales appointment capture app for Vercel.
+Offline-capable client appointment checklist app for Vercel.
 
 ## Deploy to Vercel
 

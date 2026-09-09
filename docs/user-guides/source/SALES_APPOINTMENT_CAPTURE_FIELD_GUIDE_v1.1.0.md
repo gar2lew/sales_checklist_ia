@@ -1,4 +1,4 @@
-# Sales Appointment Capture Field Guide
+# Client Appointment Checklist Field Guide
 
 **A practical guide for preparing, completing and handing over client appointments**
 
@@ -44,7 +44,7 @@
 
 ## About This Guide
 
-This guide helps you prepare for, complete and hand over client appointments using the Sales Appointment Capture app.
+This guide helps you prepare for, complete and hand over client appointments using the Client Appointment Checklist app.
 
 It covers:
 - Setting up the app on your device
@@ -475,5 +475,5 @@ Before sending the final documents, confirm:
 
 **End of Field Guide**
 
-*Sales Appointment Capture Field Guide v1.1.0 Released*
+*Client Appointment Checklist Field Guide v1.1.0 Released*
 *Internal use only — Amplify Solutions Group*

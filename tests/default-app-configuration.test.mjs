@@ -88,7 +88,7 @@ assert.deepEqual(actual.config.defaults, {
   eoiTemplate: 'standard'
 }, 'appointment and template defaults must not change');
 assert.equal(actual.config.toastDurationMs, 3200);
-assert.equal(actual.config.branding.footerPrefix, 'Sales Appointment Capture');
+assert.equal(actual.config.branding.footerPrefix, 'Client Appointment Checklist');
 assert.equal(actual.canonical.ui.autosaveDelayMs, 15000, 'autosave timing must remain 15000ms');
 assert.deepEqual(actual.canonical.staff.officeAssignments, ['Perth', 'Brisbane', 'Both'], 'staff assignments must remain separate from appointment offices');
 assert.deepEqual(actual.canonical.organisation.offices, ['Perth', 'Brisbane'], 'appointment office values must not gain Both');

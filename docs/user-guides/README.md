@@ -1,4 +1,4 @@
-# Sales Appointment Capture user guide automation
+# Client Appointment Checklist user guide automation
 
 The canonical guide content is
 `source/SALES_APPOINTMENT_CAPTURE_USER_GUIDE.md`. The nine screenshots under

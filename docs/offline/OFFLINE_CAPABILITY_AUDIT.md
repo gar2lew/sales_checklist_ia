@@ -1,6 +1,6 @@
 # Offline Appointment Capability Audit
 
-**Application:** Sales Appointment Capture  
+**Application:** Client Appointment Checklist
 **Source branch:** `fix/staff-dropdown-seeding-v2`  
 **Source commit:** `1dfe59df83722e78bcd91a070270f6a35d5fab4c`  
 **Application version:** `2.7.0-alpha.1`  

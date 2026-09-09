@@ -1,7 +1,7 @@
 {
-  "name": "Sales Appointment Capture",
-  "short_name": "Sales Capture",
-  "description": "Offline sales appointment capture tool for IA forms, ID images, signatures and final PDF generation.",
+  "name": "Client Appointment Checklist",
+  "short_name": "Client Checklist",
+  "description": "Offline client appointment checklist tool for IA forms, ID images, signatures and final PDF generation.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

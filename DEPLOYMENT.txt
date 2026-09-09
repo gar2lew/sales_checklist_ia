@@ -1,4 +1,4 @@
-Sales Appointment Capture PWA - Vercel Deployment Guide
+Client Appointment Checklist PWA - Vercel Deployment Guide
 ======================================================
 
 Folder contents

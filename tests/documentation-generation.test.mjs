@@ -38,7 +38,7 @@ const names = Object.freeze({
 
 function metadataMarkdown(imageNames = ['01-guide.png']) {
   return [
-    '# Sales Appointment Capture',
+    '# Client Appointment Checklist',
     '',
     '<!-- docs-automation:metadata:start -->',
     '**Application version:** 2.7.0-alpha.1<br>',

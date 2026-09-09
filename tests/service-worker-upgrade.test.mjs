@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.28';/, "expose waiver signing in zoom workflow must advance from v2.7.0-alpha.27 to v2.7.0-alpha.28");
+assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.29';/, "rename app to Client Appointment Checklist must advance from v2.7.0-alpha.28 to v2.7.0-alpha.29");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -56,7 +56,7 @@ assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install", 
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.28", "fresh install must populate the new cache");
+assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.29", "fresh install must populate the new cache");
 assert.equal(skipWaitingCalls, 1, "fresh install must retain immediate worker activation");
 assert.deepEqual(cachedAssets, [
   "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/app.js",

@@ -151,7 +151,7 @@ export async function validateDocxArtifact(options = {}) {
   const documentXml = zip.file('word/document.xml')
     ? await zip.file('word/document.xml').async('string')
     : '';
-  if (!documentXml.includes('Sales Appointment Capture')) {
+  if (!documentXml.includes('Client Appointment Checklist')) {
     findings.push(fail('docx', 'DOCX_TITLE', 'The guide title is missing.', 'Regenerate from canonical Markdown.'));
   }
   for (const [label, value] of Object.entries(options.metadata ?? {})) {
