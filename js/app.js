@@ -3982,19 +3982,22 @@ var staff = ($('landingStaff').value || '').trim();
   // =========================================================================
   // SECTION: WAIVER & DISCLOSURE TEMPLATE PAGE DRAWING
   // =========================================================================
-  const waiverTemplateSource = 'templates/rendered/waiver-page-6.jpg';
-  let waiverTemplateImage = null;
+  const WAIVER_PAGE_COUNT = 6;
+  const waiverTemplateSources = Array.from({ length: WAIVER_PAGE_COUNT }, (_, i) => `templates/rendered/waiver-page-${i + 1}.jpg`);
+  const waiverTemplateImages = new Array(WAIVER_PAGE_COUNT).fill(null);
 
-  async function ensureWaiverTemplateImage(){
-    if(waiverTemplateImage) return waiverTemplateImage;
+  async function ensureWaiverTemplateImage(index = WAIVER_PAGE_COUNT - 1){
+    if(waiverTemplateImages[index]) return waiverTemplateImages[index];
     status('Loading Waiver & Disclosure template...');
-    waiverTemplateImage = await loadImage(waiverTemplateSource);
-    return waiverTemplateImage;
+    for(let i = 0; i < waiverTemplateSources.length; i++){
+      if(!waiverTemplateImages[i]) waiverTemplateImages[i] = await loadImage(waiverTemplateSources[i]);
+    }
+    return waiverTemplateImages[index];
   }
 
-  function drawWaiverPage(pageNumber, totalPages, scale=2){
-    const img = waiverTemplateImage;
-    if(!img) throw new Error('Waiver & Disclosure template has not loaded.');
+  function drawWaiverPage(waiverPageIndex, pageNumber, totalPages, scale=2){
+    const img = waiverTemplateImages[waiverPageIndex];
+    if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
     const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
 
@@ -4005,6 +4008,12 @@ var staff = ($('landingStaff').value || '').trim();
     if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
     else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
     ctx.drawImage(img, dx, dy, dw, dh);
+
+    /* Pages 1-5 are the authoritative legal pages: copy them on unchanged.
+       Only the signing page (the rendered page 6) receives field overlays. */
+    if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
+      return c;
+    }
 
     /* The rendered template image is top-down, but the characterisation coordinates
        are PDF user space (bottom-left origin). Mirror y so overlays land on the
@@ -4558,7 +4567,7 @@ var staff = ($('landingStaff').value || '').trim();
     const builder = EOI_BUILDERS[eoiTemplate] || EOI_BUILDERS.standard;
     const eoiPageCount = includeEOI ? builder.getPages() : 0;
     const selectedPhotos = photos.filter(p=>p.img);
-    const waiverPageCount = includeWaiver ? 1 : 0;
+    const waiverPageCount = includeWaiver ? WAIVER_PAGE_COUNT : 0;
     const totalPages = eoiPageCount + (selectedIA ? 1 : 0) + waiverPageCount + selectedPhotos.length;
     return { selectedIA, includeEOI, includeWaiver, eoiTemplate, eoiPageCount, selectedPhotos, waiverPageCount, totalPages,
       groups: buildOutputGroups(includeEOI, eoiPageCount, selectedIA, selectedPhotos, includeWaiver)
@@ -4627,9 +4636,9 @@ var staff = ($('landingStaff').value || '').trim();
 
     /* Optional Waiver & Disclosure */
     if(hasWaiver){
-      pages.push({id:'waiver'});
-      groups.push({id:'waiver', pageOffset:offset, pageCount:1, getFilename:zoomWaiverFilename});
-      offset++;
+      for(var wvi=0; wvi<WAIVER_PAGE_COUNT; wvi++) pages.push({id:'waiver', subIdx:wvi});
+      groups.push({id:'waiver', pageOffset:offset, pageCount:WAIVER_PAGE_COUNT, getFilename:zoomWaiverFilename});
+      offset += WAIVER_PAGE_COUNT;
     }
 
     /* Optional Whiteboard pages (saved pages only) */
@@ -4649,14 +4658,14 @@ var staff = ($('landingStaff').value || '').trim();
   }
 
   function waiverOutputPlan(){
-    const includeWaiver = true; // always true for waiver-only mode
     const pages = [];
     const groups = [];
     let offset = 0;
-
-    pages.push({id:'waiver'});
-    groups.push({id:'waiver', pageOffset:offset, pageCount:1, getFilename:waiverOnlyPdfFileName});
-    offset += 1;
+    for(let wi = 0; wi < WAIVER_PAGE_COUNT; wi++){
+      pages.push({id:'waiver', subIdx:wi});
+    }
+    groups.push({id:'waiver', pageOffset:0, pageCount:WAIVER_PAGE_COUNT, getFilename:waiverOnlyPdfFileName});
+    offset += WAIVER_PAGE_COUNT;
 
     return { totalPages: offset, pages: pages, groups: groups };
   }
@@ -4672,8 +4681,8 @@ var staff = ($('landingStaff').value || '').trim();
       offset += 1;
     }
     if (includeWaiver) {
-      groups.push({ id: 'waiver', pageOffset: offset, pageCount: 1, getFilename: individualWaiverFilename });
-      offset += 1;
+      groups.push({ id: 'waiver', pageOffset: offset, pageCount: WAIVER_PAGE_COUNT, getFilename: individualWaiverFilename });
+      offset += WAIVER_PAGE_COUNT;
     }
     // Iterate original photos array to preserve index for naming
     for (let i = 0; i < photos.length; i++) {
@@ -4730,8 +4739,8 @@ var staff = ($('landingStaff').value || '').trim();
         return drawWhiteboardPage(pageDef.pageIdx, index+1, totalPages, scale, wbLoaded);
       }
       if(pageDef.id === 'waiver'){
-        await ensureWaiverTemplateImage();
-        return drawWaiverPage(index+1, totalPages, scale);
+        await ensureWaiverTemplateImage(pageDef.subIdx ?? WAIVER_PAGE_COUNT - 1);
+        return drawWaiverPage(pageDef.subIdx ?? WAIVER_PAGE_COUNT - 1, index+1, totalPages, scale);
       }
       return null;
     }
@@ -4740,8 +4749,8 @@ var staff = ($('landingStaff').value || '').trim();
       if(index >= waiverPlan.pages.length) return null;
       var pageDef = waiverPlan.pages[index];
       if(pageDef.id === 'waiver'){
-        await ensureWaiverTemplateImage();
-        return drawWaiverPage(index+1, totalPages, scale);
+        await ensureWaiverTemplateImage(pageDef.subIdx);
+        return drawWaiverPage(pageDef.subIdx, index+1, totalPages, scale);
       }
       return null;
     }
@@ -4763,11 +4772,12 @@ var staff = ($('landingStaff').value || '').trim();
       offset++;
     }
     if(plan.includeWaiver){
-      if(index === offset){
-        await ensureWaiverTemplateImage();
-        return drawWaiverPage(index + 1, totalPages, scale);
+      if(index >= offset && index < offset + plan.waiverPageCount){
+        const wIdx = index - offset;
+        await ensureWaiverTemplateImage(wIdx);
+        return drawWaiverPage(wIdx, index + 1, totalPages, scale);
       }
-      offset++;
+      offset += plan.waiverPageCount;
     }
     const photo = plan.selectedPhotos[index - offset];
     if(photo) return drawPhotoPage(photo, index + 1, totalPages, scale);

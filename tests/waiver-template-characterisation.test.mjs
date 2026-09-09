@@ -201,6 +201,41 @@ describe('Waiver & Disclosure Template Characterisation', () => {
     expect(text).toContain('18');
     expect(text).toContain('acknowledge receipt');
   });
+
+  it('all legal clauses 1-17 preserved across pages 1-5', async () => {
+    const pagesText = [];
+    for (let i = 1; i <= 5; i++) {
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      pagesText.push(textContent.items.map(item => item.str).join(' '));
+    }
+    const combined = pagesText.join('\n');
+    /* Top-level clauses are headings trailed by their number (e.g.
+       "NO LIABILITY 3", "5 The Client acknowledges"); some use subsections
+       ("2.1", "7.9", "17.9"). Match either form as a mark of the clause living
+       in pages 1-5 rather than being collapsed onto the signing page. */
+    for (let n = 1; n <= 17; n++) {
+      const clauseMarker = new RegExp(`(?:^|\\s)${n}(?:\\.\\d{1,2}\\b|\\s)`, 'm');
+      const match = clauseMarker.exec(combined);
+      expect(match).not.toBeNull(`clause ${n} number must exist in pages 1-5`);
+      if (match) {
+        const idx = match.index + match[0].length;
+        const following = combined.slice(idx, idx + 200);
+        expect(following.replace(/\s+/g, ' ').trim().length).toBeGreaterThan(20,
+          `clause ${n} must have substantive legal text after its number`);
+      }
+    }
+  });
+
+  it('template pages 1-5 carry their own document footer band', async () => {
+    for (let i = 1; i <= 5; i++) {
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map(item => item.str.toUpperCase()).join(' ');
+      expect(text).toContain('ASG');
+      expect(text).toMatch(/UPDATED DRAFT/);
+    }
+  });
 });
 
 describe('Template Integration Readiness', () => {
@@ -263,31 +298,48 @@ it('draft persistence supports extension', () => {
     expect(appContent).toContain('loadDraft');
   });
 
-  it('rendered page-6 template image exists and matches A4 aspect', () => {
-    const imagePath = path.resolve('templates/rendered/waiver-page-6.jpg');
-    expect(fs.existsSync(imagePath)).toBe(true);
+  it('rendered template page images exist for all six pages and match A4 aspect', () => {
+    for (let n = 1; n <= 6; n++) {
+      const imagePath = path.resolve(`templates/rendered/waiver-page-${n}.jpg`);
+      expect(fs.existsSync(imagePath)).toBe(true);
 
-    const data = fs.readFileSync(imagePath);
-    expect(data.length).toBeGreaterThan(50000);
-    expect(data[0]).toBe(0xff);
-    expect(data[1]).toBe(0xd8);
+      const data = fs.readFileSync(imagePath);
+      expect(data.length).toBeGreaterThan(50000);
+      expect(data[0]).toBe(0xff);
+      expect(data[1]).toBe(0xd8);
 
-    // A4 portrait ratio 595.32 x 841.92 (0.70711). Tolerate rasterisation rounding.
-    const EXPECTED_RATIO = 595.32 / 841.92;
-    const ratio = page6ImageRatio(imagePath);
-    expect(ratio).toBeCloseTo(EXPECTED_RATIO, 3);
+      // A4 portrait ratio 595.32 x 841.92 (0.70711). Tolerate rasterisation rounding.
+      const EXPECTED_RATIO = 595.32 / 841.92;
+      const ratio = page6ImageRatio(imagePath);
+      expect(ratio).toBeCloseTo(EXPECTED_RATIO, 3);
 
-    // Geometry must be an exact multiple of the A4 PDF page at scale 2.
-    const dims = jpegDimensions(imagePath);
-    expect(dims.width).toBe(1190);
-    expect(dims.height).toBe(1683);
+      // Geometry must be an exact multiple of the A4 PDF page at scale 2.
+      const dims = jpegDimensions(imagePath);
+      expect(dims.width).toBe(1190);
+      expect(dims.height).toBe(1683);
+    }
   });
 
-  it('app.js loads the rendered page-6 image, not the raw PDF', () => {
+  it('app.js loads the six rendered page images, not the raw PDF', () => {
     const appPath = path.resolve('js/app.js');
     const appContent = fs.readFileSync(appPath, 'utf-8');
-    expect(appContent).toContain('templates/rendered/waiver-page-6.jpg');
-    expect(appContent).toContain('waiverTemplateSource');
+    expect(appContent).toContain('waiverTemplateSources');
+    /* The loader builds the array with a template expression, so assert that
+       expression and its bounds rather than literal filenames. */
+    expect(appContent).toMatch(/Array\.from\(\{\s*length:\s*WAIVER_PAGE_COUNT\s*\}/);
+    expect(appContent).toContain('`templates/rendered/waiver-page-${i + 1}.jpg`');
+    /* Rendering consumes the rasterised JPGs, not the raw template PDF. */
+    expect(appContent).not.toContain('ASG-Disclosure-Waiver-2026.pdf');
+  });
+
+  it('app.js draws six waiver pages including the signing page', () => {
+    const appPath = path.resolve('js/app.js');
+    const appContent = fs.readFileSync(appPath, 'utf-8');
+    expect(appContent).toMatch(/const WAIVER_PAGE_COUNT = 6;/);
+    expect(appContent).toContain('drawWaiverPage(waiverPageIndex');
+    expect(appContent).toMatch(/waiverPageIndex < WAIVER_PAGE_COUNT - 1/);
+    // the sign-off footer stays on the signing page only
+    expect(appContent).toContain("drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817)");
   });
 });
 

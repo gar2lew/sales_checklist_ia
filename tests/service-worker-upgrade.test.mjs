@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.26';/, "disclosure-template hotfix must advance from v2.7.0-alpha.25 to v2.7.0-alpha.26");
+assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.27';/, "complete six-page waiver fix must advance from v2.7.0-alpha.26 to v2.7.0-alpha.27");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -34,7 +34,7 @@ const context = {
   },
   caches: {
     async open(name) { openedCaches.push(name); return cache; },
-    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18", "sales-capture-v2.7.0-alpha.19", "sales-capture-v2.7.0-alpha.21", "sales-capture-v2.7.0-alpha.22", "sales-capture-v2.7.0-alpha.23", "sales-capture-v2.7.0-alpha.24", "sales-capture-v2.7.0-alpha.25", "unrelated-cache"]; },
+    async keys() { return ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18", "sales-capture-v2.7.0-alpha.19", "sales-capture-v2.7.0-alpha.21", "sales-capture-v2.7.0-alpha.22", "sales-capture-v2.7.0-alpha.23", "sales-capture-v2.7.0-alpha.24", "sales-capture-v2.7.0-alpha.25", "sales-capture-v2.7.0-alpha.26", "unrelated-cache"]; },
     async delete(name) { deletedCaches.push(name); return true; },
     async match(request) {
       if (request === "/index.html") return cachedIndex;
@@ -56,13 +56,14 @@ assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install", 
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.26", "fresh install must populate the new cache");
+assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.27", "fresh install must populate the new cache");
 assert.equal(skipWaitingCalls, 1, "fresh install must retain immediate worker activation");
 assert.deepEqual(cachedAssets, [
   "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/app.js",
   "/lavida-template-page-1.jpg", "/lavida-template-page-2.jpg",
   "/templates/ia-perth-clean.jpg", "/templates/ia-brisbane-clean.jpg",
-  "/templates/ASG-Disclosure-Waiver-2026.pdf", "/templates/rendered/waiver-page-6.jpg",
+  "/templates/ASG-Disclosure-Waiver-2026.pdf", "/templates/rendered/waiver-page-1.jpg", "/templates/rendered/waiver-page-2.jpg",
+  "/templates/rendered/waiver-page-3.jpg", "/templates/rendered/waiver-page-4.jpg", "/templates/rendered/waiver-page-5.jpg", "/templates/rendered/waiver-page-6.jpg",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/asg_logo.png", "/icons/landing.png",
   "/templates/rendered/first-consult-brisbane-page-1.jpg", "/templates/rendered/first-consult-brisbane-page-2.jpg",
   "/templates/rendered/first-consult-brisbane-page-3.jpg", "/templates/rendered/first-consult-brisbane-page-4.jpg",
@@ -76,7 +77,7 @@ assert.deepEqual(cachedAssets, [
 
 listeners.get("activate")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18", "sales-capture-v2.7.0-alpha.19", "sales-capture-v2.7.0-alpha.21", "sales-capture-v2.7.0-alpha.22", "sales-capture-v2.7.0-alpha.23", "sales-capture-v2.7.0-alpha.24", "sales-capture-v2.7.0-alpha.25"], "upgrade must delete previous application caches without touching unrelated caches");
+assert.deepEqual(deletedCaches, ["sales-capture-v2.7.0-alpha.1", "sales-capture-v2.7.0-alpha.2", "sales-capture-v2.7.0-alpha.3", "sales-capture-v2.6.0", "sales-capture-v2.7.0-alpha.4", "sales-capture-v2.7.0-alpha.5", "sales-capture-v2.7.0-alpha.6", "sales-capture-v2.7.0-alpha.7", "sales-capture-v2.7.0-alpha.8", "sales-capture-v2.7.0-alpha.13", "sales-capture-v2.7.0-alpha.14", "sales-capture-v2.7.0-alpha.15", "sales-capture-v2.7.0-alpha.16", "sales-capture-v2.7.0-alpha.17", "sales-capture-v2.7.0-alpha.18", "sales-capture-v2.7.0-alpha.19", "sales-capture-v2.7.0-alpha.21", "sales-capture-v2.7.0-alpha.22", "sales-capture-v2.7.0-alpha.23", "sales-capture-v2.7.0-alpha.24", "sales-capture-v2.7.0-alpha.25", "sales-capture-v2.7.0-alpha.26"], "upgrade must delete previous application caches without touching unrelated caches");
 assert.equal(claimCalls, 1, "upgrade must retain immediate client claiming");
 
 async function dispatchFetch(request) {

@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const currentWorker = await readFile(path.join(root, "service-worker.js"), "utf8");
-const previousWorker = currentWorker.replace("v2.7.0-alpha.26", "v2.7.0-alpha.25");
+const previousWorker = currentWorker.replace("v2.7.0-alpha.27", "v2.7.0-alpha.26");
 let servedWorker = previousWorker;
 const mime = {
   ".css": "text/css",
@@ -53,14 +53,14 @@ try {
   upgradePage.on('download',download=>offlineDownloads.push(download.suggestedFilename()));
   await upgradePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await upgradePage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.25");
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.26");
 
   servedWorker = currentWorker;
   await upgradePage.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
     await registration.update();
   });
-  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.26", ["sales-capture-v2.7.0-alpha.25"]);
+  await waitForCache(upgradePage, "sales-capture-v2.7.0-alpha.27", ["sales-capture-v2.7.0-alpha.26"]);
 
   await upgradeContext.setOffline(true);
   await upgradePage.reload({ waitUntil: "networkidle" });
@@ -72,11 +72,11 @@ try {
   const freshPage = await freshContext.newPage();
   await freshPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await freshPage.evaluate(() => navigator.serviceWorker.ready);
-  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.26", ["sales-capture-v2.7.0-alpha.25"]);
+  await waitForCache(freshPage, "sales-capture-v2.7.0-alpha.27", ["sales-capture-v2.7.0-alpha.26"]);
   assert.equal(await freshPage.locator("#landingScreen").isVisible(), true, "fresh installation must render the current shell");
   await freshContext.close();
 
-  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.25 upgrade, cache cleanup, and offline reload");
+  console.log("PASS browser service-worker fresh install, v2.7.0-alpha.26 upgrade, cache cleanup, and offline reload");
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
