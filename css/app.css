@@ -845,6 +845,20 @@
     .show-waiver .waiver-only { display: block; }
     .show-waiver #timelineWaiver { display: flex; }
 
+    /* =========================================================================
+       WAIVER-ONLY PRESENTATION LAYER
+       Hidden in waiver-only mode so the standalone flow never shows
+       appointment-specific chrome, summary, preview, or package actions.
+       ========================================================================= */
+    .show-waiver .appointment-only { display: none !important; }
+    .show-waiver #appointmentSummaryCard { display: none !important; }
+    .show-waiver .previewWrap { display: none !important; }
+    .show-waiver .legacy-output-action { display: none !important; }
+    .show-waiver #saveCombinedPdf { display: none !important; }
+    .show-waiver .package-ready-files { grid-template-columns: 1fr; }
+    .show-waiver .package-ready-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .show-waiver .brandSubtitle { font-size: 12px; font-weight: 600; letter-spacing: .01em; opacity: .85; }
+
     /* Zoom attachment placeholders */
     .attachment-placeholder {
       border: 2px dashed var(--border);

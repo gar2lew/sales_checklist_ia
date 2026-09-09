@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v2.7.0-alpha.25';
+const CACHE_VERSION = 'v2.7.0-alpha.26';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -16,6 +16,7 @@ const APP_SHELL = [
   '/templates/ia-perth-clean.jpg',
   '/templates/ia-brisbane-clean.jpg',
   '/templates/ASG-Disclosure-Waiver-2026.pdf',
+  '/templates/rendered/waiver-page-6.jpg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/asg_logo.png',

@@ -142,7 +142,8 @@
         <div class="headerBrand">
           <img src="icons/asg_logo.png" alt="Amplify Solutions Group Logo" class="appLogo">
           <div class="brandText">
-            <span class="brandTitle">Sales Appointment Capture</span>
+            <span class="brandTitle" id="brandTitle">Sales Appointment Capture</span>
+            <span class="brandSubtitle waiver-only" id="brandSubtitle">Complete, sign and download the Waiver &amp; Disclosure.</span>
             <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
           <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
@@ -202,7 +203,7 @@
       <ol class="timeline-steps waiver-only" id="timelineWaiver" aria-label="Waiver &amp; Disclosure steps">
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentInfoSection" data-tl-label="Client Details"><span class="tl-circle">1</span><span class="tl-label">Client Details</span></button></li>
         <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="waiverSignatureSection" data-tl-label="Waiver &amp; Disclosure"><span class="tl-circle">2</span><span class="tl-label">Waiver &amp; Disclosure</span></button></li>
-        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="appointmentSummaryCard" data-tl-label="Ready"><span class="tl-circle">3</span><span class="tl-label">Ready</span></button></li>
+        <li class="timeline-step"><button type="button" class="tl-step-btn" data-tl-target="footerBar" data-tl-label="Ready"><span class="tl-circle">3</span><span class="tl-label">Ready</span></button></li>
       </ol>
     </nav>
 
@@ -296,12 +297,12 @@
           <h2>1. Appointment & client information</h2>
           <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
           <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
-            <div class="fields three">
+            <div class="fields three appointment-only">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientAddress">Client Current Address</label><input id="clientAddress" type="text" placeholder="Client current address"></div>
           </div>
-          <div class="fields" style="margin-top:12px">
+          <div class="fields appointment-only" style="margin-top:12px">
             <div><label for="propertySaleAddress">Address of Property Sale</label><input id="propertySaleAddress" type="text" placeholder="Property being sold"></div>
           </div>
           
@@ -315,8 +316,8 @@
           </div>
 
           <div class="subsection" style="margin-top:16px">
-            <h3>Client 2</h3>
-            <div class="fields three">
+            <h3>Client 2 <label class="waiver-only client2-toggle-label" style="font-weight:600; font-size:13px; margin-left:12px; cursor:pointer"><input type="checkbox" id="waiverClient2Toggle"> Include Client 2</label></h3>
+            <div class="fields three" id="client2Fields">
               <div><label for="client2Name">Name</label><input id="client2Name" type="text" placeholder="Client 2 name"></div>
               <div><label for="client2Phone">Contact Number</label><input id="client2Phone" type="tel" placeholder="Client 2 phone"></div>
               <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com"></div>

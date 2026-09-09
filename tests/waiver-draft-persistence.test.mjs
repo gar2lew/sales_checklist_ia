@@ -87,6 +87,7 @@ test('waiver-only draft: save, auto-fill dates, restore, signature re-ink', asyn
     await startWaiverOnly(page);
 
     await page.fill('#waiverClient1Name', 'Fictional Test Client One');
+    await page.check('#waiverClient2Toggle');
     await page.fill('#client2Name', 'Fictional Test Client Two');
     await page.evaluate(() => { document.getElementById('client2Name').dispatchEvent(new Event('change', { bubbles:true })); });
     await page.waitForFunction(() => !document.getElementById('waiverClient2Block').classList.contains('hidden'));

@@ -603,14 +603,71 @@
     var app = document.querySelector('.app');
     app.classList.remove('show-in-person', 'show-zoom', 'show-waiver');
     app.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : (appointmentMode === 'waiverOnly' ? 'show-waiver' : 'show-in-person'));
+    document.body.classList.remove('show-in-person', 'show-zoom', 'show-waiver');
+    document.body.classList.add(appointmentMode === 'zoom' ? 'show-zoom' : (appointmentMode === 'waiverOnly' ? 'show-waiver' : 'show-in-person'));;
     relocateSignaturePads();
     updateWaiverDetails();
     updateZipVisibility();
     placeContractDueDateField();
     updateSummaryCard();
     updatePackagePreview();
+    updateModeUI();
     updateTimeline();
     deactivateValidation();
+  }
+  function updateModeUI(){
+    var isWaiver = appointmentMode === 'waiverOnly';
+    /* Header brand title + supporting copy */
+    var brandTitle = $('brandTitle');
+    if(brandTitle) brandTitle.textContent = isWaiver ? 'Waiver & Disclosure' : 'Sales Appointment Capture';
+    /* Client details card heading */
+    var clientDetailsHeading = document.querySelector('#appointmentInfoSection h2');
+    if(clientDetailsHeading) clientDetailsHeading.textContent = isWaiver ? '1. Client Details' : '1. Appointment & client information';
+    /* Generate action labels */
+    var generateLabel = isWaiver ? 'Create Waiver PDF' : 'Generate Appointment Package';
+    var generateTop = $('generateTop');
+    if(generateTop) generateTop.textContent = generateLabel;
+    var generateBottom = $('generateBottom');
+    if(generateBottom){
+      var bottomText = generateBottom.querySelector('.btn-text');
+      if(bottomText) bottomText.textContent = generateLabel;
+      else generateBottom.textContent = generateLabel;
+      generateBottom.title = generateLabel;
+    }
+    /* Ready-modal primary download label */
+    var downloadPackage = $('downloadPackage');
+    if(downloadPackage) downloadPackage.textContent = isWaiver ? 'Download PDF' : 'Download Package';
+    /* Client 2 optional toggle (waiver-only) */
+    syncWaiverClient2Toggle();
+    updateFooterDisplayName();
+  }
+  function syncWaiverClient2Toggle(){
+    var isWaiver = appointmentMode === 'waiverOnly';
+    var toggle = $('waiverClient2Toggle');
+    var fields = $('client2Fields');
+    if(toggle){
+      toggle.checked = hasClient2();
+      if(fields) fields.style.display = (!isWaiver || hasClient2()) ? '' : 'none';
+    }
+  }
+  function onWaiverClient2Toggle(){
+    var toggle = $('waiverClient2Toggle');
+    if(!toggle) return;
+    var fields = $('client2Fields');
+    if(!fields) return;
+    if(toggle.checked){
+      fields.style.display = '';
+    } else {
+      fields.style.display = 'none';
+      ['client2Name','client2Phone','client2Email','waiverClient2Name','waiverClient2Date'].forEach(function(id){
+        var el = $(id);
+        if(el) el.value = '';
+      });
+      updateWaiverDetails();
+      updateName();
+      clearGenerated();
+      scheduleRevalidate();
+    }
   }
   function updateZipVisibility(){
     var isWaiver = appointmentMode === 'waiverOnly';
@@ -793,10 +850,26 @@ var staff = ($('landingStaff').value || '').trim();
       }
       return;
     }
-    const errors=[];
-    if(!plan.totalPages){
-      errors.push({id:null,message:'Select an IA form, include the EOI form, and/or attach at least one ID image.'});
+    if(appointmentMode === 'waiverOnly'){
+      const waiverErrors=[];
+      if(!plan.totalPages){
+        waiverErrors.push({id:null,message:'No output pages available. Please try again.'});
+      }
+      requireField(waiverErrors,'clientName','Enter the client name.');
+      waiverReadiness().items.forEach(function(item){
+        if(!waiverErrors.some(function(err){return err.id === item.id;})) waiverErrors.push(item);
+      });
+      waiverErrors.filter(function(err){return err.id;}).forEach(function(err){setFieldError(err.id,err.message);});
+      if(waiverErrors.length){
+        const first=waiverErrors[0];
+        if(first.id && $(first.id)) $(first.id).scrollIntoView({behavior:'smooth',block:'center'});
+        const validationError = new Error(waiverErrors.map(function(err){return err.message;}).join(' '));
+        validationError.isValidation = true;
+        throw validationError;
+      }
+      return;
     }
+    const errors=[];
     requireField(errors,'date','Enter the appointment date.');
     requireValidDate(errors,'date','Enter the appointment date as DD/MM/YYYY.');
     requireField(errors,'teamMember','Enter the staff member.');
@@ -864,6 +937,7 @@ var staff = ($('landingStaff').value || '').trim();
   }
   function pdfFileName(){
     if(appointmentMode === 'zoom') return zoomPdfFileName();
+    if(appointmentMode === 'waiverOnly') return waiverOnlyPdfFileName();
     try {
       const dateVal = $('date') ? $('date').value : '';
       const date = dateVal ? formatDisplayDate(dateVal).replace(/\//g, '-') : 'DD-MM-YYYY';
@@ -955,14 +1029,20 @@ var staff = ($('landingStaff').value || '').trim();
   function zoomWhiteboardFilename(){
     return 'Whiteboard Page.pdf';
   }
+  function waiverDateForFilename(){
+    var raw = appointmentMode === 'waiverOnly'
+      ? (fieldText('waiverClient1Date') || fieldText('date') || '')
+      : (fieldText('date') || '');
+    return raw ? formatDisplayDate(raw).replace(/\//g, '-') : 'DD-MM-YYYY';
+  }
   function individualWaiverFilename(){
     var c = clientNamesForFilename();
-    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'DD-MM-YYYY';
+    var d = waiverDateForFilename();
     return 'Waiver and Disclosure - ' + c + ' - ' + d + '.pdf';
   }
   function waiverOnlyPdfFileName(){
     var c = clientNamesForFilename();
-    var d = fieldText('date') ? formatDisplayDate(fieldText('date')).replace(/\//g,'-') : 'DD-MM-YYYY';
+    var d = waiverDateForFilename();
     return d + ' - ' + c + ' - Waiver and Disclosure.pdf';
   }
   function zoomWaiverFilename(){
@@ -1006,12 +1086,18 @@ var staff = ($('landingStaff').value || '').trim();
   function updateFooterDisplayName(){
     const el=$('fileNamePreview');
     if(!el) return;
-    const clients=mergedClientNames() || 'New appointment';
-    const appointmentDate=formatDisplayDate(fieldText('date')) || 'Date not set';
     const fullName=pdfFileName();
     el.textContent=fullName;
-    el.dataset.compactLabel=`${clients} · ${appointmentDate}`;
     el.title=fullName;
+    if(appointmentMode === 'waiverOnly'){
+      const clients=mergedClientNames() || 'New waiver';
+      const signingDate=formatDisplayDate(fieldText('waiverClient1Date') || fieldText('date')) || 'Signing date not set';
+      el.dataset.compactLabel=`${clients} · ${signingDate}`;
+      return;
+    }
+    const clients=mergedClientNames() || 'New appointment';
+    const appointmentDate=formatDisplayDate(fieldText('date')) || 'Date not set';
+    el.dataset.compactLabel=`${clients} · ${appointmentDate}`;
   }
 
   function setSummaryDisclosureExpanded(expanded){
@@ -1289,7 +1375,9 @@ var staff = ($('landingStaff').value || '').trim();
     const title=$('appointmentPackageReadyTitle');
     const description=$('appointmentPackageReadyDescription');
     if(!ready || (packageDownloadStatusPackage && packageDownloadStatusPackage !== lastAppointmentPackage)) resetPackageDownloadStatus();
-    if(title) title.textContent=stale ? 'Appointment Package Needs Regeneration' : 'Appointment Package Ready';
+    if(title) title.textContent=stale
+      ? (appointmentMode === 'waiverOnly' ? 'Waiver & Disclosure Needs Regeneration' : 'Appointment Package Needs Regeneration')
+      : (appointmentMode === 'waiverOnly' ? 'Waiver & Disclosure Ready' : 'Appointment Package Ready');
     if(description) description.textContent=stale
       ? 'The appointment has changed since this package was generated.'
       : (appointmentMode === 'waiverOnly' ? 'Your Waiver & Disclosure PDF is ready.' : 'Your combined PDF and document ZIP are ready.');
@@ -2335,6 +2423,15 @@ var staff = ($('landingStaff').value || '').trim();
     if(!teamOk) missing++;
     if(!clientOk) missing++;
 
+    if(appointmentMode === 'waiverOnly'){
+      var waiverPlan = waiverOutputPlan();
+      var waiverMissing = 0;
+      if(!fieldText('clientName')) waiverMissing++;
+      waiverMissing += waiverReadiness().items.length;
+      if(!waiverPlan.totalPages) waiverMissing++;
+      return { ready: (waiverMissing === 0), missing: waiverMissing };
+    }
+
     if(appointmentMode === 'zoom'){
       var plan = zoomOutputPlan();
       if(waiverIncluded()){
@@ -2381,6 +2478,15 @@ var staff = ($('landingStaff').value || '').trim();
      Only fields that would block PDF generation are "required missing items." */
   function structuredReadinessCheck(){
     var items = [];
+    if(appointmentMode === 'waiverOnly'){
+      var waiverPlan = waiverOutputPlan();
+      if(!waiverPlan.totalPages) items.push({id:null, message:'No output pages available. Please try again.'});
+      if(!fieldText('clientName')) items.push({id:'clientName', message:'Enter the client name.'});
+      waiverReadiness().items.forEach(function(item){
+        if(!items.some(function(existing){ return existing.id === item.id; })) items.push(item);
+      });
+      return { ready: items.length === 0, missingCount: items.length, items: items };
+    }
     if(appointmentMode === 'zoom'){
       var plan = zoomOutputPlan();
       if(!plan.totalPages) items.push({id:null, message:'Enable at least one output option in Appointment Outputs.'});
@@ -2526,7 +2632,7 @@ var staff = ($('landingStaff').value || '').trim();
     var isZoom = (appointmentMode === 'zoom');
     var tl = isZoom ? $('timelineZoom') : (appointmentMode === 'waiverOnly' ? $('timelineWaiver') : $('timelineInPerson'));
     if(!tl) return;
-    var readyBtn = tl.querySelector('[data-tl-target="' + (isZoom ? 'zoomPackagePreview' : 'appointmentSummaryCard') + '"]');
+    var readyBtn = tl.querySelector('[data-tl-target="' + (isZoom ? 'zoomPackagePreview' : (appointmentMode === 'waiverOnly' ? 'footerBar' : 'appointmentSummaryCard')) + '"]');
     if(readyBtn){
       var baseLabel = readyBtn.getAttribute('data-tl-label') || 'Ready';
       if(!check.ready && check.missingCount > 0){
@@ -2622,9 +2728,9 @@ var staff = ($('landingStaff').value || '').trim();
       ];
     } else if(isWaiver){
       steps = [
-        { el: tlWaiver.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return fieldText('teamMember') && fieldText('clientName') && fieldText('date'); }, optional: false },
+        { el: tlWaiver.querySelector('[data-tl-target="appointmentInfoSection"]'), complete: function(){ return !!fieldText('clientName'); }, optional: false },
         { el: tlWaiver.querySelector('[data-tl-target="waiverSignatureSection"]'), complete: function(){ return waiverReadiness().ready; }, optional: false },
-        { el: tlWaiver.querySelector('[data-tl-target="appointmentSummaryCard"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
+        { el: tlWaiver.querySelector('[data-tl-target="footerBar"]'), complete: function(){ return readinessCheck().ready; }, optional: false }
       ];
     } else {
       steps = [
@@ -3814,9 +3920,12 @@ var staff = ($('landingStaff').value || '').trim();
       if(lines.length){
         const lastIndex = lines.length - 1;
         if(didTruncate && !lines[lastIndex].endsWith('...')) lines[lastIndex] = `${lines[lastIndex]}...`;
-        while(ctx.measureText(lines[lastIndex]).width > width && lines[lastIndex].length > 1){
-          lines[lastIndex] = `${lines[lastIndex].slice(0, -2)}...`;
+        const truncSuffix = didTruncate ? '...' : '';
+        let shown = lines[lastIndex].replace(/\.\.\.$/, '');
+        while(ctx.measureText(`${shown}${truncSuffix}`).width > width && shown.length > 0){
+          shown = shown.slice(0, -1);
         }
+        lines[lastIndex] = `${shown}${truncSuffix}`;
       }
       lineHeight = size + lineGap;
       const previousBaseline = ctx.textBaseline;
@@ -3873,7 +3982,7 @@ var staff = ($('landingStaff').value || '').trim();
   // =========================================================================
   // SECTION: WAIVER & DISCLOSURE TEMPLATE PAGE DRAWING
   // =========================================================================
-  const waiverTemplateSource = 'templates/ASG-Disclosure-Waiver-2026.pdf';
+  const waiverTemplateSource = 'templates/rendered/waiver-page-6.jpg';
   let waiverTemplateImage = null;
 
   async function ensureWaiverTemplateImage(){
@@ -3899,8 +4008,8 @@ var staff = ($('landingStaff').value || '').trim();
 
     /* The rendered template image is top-down, but the characterisation coordinates
        are PDF user space (bottom-left origin). Mirror y so overlays land on the
-       correct visual rows. */
-    const map = (sx, sy) => ({ x: dx + (sx / img.width) * dw, y: dy + ((img.height - sy) / img.height) * dh });
+       correct visual rows. sy is given in PDF points against the 595x842 page. */
+    const map = (sx, sy) => ({ x: dx + (sx / img.width) * dw, y: dy + ((H - sy) / H) * dh });
     const maxW = sw => (sw / img.width) * dw;
     function whiteOut(sx, sy, sw, sh){
       const p1 = map(sx, sy); const p2 = map(sx + sw, sy + sh);
@@ -4004,9 +4113,12 @@ var staff = ($('landingStaff').value || '').trim();
       if(lines.length){
         const lastIndex = lines.length - 1;
         if(didTruncate && !lines[lastIndex].endsWith('...')) lines[lastIndex] = `${lines[lastIndex]}...`;
-        while(ctx.measureText(lines[lastIndex]).width > width && lines[lastIndex].length > 1){
-          lines[lastIndex] = `${lines[lastIndex].slice(0, -2)}...`;
+        const truncSuffix = didTruncate ? '...' : '';
+        let shown = lines[lastIndex].replace(/\.\.\.$/, '');
+        while(ctx.measureText(`${shown}${truncSuffix}`).width > width && shown.length > 0){
+          shown = shown.slice(0, -1);
         }
+        lines[lastIndex] = `${shown}${truncSuffix}`;
       }
       lineHeight = size + lineGap;
       const previousBaseline = ctx.textBaseline;
@@ -5462,14 +5574,14 @@ var staff = ($('landingStaff').value || '').trim();
     packageGenerationInProgress=true;
     setPackageGenerationDisabled(true);
     setPackageActionDisabled(true);
-    status('Generating appointment package…');
+    status(appointmentMode === 'waiverOnly' ? 'Creating Waiver & Disclosure PDF…' : 'Generating appointment package…');
     try{
       const appointmentPackage=await buildAppointmentPackage();
       await refreshPreview();
       if(!await isValidAppointmentPackage(appointmentPackage)) throw new Error('Appointment package validation failed.');
       renderPackageReady('ready');
-      status('Appointment package ready.');
-      toast('Appointment package ready.');
+      status(appointmentMode === 'waiverOnly' ? 'Waiver & Disclosure PDF ready.' : 'Appointment package ready.');
+      toast(appointmentMode === 'waiverOnly' ? 'Waiver & Disclosure PDF ready.' : 'Appointment package ready.');
     }catch(err){ if(!err || !err.isValidation) console.error(err); toast(err && err.isValidation && err.message ? err.message : 'Could not generate PDF. Try removing very large photos or enabling compression.'); status(err && err.isValidation ? 'Please fix the highlighted fields.' : 'This document is not available on the device yet. Connect to the internet, reopen the app and try again.'); }
     finally{
       packageGenerationInProgress=false;
@@ -5735,7 +5847,7 @@ var staff = ($('landingStaff').value || '').trim();
     const client1 = (fieldText('clientName') || '').trim();
     const client2 = (fieldText('client2Name') || '').trim();
     const clientNames = client2 ? `${client1} & ${client2}` : (client1 || 'Client');
-    const date = formatDisplayDate(fieldText('date')) || 'DD/MM/YYYY';
+    const date = formatDisplayDate(fieldText('waiverClient1Date') || fieldText('date')) || 'DD/MM/YYYY';
     const subject = `Waiver & Disclosure | ${clientNames} | ${date}`;
     const body = `Hi Natalie,\n\nPlease find the completed Waiver & Disclosure for:\n\n${clientNames}\n\nDate:\n${date}\n\nPlease attach the downloaded Waiver & Disclosure PDF before sending.\n\nKind regards,\n\n${staffName}`;
     const fallbackBody = body;
@@ -5768,7 +5880,7 @@ var staff = ($('landingStaff').value || '').trim();
       downloadBlob(appointmentPackage.combinedPdfBlob,appointmentPackage.filenames.combinedPdf);
       if(!isWaiverOnly) downloadBlob(appointmentPackage.zipBlob,appointmentPackage.filenames.zip);
       showPackageDownloadStatus('started',appointmentPackage);
-      status('Downloads started.');
+      status(isWaiverOnly ? 'PDF downloaded.' : 'Downloads started.');
     }catch(err){
       console.error(err);
       showPackageDownloadStatus('fallback',appointmentPackage);
@@ -6266,6 +6378,7 @@ var staff = ($('landingStaff').value || '').trim();
   if($('saveDraftBottom')) $('saveDraftBottom').addEventListener('click',saveDraft);
   $('loadDraft').addEventListener('click',loadDraft);
   if($('loadTestData')) $('loadTestData').addEventListener('click',loadTestData);
+  if($('waiverClient2Toggle')) $('waiverClient2Toggle').addEventListener('change',onWaiverClient2Toggle);
   $('openSettings').addEventListener('click',openSettings);
   if($('configureStaffFromLanding')) $('configureStaffFromLanding').addEventListener('click',openSettings);
   $('closeSettings').addEventListener('click',e=>{ e.preventDefault(); closeSettings(); });

@@ -262,4 +262,56 @@ it('draft persistence supports extension', () => {
     expect(appContent).toContain('saveDraft');
     expect(appContent).toContain('loadDraft');
   });
+
+  it('rendered page-6 template image exists and matches A4 aspect', () => {
+    const imagePath = path.resolve('templates/rendered/waiver-page-6.jpg');
+    expect(fs.existsSync(imagePath)).toBe(true);
+
+    const data = fs.readFileSync(imagePath);
+    expect(data.length).toBeGreaterThan(50000);
+    expect(data[0]).toBe(0xff);
+    expect(data[1]).toBe(0xd8);
+
+    // A4 portrait ratio 595.32 x 841.92 (0.70711). Tolerate rasterisation rounding.
+    const EXPECTED_RATIO = 595.32 / 841.92;
+    const ratio = page6ImageRatio(imagePath);
+    expect(ratio).toBeCloseTo(EXPECTED_RATIO, 3);
+
+    // Geometry must be an exact multiple of the A4 PDF page at scale 2.
+    const dims = jpegDimensions(imagePath);
+    expect(dims.width).toBe(1190);
+    expect(dims.height).toBe(1683);
+  });
+
+  it('app.js loads the rendered page-6 image, not the raw PDF', () => {
+    const appPath = path.resolve('js/app.js');
+    const appContent = fs.readFileSync(appPath, 'utf-8');
+    expect(appContent).toContain('templates/rendered/waiver-page-6.jpg');
+    expect(appContent).toContain('waiverTemplateSource');
+  });
 });
+
+function jpegDimensions(filePath) {
+  const data = fs.readFileSync(filePath);
+  // SOF0 marker scan
+  let offset = 2;
+  while (offset < data.length) {
+    if (data[offset] !== 0xff) { offset++; continue; }
+    const marker = data[offset + 1];
+    if (marker === 0xd8) { offset += 2; continue; }
+    if (marker === 0xd9 || marker === 0xda) break;
+    const len = data.readUInt16BE(offset + 2);
+    if (marker >= 0xc0 && marker <= 0xc3) {
+      const height = data.readUInt16BE(offset + 5);
+      const width = data.readUInt16BE(offset + 7);
+      return { width, height };
+    }
+    offset += 2 + len;
+  }
+  throw new Error('JPEG dimensions not found');
+}
+
+function page6ImageRatio(filePath) {
+  const { width, height } = jpegDimensions(filePath);
+  return width / height;
+}
