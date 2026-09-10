@@ -4033,8 +4033,19 @@ var staff = ($('landingStaff').value || '').trim();
     ctx.drawImage(img, dx, dy, dw, dh);
 
     /* Pages 1-5 are the authoritative legal pages: copy them on unchanged.
-       Only the signing page (the rendered page 6) receives field overlays. */
+       Only the signing page (the rendered page 6) receives field overlays.
+       Mask the "Updated draft 02/09/2026" footer text on pages 1-5. */
     if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
+      /* White out the right portion of the footer where "Updated draft 02/09/2026" appears.
+         Footer band is at bottom of page; draft date is right-aligned.
+         At scale=2: page width ~1190px, footer band ~72px tall at bottom.
+         Draft date occupies right ~30% of footer width. */
+      const footerBandH = 72; /* 36pt * 2 */
+      const footerY = dy + dh - footerBandH;
+      const maskX = dx + dw * 0.7; /* right 30% where draft date sits */
+      const maskW = dw * 0.3;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(maskX, footerY, maskW, footerBandH);
       return c;
     }
 
@@ -4165,8 +4176,8 @@ var staff = ($('landingStaff').value || '').trim();
     // Client 1 fields (verified coordinates from PDF)
     const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
     const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
-    drawTemplateLineValue(client1Name, 59, 599.71, 301, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
-    drawTemplateLineValue(client1Date, 54, 475.51, 116, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+    drawTemplateLineValue(client1Name, 59, 599.71, 301, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
+    drawTemplateLineValue(client1Date, 54, 475.51, 116, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
 
     // Client 1 signature (waiver signature is captured on shared pads)
     if(hasSignature){

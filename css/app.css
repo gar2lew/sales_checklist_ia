@@ -853,8 +853,8 @@
     .show-zoom .zoom-only { display: block; }
     .show-zoom .waiver-only { display: none; }
     .show-zoom #timelineZoom { display: flex; }
-    .show-waiver .in-person-only { display: none; }
-    .show-waiver .zoom-only { display: none; }
+    .show-waiver .in-person-only { display: none !important; }
+    .show-waiver .zoom-only { display: none !important; }
     .show-waiver .waiver-only { display: block; }
     .show-waiver #timelineWaiver { display: flex; }
 

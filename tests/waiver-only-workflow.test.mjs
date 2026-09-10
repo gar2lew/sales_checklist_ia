@@ -104,7 +104,7 @@ test('waiver-only standalone presentation (header, timeline, hidden appointment 
   assert.equal(await visibleQuery(page, '#checklistCard'), false, 'checklist card hidden');
   assert.equal(await visibleQuery(page, '.previewWrap'), false, 'output preview hidden');
   assert.equal(await visibleQuery(page, '#appointmentInfoSection .appointment-only'), false, 'date/team member row hidden');
-  assert.equal(await visibleQuery(page, '#relevantInfoSection .appointment-only'), false, 'property sale address row hidden');
+  assert.equal(await visibleQuery(page, '#appointmentInfoSection .in-person-only'), false, 'EOI/IA/Waiver checkboxes hidden');
 
   /* Legacy output actions hidden */
   assert.equal(await visibleQuery(page, '#downloadTop, #downloadBottom, #downloadPackageTop, #downloadPackageBottom, #shareTop, #shareBottom, #sharePackage'), false, 'legacy output actions hidden');
