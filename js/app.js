@@ -4002,27 +4002,20 @@ var staff = ($('landingStaff').value || '').trim();
     return c;
   }
 
-  // =========================================================================
-  // // =========================================================================
-  // SECTION: WAIVER & DISCLOSURE PDF GENERATION (pdf-lib based)
-  // =========================================================================
-  // Replaces the legacy JPEG-based approach with direct PDF manipulation
-  // using the authoritative source PDF: templates/ASG-Disclosure-Waiver-2026.pdf
-  // Benefits: preserves vector quality, text selectability, sharp logo, clean footer.
-  // =========================================================================
-
 // =========================================================================
-  // // =========================================================================
   // SECTION: WAIVER & DISCLOSURE PDF GENERATION (pdf-lib based)
   // =========================================================================
-  // Replaces the legacy JPEG-based approach with direct PDF manipulation
-  // using the authoritative source PDF: templates/ASG-Disclosure-Waiver-2026.pdf
+  // Direct PDF manipulation of the authoritative source PDF
+  // (templates/ASG-Disclosure-Waiver-2026.pdf) using pdf-lib in both the browser
+  // and Node. The browser loads a locally-served UMD build of pdf-lib
+  // (lib/pdf-lib.min.js, cached by the service worker for offline use) so this
+  // vector path is genuine in production rather than a Node-only fallback.
   // Benefits: preserves vector quality, text selectability, sharp logo, clean footer.
   // =========================================================================
 
-  // Load pdf-lib only in Node.js environment (for PDF generation)
-  // In browser, this returns null and the JPEG-based approach is used
+// Load pdf-lib in the browser (global PDFLib from /lib/pdf-lib.min.js) or Node.
   function loadPdfLib(){
+    if(typeof window !== 'undefined' && window.PDFLib) return window.PDFLib;
     if(typeof process !== 'undefined' && process.versions && process.versions.node){
       try { return require('pdf-lib'); } catch(e){ return null; }
     }
@@ -4034,73 +4027,119 @@ var staff = ($('landingStaff').value || '').trim();
   // Footer text to remove
   const DRAFT_FOOTER_TEXT = 'Updated draft 02/09/2026';
 
-  // Page 6 signing coordinates (from template characterisation, PDF user-space, points)
-  const SIGNING_COORDS = {
-    client1: {
-      name: { x: 59, y: 599.71, width: 301 },
-      signature: { x: 59, y: 537.55, width: 307 },
-      date: { x: 54, y: 475.51, width: 116 },
-    },
-    client2: {
-      name: { x: 54, y: 410.00, width: 301 },
-      signature: { x: 59, y: 347.84, width: 307 },
-      date: { x: 54, y: 285.80, width: 116 },
+  // Load the authoritative source waiver (filesystem in Node, fetch in browser;
+  // the template is in the service-worker APP_SHELL so the fetch works offline).
+  async function loadWaiverSourcePdfBytes(){
+    if(typeof window !== 'undefined' && typeof fetch === 'function'){
+      const response = await fetch('/templates/ASG-Disclosure-Waiver-2026.pdf');
+      if(!response.ok) throw new Error('Could not load waiver template (HTTP ' + response.status + ')');
+      return new Uint8Array(await response.arrayBuffer());
     }
-  };
+    if(typeof process !== 'undefined' && process.versions && process.versions.node){
+      const fs = require('fs');
+      const path = require('path');
+      return fs.readFileSync(path.resolve('templates/ASG-Disclosure-Waiver-2026.pdf'));
+    }
+    throw new Error('Could not load waiver template in this environment');
+  }
 
-async function generateWaiverPdfFromSource(){
+  // Latin1 <-> bytes helpers that work without Buffer in the browser.
+  function latin1FromBytes(bytes){
+    let out = '';
+    for(let i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+    return out;
+  }
+  function bytesFromLatin1(text){
+    const out = new Uint8Array(text.length);
+    for(let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
+    return out;
+  }
+
+  // A BT..ET text block is footer content when it lays out glyphs in the bottom
+  // band (baseline y in [27,41] points). Body text never reaches that band.
+  function isWaiverFooterContentBlock(block){
+    let x = 0, y = 0;
+    for(const m of block.matchAll(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(Td|TD|Tm)\b/g)){
+      const vx = parseFloat(m[1]), vy = parseFloat(m[2]), op = m[3];
+      if(op === 'Tm'){ x = vx; y = vy; }
+      else if(op === 'TD'){ y -= vy; x += vx; }
+      else { x += vx; y += vy; }
+      if(y >= 27 && y <= 41 && x > -5 && x < 600) return true;
+    }
+    return false;
+  }
+
+  // Remove the template footer text (brand + "Updated draft 02/09/2026" + page
+  // number) from a page's decoded content stream and slot a sanitized raw stream
+  // back in. The footer glyphs use subset fonts, so they are removed at the
+  // content-operator level rather than hidden under a cover rectangle.
+  async function sanitizeWaiverPage(page, pdfDoc, pdfLib){
+    try{
+      const stream = await page.node.Contents();
+      if(!stream || typeof stream.getContents !== 'function' || !stream.dict) return;
+      const rawBytes = stream.getContents();
+      if(!rawBytes || rawBytes.length === 0) return;
+      const decoder = pdfLib.decodePDFRawStream({ dict: stream.dict, contents: rawBytes });
+      const decodedBuf = new Uint8Array(decoder.decode());
+      const decoded = latin1FromBytes(decodedBuf);
+
+      const blocks = [];
+      let pos = 0;
+      while(true){
+        const bt = decoded.indexOf('BT', pos);
+        if(bt < 0) break;
+        const et = decoded.indexOf('ET', bt + 2);
+        if(et < 0) break;
+        const btStart = decoded.lastIndexOf('\n', bt) + 1;
+        const etEnd = decoded.indexOf('\n', et);
+        blocks.push({ btStart, etEnd: etEnd < 0 ? decoded.length : etEnd, block: decoded.slice(bt, et + 2) });
+        pos = et + 2;
+      }
+      const footerBlocks = blocks.filter((b) => isWaiverFooterContentBlock(b.block));
+      let edited = decoded;
+      for(const block of [...footerBlocks].sort((a, b) => b.btStart - a.btStart)){
+        edited = edited.slice(0, block.btStart) + edited.slice(block.etEnd + 1);
+      }
+      if(edited === decoded) return;
+
+      const contentDict = stream.dict.clone(pdfDoc.context);
+      contentDict.delete(pdfLib.PDFName.of('Filter'));
+      contentDict.delete(pdfLib.PDFName.of('Length'));
+      const newStream = pdfLib.PDFRawStream.of(contentDict, bytesFromLatin1(edited));
+      page.node.set(pdfLib.PDFName.of('Contents'), pdfDoc.context.register(newStream));
+    }catch(err){ console.warn('Could not sanitize waiver page footer:', err); }
+  }
+
+  function drawWaiverFooter(page, pageIndex, helveticaBold, pdfLib){
+    const grey = pdfLib.rgb(0.45, 0.47, 0.53);
+    page.drawText('ASG | Waiver and Disclosure', { x: 42, y: 24, size: 8, font: helveticaBold, color: grey });
+    const pageNum = (pageIndex + 1).toString();
+    const pageNumWidth = helveticaBold.widthOfTextAtSize(pageNum, 8);
+    page.drawText(pageNum, { x: page.getWidth() - 42 - pageNumWidth, y: 24, size: 8, font: helveticaBold, color: grey });
+  }
+
+  async function generateWaiverPdfFromSource(){
     const pdfLib = loadPdfLib();
     if(!pdfLib) throw new Error('pdf-lib not available in this environment');
-    const { PDFDocument, rgb, StandardFonts } = pdfLib;
+    const { PDFDocument, StandardFonts } = pdfLib;
 
-    // Load the authoritative source PDF from filesystem (Node.js environment)
-    const fs = require('fs');
-    const path = require('path');
-    const sourcePdfBytes = fs.readFileSync(path.resolve('templates/ASG-Disclosure-Waiver-2026.pdf'));
+    const sourcePdfBytes = await loadWaiverSourcePdfBytes();
     const pdfDoc = await PDFDocument.load(sourcePdfBytes);
 
     const pages = pdfDoc.getPages();
-    if(pages.length !== 6) throw new Error('Expected 6-page waiver template, got ' + pages.length);
+    if(pages.length !== WAIVER_PAGE_COUNT) throw new Error('Expected 6-page waiver template, got ' + pages.length);
+
+    for(let i = 0; i < pages.length; i++){
+      await sanitizeWaiverPage(pages[i], pdfDoc, pdfLib);
+    }
 
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     for(let i = 0; i < pages.length; i++){
-      const page = pages[i];
-      const pageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
-
-      page.drawRectangle({
-        x: pageWidth * 0.6,
-        y: 18,
-        width: pageWidth * 0.4,
-        height: 30,
-        color: rgb(1, 1, 1),
-      });
-
-      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-      page.drawText('ASG | Waiver and Disclosure', {
-        x: 42,
-        y: 24,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0.45, 0.47, 0.53),
-      });
-
-      const pageNum = (pages.indexOf(page) + 1).toString();
-      const pageNumWidth = helveticaBold.widthOfTextAtSize(pageNum, 8);
-      page.drawText(pageNum, {
-        x: page.getWidth() - 42 - pageNumWidth,
-        y: 24,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0.45, 0.47, 0.53),
-      });
-
-      if(i === 5){
-        await addSigningOverlays(page, helveticaBold, helvetica);
+      drawWaiverFooter(pages[i], i, helveticaBold, pdfLib);
+      if(i === WAIVER_PAGE_COUNT - 1){
+        await addSigningOverlays(pages[i], pdfDoc, helveticaBold, helvetica);
       }
     }
 
@@ -4108,73 +4147,133 @@ async function generateWaiverPdfFromSource(){
     return new Uint8Array(pdfBytes);
   }
 
-async function addSigningOverlays(page, helveticaBold, helvetica){
-    const pdfLib = loadPdfLib();
-    if(!pdfLib) throw new Error('pdf-lib not available in this environment');
-    const { PDFDocument, rgb, StandardFonts } = pdfLib;
+  // Draw a captured signature PNG so its bottom sits just above the underline.
+  async function drawWaiverSignature(page, canvas, pdfDoc, underlineX0, underlineX1, baselineY){
+    try{
+      const sigDataUrl = canvas.toDataURL('image/png');
+      const sigBase64 = sigDataUrl.split(',')[1];
+      const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+      const sigImage = await pdfDoc.embedPng(sigBytes);
+      const sigDims = sigImage.scale(1);
+      const width = underlineX1 - underlineX0;
+      const height = sigDims.height * (width / sigDims.width);
+      page.drawImage(sigImage, { x: underlineX0, y: baselineY - height + 4, width, height });
+    }catch(e){ console.warn('Could not embed signature:', e); }
+  }
+
+  // Signing overlay for page 6 of the source template. The CLIENT'S NAME,
+  // CLIENT'S SIGNATURE and DATE labels and Underlines are already part of the
+  // page; only the values are drawn here (positions from the template page 6).
+  async function addSigningOverlays(page, pdfDoc, helveticaBold, helvetica){
+    const { rgb } = loadPdfLib();
+    const black = rgb(0, 0, 0);
 
     const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
     const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
-    const hasClient2 = fieldText('client2Name').length > 0 || fieldText('waiverClient2Name').length > 0;
     const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+    const hasClient2 = c2Name.length > 0;
     const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
 
-    if(client1Name){
-      page.drawText(client1Name, { x: 59, y: 599.71, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-    }
-    if(client1Date){
-      page.drawText(client1Date, { x: 54, y: 475.51, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-    }
-    if(hasSignature){
-      try {
-        const sigDataUrl = sig.toDataURL('image/png');
-        const sigBase64 = sigDataUrl.split(',')[1];
-        const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
-        const sigImage = await pdfDoc.embedPng(sigBytes);
-        const sigDims = sigImage.scale(1);
-        const sigScale = 307 / sigDims.width;
-        page.drawImage(sigImage, { x: 59, y: 537.55 - sigDims.height * sigScale + 4, width: 307, height: sigDims.height * sigScale });
-} catch(e){ console.warn('Could not embed signature 1:', e); }
-    }
+    const sig1Canvas = typeof document !== 'undefined' ? document.getElementById('signature') : null;
+    const sig2Canvas = typeof document !== 'undefined' ? document.getElementById('signature2') : null;
+
+    if(client1Name) page.drawText(client1Name, { x: 121, y: 604.8, size: 10.5, font: helveticaBold, color: black });
+    if(hasSignature && sig1Canvas) await drawWaiverSignature(page, sig1Canvas, pdfDoc, 138.68, 360.92, 542.7);
+    if(client1Date) page.drawText(client1Date, { x: 78, y: 480.6, size: 10.5, font: helveticaBold, color: black });
 
     if(hasClient2){
-      const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
-      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
-
-      if(c2Name){
-        page.drawText('CLIENT 2 NAME', { x: 54, y: 410.00, size: 9.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-        const labelFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        const labelWidth = labelFont.widthOfTextAtSize('CLIENT 2 NAME', 9.5);
-        page.drawText(c2Name, { x: 54 + labelWidth + 4, y: 410.00, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-      }
-      if(hasSignature2){
-        try {
-          const sig2DataUrl = sig2.toDataURL('image/png');
-          const sig2Base64 = sig2DataUrl.split(',')[1];
-          const sig2Bytes = Uint8Array.from(atob(sig2Base64), c => c.charCodeAt(0));
-          const sig2Image = await pdfDoc.embedPng(sig2Bytes);
-          const sig2Dims = sig2Image.scale(1);
-          const sig2Scale = 307 / sig2Dims.width;
-          page.drawImage(sig2Image, { x: 59, y: 347.84 - sig2Dims.height * sig2Scale + 4, width: 307, height: sig2Dims.height * sig2Scale });
-        } catch(e){ console.warn('Could not embed signature 2:', e); }
-      }
-      if(c2Date){
-        page.drawText('DATE', { x: 54, y: 285.80, size: 9.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-        const dateLabelFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        const dateLabelWidth = dateLabelFont.widthOfTextAtSize('DATE', 9.5);
-        page.drawText(c2Date, { x: 54 + dateLabelWidth + 4, y: 285.80, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
-      }
-}
-
-    const pageWidth = page.getWidth();
-    page.drawRectangle({ x: pageWidth * 0.6, y: 18, width: pageWidth * 0.4, height: 30, color: rgb(1, 1, 1) });
-
-    page.drawText('ASG | Waiver and Disclosure', { x: 42, y: 24, size: 8, font: helveticaBold, color: rgb(0.45, 0.47, 0.53) });
-    page.drawText('6', { x: page.getWidth() - 42 - 5, y: 24, size: 8, font: helveticaBold, color: rgb(0.45, 0.47, 0.53) });
-}
+      page.drawText('CLIENT 2', { x: 54, y: 410, size: 9.5, font: helveticaBold, color: black });
+      page.drawText(c2Name, { x: 54, y: 372, size: 10.5, font: helveticaBold, color: black });
+      page.drawLine({ start: { x: 54, y: 310.5 }, end: { x: 362, y: 310.5 }, thickness: 0.7, color: black });
+      if(hasSignature2 && sig2Canvas) await drawWaiverSignature(page, sig2Canvas, pdfDoc, 54, 362, 310);
+      if(c2Date) page.drawText(c2Date, { x: 54, y: 248, size: 10.5, font: helveticaBold, color: black });
+    }
+  }
 
   const waiverTemplateSources = Array.from({ length: 6 }, (_, i) => 'templates/rendered/waiver-page-' + (i + 1) + '.jpg');
   const waiverTemplateImages = new Array(6).fill(null);
+
+  async function ensureWaiverTemplateImage(index = WAIVER_PAGE_COUNT - 1){
+    if(waiverTemplateImages[index]) return waiverTemplateImages[index];
+    status('Loading Waiver & Disclosure template...');
+    for(let i = 0; i < waiverTemplateSources.length; i++){
+      if(!waiverTemplateImages[i]) waiverTemplateImages[i] = await loadImage(waiverTemplateSources[i]);
+    }
+    return waiverTemplateImages[index];
+  }
+
+  function drawWaiverPage(waiverPageIndex, pageNumber, totalPages, scale=2){
+    const img = waiverTemplateImages[waiverPageIndex];
+    if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+    // The source waiver PDF is A4 ratio. Fit it onto the generated page without distortion.
+    const imgAspect = img.width / img.height;
+    const pageAspect = W / H;
+    let dw, dh, dx, dy;
+    if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
+    else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    // PDF user space (bottom-left origin) to canvas pixels (top-down origin).
+    const sx = v => dx + (v / img.width) * dw;
+    const sy = v => dy + ((H - v) / H) * dh;
+
+    /* The waiver-page JPGs are rendered from the sanitised source, so the
+       (draft-stamped) footer band is already gone. Cover any residual ink in
+       the footer band on pages 1-5 so canvases never show the draft date. */
+    if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
+      const bandTopPdfY = 46;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(dx, sy(bandTopPdfY), dw, dy + dh - sy(bandTopPdfY));
+      return c;
+    }
+
+    // Client 1 fields (verified coordinates from the authoritative page 6)
+    const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
+    const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
+    ctx.fillStyle = '#111';
+    ctx.textBaseline = 'alphabetic';
+    if(client1Name){ ctx.font = '700 10.5px Arial'; ctx.fillText(client1Name.trim(), sx(121), sy(604.8)); }
+    if(client1Date){ ctx.font = '700 10.5px Arial'; ctx.fillText(client1Date.trim(), sx(78), sy(480.6)); }
+
+    // Client 1 signature (shared pad; bottom edge sits on the signature line)
+    if(hasSignature && sig){
+      const b = sy(542.7);
+      const w = (222.24 / img.width) * dw;
+      const h = w * (sig.height / sig.width);
+      ctx.drawImage(sig, sx(138.68), b - h, w, h);
+    }
+
+    // Client 2 fields (only if Client 2 is included; mirrored below Client 1)
+    const client2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+    if(client2Name){
+      ctx.font = '700 9.5px Arial';
+      ctx.fillText('CLIENT 2', sx(54), sy(410));
+      ctx.font = '700 10.5px Arial';
+      ctx.fillText(client2Name.trim(), sx(54), sy(372));
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(sx(54), sy(310.5));
+      ctx.lineTo(sx(362), sy(310.5));
+      ctx.stroke();
+      if(hasSignature2 && sig2){
+        const b = sy(310);
+        const w = ((362 - 54) / img.width) * dw;
+        const h = w * (sig2.height / sig2.width);
+        ctx.drawImage(sig2, sx(54), b - h, w, h);
+      }
+      ctx.font = '700 10.5px Arial';
+      ctx.fillText((fieldText('waiverClient2Date') || fieldText('date') || '').trim(), sx(54), sy(248));
+    }
+
+    drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817);
+
+    return c;
+  }
+
 function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
     var W = 595, H = 842;
     var c = document.createElement('canvas');
@@ -5515,11 +5614,24 @@ function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
 
   async function buildPdf(generatedAt,expectedRevision=documentRevision){
     status('Generating clean output PDF...');
-    const scale = $('compressPhotos').checked ? 2 : 3;
-    const canvases=[];
     const plan = outputPlan();
     validateBeforePdf(plan);
     currentGeneratedAt = generatedAt instanceof Date ? generatedAt : new Date();
+    if(appointmentMode === 'waiverOnly'){
+      // Vector generation straight from the authoritative source PDF.
+      const waiverPdfBytes = await generateWaiverPdfFromSource();
+      const blob = new Blob([waiverPdfBytes], { type: 'application/pdf' });
+      if(expectedRevision !== documentRevision) throw new Error('Appointment changed during generation. Please try again.');
+      lastPdfBlob=blob; lastPdfName=pdfFileName();
+      lastPdfRevision=expectedRevision;
+      lastPdfGeneratedAt=currentGeneratedAt;
+      packageGenerationCounts.combinedPdf++;
+      status('Generated ' + lastPdfName + ' (source PDF, vector quality).');
+      updateActionButtons();
+      return {blob, name:lastPdfName};
+    }
+    const scale = $('compressPhotos').checked ? 2 : 3;
+    const canvases=[];
     for(let i=0;i<plan.totalPages;i++){
       canvases.push(await drawOutputPage(i, plan.totalPages, scale));
     }

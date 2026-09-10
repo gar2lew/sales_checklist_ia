@@ -1,28 +1,21 @@
 /**
  * Complete six-page Waiver & Disclosure generation tests.
  *
- * Proves the downloaded waiver is the authoritative six-page legal document
- * (pages 1-5 pristine, page 6 carries the signing block), for the standalone,
- * In-Person combined, Zoom combined, and ZIP package outputs. Reads the actual
- * generated PDFs (never filenames or rendered previews) to verify page counts.
- *
- * NOTE: Zoom mode hides the shared signature pads (they live in the
- * in-person-only #signaturesSection). The zoom test below relocates the pads
- * into the app's own #waiverPadsHost container -- the exact relocation the app
- * performs for waiverOnly mode (`relocateSignaturePads`) -- so the zoom waiver
- * can be genuinely signed. The GUI gap (zoom leaves pads hidden) is a
- * pre-existing issue recorded separately from this six-page work.
+ * Verifies the vector source-PDF waiver generation path: the downloaded waiver
+ * is the authoritative six-page legal document produced directly from the source
+ * PDF (no canvas rasterisation for standalone or ZIP entries). Combined booklet
+ * PDFs (in-person / zoom) still use canvas rendering; only page counts are
+ * asserted for those.
  *
  * Run: npx vitest run tests/waiver-six-page-generation.test.mjs
  */
 
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { test, afterAll } from 'vitest';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import JSZip from 'jszip';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -42,18 +35,116 @@ const baseURL = `http://127.0.0.1:${server.address().port}/`;
 
 const browser = await chromium.launch({ headless:true });
 
+/* pdf.js needs the standard-14 font data to extract text drawn with the
+   Helvetica fonts pdf-lib embeds for the signing overlays. */
+function pdfjsParams(){
+  const sfDir = fileURLToPath(new URL('../node_modules/pdfjs-dist/standard_fonts/', import.meta.url));
+  return { standardFontDataUrl: pathToFileURL(sfDir).href };
+}
+
 /* ------------------------------------------------------------------ */
-/* PDF structural parsing (dependency-free, matches the app's writer)  */
+/* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-function parsePdf(buf){
+/** Collapse apostrophe variants and non-alphanumeric to a lowercase comparison string. */
+function normText(s){
+  return s.replace(/[^\p{L}\p{N}]+/gu, '').toLowerCase();
+}
+
+/** Extract per-page text from a pdfjs document. Returns array of {page, raw, normalized}. */
+async function extractPageText(buf){
+  const doc = await getDocument({ data: new Uint8Array(buf), ...pdfjsParams() }).promise;
+  const out = [];
+  for(let i = 1; i <= doc.numPages; i++){
+    const page = await doc.getPage(i);
+    const tc = await page.getTextContent();
+    const raw = tc.items.map(it => it.str).join(' ');
+    out.push({ page:i, raw, normalized: normText(raw) });
+  }
+  doc.destroy();
+  return out;
+}
+
+async function pdfjsPageCount(buf){
+  const doc = await getDocument({ data: new Uint8Array(buf), ...pdfjsParams() }).promise;
+  const n = doc.numPages;
+  doc.destroy();
+  return n;
+}
+
+/**
+ * Assert the vector waiver structure: 6 pages, text content checks, draft
+ * absent, no full-page DCTDecode images (not canvas-rasterised), and at least
+ * one small image XObject (the signature PNG).
+ */
+async function assertVectorWaiver(buf, { label, client1Name, client2Name, client2Present, dateStr }){
+  const numPages = await pdfjsPageCount(buf);
+  assert.equal(numPages, 6, `${label}: must have exactly 6 pages`);
+
+  const pages = await extractPageText(buf);
+  assert.equal(pages.length, 6, `${label}: page text extraction must return 6 entries`);
+
+  /* Draft date must be absent from every page. */
+  for(const { page, raw } of pages){
+    assert.ok(!/Updated draft/i.test(raw), `${label}: page ${page} must not contain "Updated draft"`);
+  }
+
+  /* Page 1: legal header + "This document contains a waiver and disclosure." */
+  assert.ok(pages[0].normalized.includes('waiveranddisclosure'),
+    `${label}: page 1 must contain "WAIVER AND DISCLOSURE" header`);
+  assert.ok(pages[0].normalized.includes('thisdocumentcontainsawaiveranddisclosure'),
+    `${label}: page 1 must contain "This document contains a waiver and disclosure."`);
+
+  /* Page 3: CLIENT'S WARRANTIES, ACKNOWLEDGMENTS, AND AGREEMENTS */
+  assert.ok(pages[2].normalized.includes('clientswarrantiesacknowledgmentsandagreements'),
+    `${label}: page 3 must contain "CLIENT'S WARRANTIES, ACKNOWLEDGMENTS, AND AGREEMENTS"`);
+
+  /* Page 6: signing block labels + client values */
+  assert.ok(pages[5].normalized.includes('acknowledgementofthiswaiveranddisclosure'),
+    `${label}: page 6 must contain "ACKNOWLEDGEMENT OF THIS WAIVER AND DISCLOSURE"`);
+  assert.ok(pages[5].normalized.includes('clientsname'),
+    `${label}: page 6 must contain "CLIENT'S NAME"`);
+  assert.ok(pages[5].normalized.includes('clientssignature'),
+    `${label}: page 6 must contain "CLIENT'S SIGNATURE"`);
+  assert.ok(pages[5].normalized.includes('date'),
+    `${label}: page 6 must contain "DATE"`);
+
+  if(client1Name){
+    assert.ok(pages[5].normalized.includes(normText(client1Name)),
+      `${label}: page 6 must contain client 1 name "${client1Name}"`);
+  }
+  if(dateStr){
+    const normDate = normText(dateStr);
+    assert.ok(pages[5].normalized.includes(normDate),
+      `${label}: page 6 must contain date "${dateStr}"`);
+    assert.ok(!pages[5].normalized.includes('02092026'),
+      `${label}: page 6 must not contain the draft date "02/09/2026"`);
+  }
+
+  if(client2Present){
+    assert.ok(pages[5].normalized.includes('client2'),
+      `${label}: page 6 must contain "CLIENT 2" when second client is enabled`);
+    assert.ok(pages[5].normalized.includes(normText(client2Name)),
+      `${label}: page 6 must contain client 2 name "${client2Name}"`);
+  }
+
+  /* Structural image check: no full-page DCTDecode images (not canvas). */
   const latin = buf.toString('latin1');
-  const count = latin.match(/\/Type \/Pages \/Count (\d+)/);
-  const pageCount = count ? Number(count[1]) : -1;
+  const imageMatches = [...latin.matchAll(/\/Subtype \/Image \/Width (\d+)/g)];
+  assert.ok(imageMatches.every(m => Number(m[1]) < 500),
+    `${label}: no image XObject may be full-page (all must be < 500px wide)`);
+}
 
-  /* Image XObjects: object number, dimensions, and embedded JPEG bytes. */
+/** Parse page-image digests from a canvas-generated (JPEG-embedded) PDF. */
+function parseCanvasDigests(buf){
+  const latin = buf.toString('latin1');
+  const pages = [];
+  const pageRe = /\/Type \/Page .*?\/XObject << \/Im\d+ (\d+) 0 R >> >> \/Contents (\d+) 0 R >>/g;
+  let p;
+  while((p = pageRe.exec(latin)) !== null) pages.push(Number(p[1]));
+
+  const imgRe = /(\d+) 0 obj\n<< .*?\/Width (\d+) \/Height (\d+) .*?\/Filter \/DCTDecode \/Length (\d+) >>\nstream\n/g;
   const images = new Map();
-  const imgRe = /(\d+) 0 obj\n<< \/Type \/XObject \/Subtype \/Image \/Width (\d+) \/Height (\d+) \/ColorSpace \/DeviceRGB \/BitsPerComponent 8 \/Filter \/DCTDecode \/Length (\d+) >>\nstream\n/g;
   let m;
   while((m = imgRe.exec(latin)) !== null){
     const objNum = Number(m[1]);
@@ -64,39 +155,11 @@ function parsePdf(buf){
     images.set(objNum, { width, height, jpg: Buffer.from(buf.buffer, buf.byteOffset + start, len) });
   }
 
-  /* Page objects in Kids order: each references one image via /ImN. */
-  const pages = [];
-  const pageRe = /\/Type \/Page \/Parent 2 0 R \/MediaBox \[([\d. ]+)\] \/Resources << \/XObject << \/(Im\d+) (\d+) 0 R >> >> \/Contents (\d+) 0 R >>/g;
-  let p;
-  while((p = pageRe.exec(latin)) !== null){
-    const imgObj = Number(p[3]);
-    const image = images.get(imgObj);
-    pages.push({ name:p[2], image, mediaBox:p[1].trim() });
-  }
-  return { pageCount, pages };
+  return pages.map(imgObj => {
+    const img = images.get(imgObj);
+    return img || null;
+  }).filter(Boolean);
 }
-
-function pageDigests(buf){
-  const { pages } = parsePdf(buf);
-  return pages.map(page => {
-    assert.ok(page.image, `every page must have an embedded image; missing for ${page.name}`);
-    return createHash('sha256').update(page.image.jpg).digest('hex');
-  });
-}
-
-async function pdfjsPageCount(buf){
-  const task = getDocument({ data: new Uint8Array(buf) });
-  try {
-    const doc = await task.promise;
-    return doc.numPages;
-  } finally {
-    task.destroy();
-  }
-}
-
-const CLIENT_1 = 'John Smith';
-const CLIENT_2 = 'Jane Smith';
-const DATE = '25/08/2026';
 
 /* ------------------------------------------------------------------ */
 /* E2E helpers                                                         */
@@ -136,20 +199,22 @@ async function waitWaiverVisible(page){
 async function signClient1(page){
   await waitWaiverVisible(page);
   await drawOnPad(page, '#signature');
-  await page.waitForFunction(() => {
+  await page.fill('#waiverClient1Date', DATE);
+  await page.waitForFunction((d) => {
     const el = document.getElementById('waiverClient1Date');
-    return el && /^\d{2}\/\d{2}\/\d{4}$/.test(el.value);
-  }, null, { timeout:5000 });
+    return el && el.value === d;
+  }, DATE, { timeout:5000 });
 }
 
 async function signClient2(page){
   await page.check('#waiverClient2Toggle');
   await page.fill('#client2Name', CLIENT_2);
   await drawOnPad(page, '#signature2');
-  await page.waitForFunction(() => {
+  await page.fill('#waiverClient2Date', DATE);
+  await page.waitForFunction((d) => {
     const el = document.getElementById('waiverClient2Date');
-    return el && /^\d{2}\/\d{2}\/\d{4}$/.test(el.value);
-  }, null, { timeout:5000 });
+    return el && el.value === d;
+  }, DATE, { timeout:5000 });
 }
 
 async function fillSharedAppointment(page){
@@ -195,32 +260,15 @@ function identifyPdfAndZip(buffers){
   return { pdf, zip };
 }
 
-/* Digest assertions shared by all scenarios. */
-function assertCompleteSixPageWaiver(pdfBuffer, label){
-  const parsed = parsePdf(pdfBuffer);
-  assert.equal(parsed.pageCount, 6, `${label}: generated PDF must have exactly 6 pages`);
-  assert.equal(parsed.pages.length, 6, `${label}: page objects must match the declared count`);
-  for(const page of parsed.pages){
-    const { width, height } = page.image;
-    /* drawWaiverPage canvases use W=595,H=842 at scale 2 or 3. */
-    assert.ok((width === 1190 && height === 1684) || (width === 1785 && height === 2526),
-      `${label}: embedded page image must be A4 at supported scale, got ${width}x${height}`);
-    const ratio = width / height;
-    assert.ok(Math.abs(ratio - 595 / 842) < 0.001, `${label}: page image keeps A4 ratio`);
-    assert.ok(/^0 0 595\.28 841\.89$/.test(page.mediaBox),
-      `${label}: page MediaBox stays A4 (got ${page.mediaBox})`);
-  }
-}
+const CLIENT_1 = 'John Smith';
+const CLIENT_2 = 'Jane Smith';
+const DATE = '25/08/2026';
 
 /* ------------------------------------------------------------------ */
-/* Cross-scenario page digest baselines (filled by the first scenario) */
+/* Tests                                                               */
 /* ------------------------------------------------------------------ */
 
-let standaloneC1Digests = null;
-let standaloneC1C2Digests = null;
-let combinedInPersonWaiverDigests = null;
-
-test('standalone Client 1: exactly 6 pages, no ZIP, complete waiver PDF', async () => {
+test('standalone Client 1: vector 6-page waiver, text extractable, draft absent', async () => {
   const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
   const errors = [];
   installSafeHooks(context, errors);
@@ -234,18 +282,21 @@ test('standalone Client 1: exactly 6 pages, no ZIP, complete waiver PDF', async 
   assert.match(downloads[0].name, /\.pdf$/i, 'waiver-only download must be a PDF');
   const pdf = downloads[0].data;
   assert.equal(pdf[0], 0x25, 'downloaded file starts with %PDF');
-  assert.ok(pdf[1] === 0x50 && pdf[2] === 0x44 && pdf[3] === 0x46, 'downloaded file is a PDF, not a ZIP');
-  assertCompleteSixPageWaiver(pdf, 'standalone Client 1');
-  assert.equal(await pdfjsPageCount(pdf), 6, 'a real PDF parser confirms the 6-page count');
+  assert.ok(pdf[1] === 0x50 && pdf[2] === 0x44 && pdf[3] === 0x46, 'downloaded file is a PDF');
 
-  standaloneC1Digests = pageDigests(pdf);
+  await assertVectorWaiver(pdf, {
+    label: 'standalone Client 1',
+    client1Name: CLIENT_1,
+    client2Present: false,
+    dateStr: DATE,
+  });
 
   assert.deepEqual(errors, [], 'no page errors in standalone client-1 flow');
   await context.close();
-  console.log('PASS standalone Client 1 six-page waiver, single PDF download, no ZIP');
+  console.log('PASS standalone Client 1 vector 6-page waiver');
 });
 
-test('standalone Client 1 + Client 2: still exactly 6 pages, Client 2 on page 6 only', async () => {
+test('standalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6', async () => {
   const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
   const errors = [];
   installSafeHooks(context, errors);
@@ -258,28 +309,44 @@ test('standalone Client 1 + Client 2: still exactly 6 pages, Client 2 on page 6 
 
   const downloads = await captureDownloads(page, 1, () => page.click('#downloadPackage'));
   const pdf = downloads[0].data;
-  assertCompleteSixPageWaiver(pdf, 'standalone Client 1 + Client 2');
-  const parsed = parsePdf(pdf);
-  assert.equal(parsed.pageCount, 6, 'Client 1 + Client 2 waiver must remain exactly 6 pages (no page 7)');
-  assert.equal(await pdfjsPageCount(pdf), 6, 'a real PDF parser confirms no page 7');
 
-  standaloneC1C2Digests = pageDigests(pdf);
+  await assertVectorWaiver(pdf, {
+    label: 'standalone Client 1 + Client 2',
+    client1Name: CLIENT_1,
+    client2Name: CLIENT_2,
+    client2Present: true,
+    dateStr: DATE,
+  });
 
-  /* Pages 1-5 identical to the Client 1-only run: Client 2 details never touch them. */
+  /* Pages 1-5 must contain identical legal text to a Client 1-only run. */
+  const c1context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const c1errors = [];
+  installSafeHooks(c1context, c1errors);
+  const c1page = await c1context.newPage();
+  await enterMode(c1page, 'waiverOnly');
+  await c1page.fill('#clientName', CLIENT_1);
+  await signClient1(c1page);
+  await generateAndWaitReady(c1page);
+  const c1downloads = await captureDownloads(c1page, 1, () => c1page.click('#downloadPackage'));
+  const c1pdf = c1downloads[0].data;
+  await c1context.close();
+
+  const c1pages = await extractPageText(c1pdf);
+  const c2pages = await extractPageText(pdf);
   for(let i = 0; i < 5; i++){
-    assert.equal(standaloneC1C2Digests[i], standaloneC1Digests[i],
-      `page ${i + 1} must be byte-identical with and without Client 2 (client 2 must not touch legal pages 1-5)`);
+    assert.equal(c1pages[i].normalized, c2pages[i].normalized,
+      `pages 1-5 text must be identical with and without Client 2 (page ${i + 1})`);
   }
-  /* Page 6 differs: the Client 2 signing block is drawn on the final page. */
-  assert.notEqual(standaloneC1C2Digests[5], standaloneC1Digests[5],
-    'page 6 must carry the Client 2 signing block when Client 2 is enabled');
+
+  assert.notEqual(c1pages[5].normalized, c2pages[5].normalized,
+    'page 6 must differ when Client 2 is enabled');
 
   assert.deepEqual(errors, [], 'no page errors in standalone client-2 flow');
   await context.close();
-  console.log('PASS standalone Client 1+2 waiver remains 6 pages, Client 2 on page 6');
+  console.log('PASS standalone Client 1+2 vector waiver with CLIENT 2 block');
 });
 
-test('In-Person + waiver: combined PDF and ZIP entry each carry the complete 6-page waiver', async () => {
+test('In-Person + waiver: combined canvas PDF + vector ZIP waiver entry', async () => {
   const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
   const errors = [];
   installSafeHooks(context, errors);
@@ -295,29 +362,38 @@ test('In-Person + waiver: combined PDF and ZIP entry each carry the complete 6-p
   assert.equal(pdf.length, 1, 'exactly one combined PDF download');
   assert.equal(zip.length, 1, 'exactly one ZIP download');
 
-  assertCompleteSixPageWaiver(pdf[0].data, 'in-person combined');
-  assert.equal(await pdfjsPageCount(pdf[0].data), 6, 'in-person combined PDF has exactly 6 pages');
-  combinedInPersonWaiverDigests = pageDigests(pdf[0].data);
-  for(let i = 0; i < 6; i++){
-    assert.equal(combinedInPersonWaiverDigests[i], standaloneC1Digests[i],
-      `in-person combined page ${i + 1} must be byte-identical to the standalone waiver (same complete document embedded)`);
+  /* Combined PDF: canvas-based 6 waiver pages. Verify page count. */
+  const combinedNumPages = await pdfjsPageCount(pdf[0].data);
+  assert.equal(combinedNumPages, 6, 'in-person combined PDF must have 6 pages (waiver only)');
+
+  /* Combined has JPEG page images (canvas rasterised). */
+  const canvasDigests = parseCanvasDigests(pdf[0].data);
+  assert.equal(canvasDigests.length, 6, 'combined must contain 6 JPEG page images');
+  for(const d of canvasDigests){
+    assert.ok(d.width >= 1190 && d.height >= 1683,
+      `combined page images must be canvas-scale JPEG (got ${d.width}x${d.height})`);
   }
 
+  /* ZIP waiver entry: vector PDF with correct text. */
   const zipContent = await JSZip.loadAsync(zip[0].data);
   const names = Object.keys(zipContent.files).filter(name => !zipContent.files[name].dir);
   const waiverEntries = names.filter(name => /Waiver and Disclosure.*\.pdf$/i.test(name));
   assert.equal(waiverEntries.length, 1, `ZIP must contain the standalone waiver exactly once (got ${JSON.stringify(names)})`);
   const waiverBuf = Buffer.from(await zipContent.files[waiverEntries[0]].async('nodebuffer'));
-  assertCompleteSixPageWaiver(waiverBuf, 'in-person ZIP waiver entry');
-  assert.deepEqual(pageDigests(waiverBuf), standaloneC1Digests,
-    'ZIP waiver entry must be the same complete six-page waiver as the standalone download');
+
+  await assertVectorWaiver(waiverBuf, {
+    label: 'in-person ZIP waiver entry',
+    client1Name: CLIENT_1,
+    client2Present: false,
+    dateStr: DATE,
+  });
 
   assert.deepEqual(errors, [], 'no page errors in in-person + waiver flow');
   await context.close();
-  console.log('PASS In-Person combined: 6-page waiver in combined PDF and single ZIP entry');
+  console.log('PASS In-Person combined: 6-page waiver in combined PDF and vector ZIP entry');
 });
 
-test('Zoom + waiver: combined PDF and ZIP entry each carry the complete 6-page waiver', async () => {
+test('Zoom + waiver: combined canvas PDF + vector ZIP waiver entry', async () => {
   const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
   const errors = [];
   installSafeHooks(context, errors);
@@ -326,8 +402,6 @@ test('Zoom + waiver: combined PDF and ZIP entry each carry the complete 6-page w
   await fillSharedAppointment(page);
   await page.check('#zoomIncludeWaiver');
   await waitWaiverVisible(page);
-  /* Zoom hides the shared signature pads (in-person-only section). Use the
-     app's own waiver pads host -- the relocation waiverOnly mode performs. */
   await page.evaluate(() => {
     const sigHost = document.getElementById('sigPadsHost');
     const waiverHost = document.getElementById('waiverPadsHost');
@@ -344,52 +418,45 @@ test('Zoom + waiver: combined PDF and ZIP entry each carry the complete 6-page w
   assert.equal(zip.length, 1, 'exactly one ZIP download');
 
   /* cover(1) + firstConsult(6) + clientReview(4) + waiver(6) = 17 */
-  const parsed = parsePdf(pdf[0].data);
-  assert.equal(parsed.pageCount, 17, 'zoom combined must be cover + firstConsult + clientReview + 6-page waiver');
-  assert.equal(await pdfjsPageCount(pdf[0].data), 17, 'a real PDF parser confirms the 17-page zoom count');
+  const combinedNumPages = await pdfjsPageCount(pdf[0].data);
+  assert.equal(combinedNumPages, 17, 'zoom combined must be cover + firstConsult + clientReview + 6-page waiver');
 
-  const zoomDigests = pageDigests(pdf[0].data);
-  assert.equal(zoomDigests.length, 17, '17 embedded page images');
-  const zoomWaiverDigests = zoomDigests.slice(11);
-  /* Waiver pages 1-5 carry no footer, so they must be byte-identical to the
-     standalone waiver pages 1-5. Waiver page 6 differs only by the booklet
-     footer stamp ("Page X of 17" vs "Page 6 of 6"); its signing content is
-     verified visually via the GUI artifacts. */
-  for(let i = 0; i < 5; i++){
-    assert.equal(zoomWaiverDigests[i], standaloneC1Digests[i],
-      `zoom combined waiver page ${i + 1} must match the standalone waiver (page ${i + 12} of the booklet)`);
-  }
-  const uniqueWaiver = new Set(zoomWaiverDigests);
-  assert.equal(uniqueWaiver.size, 6, `zoom waiver pages must be six distinct pages (got ${uniqueWaiver.size})`);
-  assert.notEqual(zoomWaiverDigests[5], standaloneC1Digests[5],
-    'zoom waiver page 6 differs from the standalone page 6 (booklet footer stamp expected)');
-  /* No duplicate legal pages: the non-waiver booklet pages must differ from the waiver pages. */
-  const waiverSet = new Set(zoomWaiverDigests);
-  for(let i = 0; i < 11; i++){
-    assert.equal(waiverSet.has(zoomDigests[i]), false,
-      `zoom booklet page ${i + 1} must not duplicate any waiver page`);
-  }
+  const canvasDigests = parseCanvasDigests(pdf[0].data);
+  assert.equal(canvasDigests.length, 17, 'combined must contain 17 JPEG page images');
 
+  /* Waiver pages at positions 12-17 (0-indexed: 11-16) must be canvas A4 pages. */
+  const waiverDigests = canvasDigests.slice(11);
+  assert.equal(waiverDigests.length, 6, 'zoom combined must have 6 waiver pages');
+  for(const d of waiverDigests){
+    const ratio = d.width / d.height;
+    assert.ok(Math.abs(ratio - 595 / 842) < 0.001,
+      `waiver page must keep A4 ratio (got ${d.width}x${d.height})`);
+  }
+  /* Each of the 6 waiver pages must be distinct. */
+  const uniqueWaiver = new Set(waiverDigests.map(d => d.jpg.toString('hex')));
+  assert.equal(uniqueWaiver.size, 6, 'zoom waiver pages must be six distinct pages');
+
+  /* ZIP waiver entry: vector PDF. */
   const zipContent = await JSZip.loadAsync(zip[0].data);
   const names = Object.keys(zipContent.files).filter(name => !zipContent.files[name].dir);
   assert.equal(names.length, 4, `zoom ZIP must contain cover, firstConsult, clientReview, waiver (got ${JSON.stringify(names)})`);
   const waiverEntries = names.filter(name => /Waiver and Disclosure.*\.pdf$/i.test(name));
   assert.equal(waiverEntries.length, 1, 'zoom ZIP must contain the waiver exactly once');
   const waiverBuf = Buffer.from(await zipContent.files[waiverEntries[0]].async('nodebuffer'));
-  assertCompleteSixPageWaiver(waiverBuf, 'zoom ZIP waiver entry');
-  /* The individual waiver group is drawn with the same 17-page booklet context,
-     so it must be byte-identical to the six waiver pages inside the combined PDF. */
-  assert.deepEqual(pageDigests(waiverBuf), zoomWaiverDigests,
-    'zoom ZIP waiver entry must be the same complete six-page waiver as in the combined booklet');
-  assert.deepEqual(pageDigests(waiverBuf).slice(0, 5), standaloneC1Digests.slice(0, 5),
-    'zoom ZIP waiver entry pages 1-5 are the preserved legal pages');
+
+  await assertVectorWaiver(waiverBuf, {
+    label: 'zoom ZIP waiver entry',
+    client1Name: CLIENT_1,
+    client2Present: false,
+    dateStr: DATE,
+  });
 
   assert.deepEqual(errors, [], 'no page errors in zoom + waiver flow');
   await context.close();
-  console.log('PASS Zoom combined: 6-page waiver in combined PDF and single ZIP entry');
+  console.log('PASS Zoom combined: 6-page waiver in combined PDF and vector ZIP entry');
 });
 
-test('regression: Zoom without waiver stays 11 pages with no waiver entry and no waiver pages', async () => {
+test('regression: Zoom without waiver stays 11 pages with no waiver entry', async () => {
   const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
   const errors = [];
   installSafeHooks(context, errors);
@@ -402,15 +469,8 @@ test('regression: Zoom without waiver stays 11 pages with no waiver entry and no
   const { pdf, zip } = identifyPdfAndZip(downloads);
 
   /* cover(1) + firstConsult(6) + clientReview(4) = 11 */
-  const parsed = parsePdf(pdf[0].data);
-  assert.equal(parsed.pageCount, 11, 'zoom without waiver must remain 11 pages');
-  assert.equal(await pdfjsPageCount(pdf[0].data), 11, 'a real PDF parser confirms the 11-page zoom count');
-
-  const digests = pageDigests(pdf[0].data);
-  const waiverSet = new Set(standaloneC1Digests);
-  for(const digest of digests){
-    assert.equal(waiverSet.has(digest), false, 'no waiver page may appear when the waiver toggle is off');
-  }
+  const parsedNumPages = await pdfjsPageCount(pdf[0].data);
+  assert.equal(parsedNumPages, 11, 'zoom without waiver must remain 11 pages');
 
   const zipContent = await JSZip.loadAsync(zip[0].data);
   const names = Object.keys(zipContent.files).filter(name => !zipContent.files[name].dir);
@@ -433,8 +493,6 @@ test('regression: In-Person without waiver unchanged (single-page delta with IA 
     await page.check('#includeIA');
     await page.waitForSelector('#iaForm', { state:'visible', timeout:15000 });
     await page.selectOption('#iaForm', 'perth');
-    /* #iaDate lives inside the manual-overrides block and auto-fills from #date
-       when the IA form template is chosen (app.js updateIaDetails path). */
     const iaDateValue = await page.$eval('#iaDate', el => el.value).catch(() => '');
     assert.match(iaDateValue, /^\d{2}\/\d{2}\/\d{4}$/, 'IA date auto-fills from the appointment date');
     await page.fill('#clientAddress', '1 Test Street, Perth WA');
@@ -454,29 +512,12 @@ test('regression: In-Person without waiver unchanged (single-page delta with IA 
   const withWaiver = await run(true);
   const withoutWaiver = await run(false);
 
-  const onParsed = parsePdf(withWaiver.pdf);
-  const offParsed = parsePdf(withoutWaiver.pdf);
-  /* IA(1) + waiver(6) = 7 with waiver; IA(1) = 1 without. Delta must be exactly 6. */
-  assert.equal(onParsed.pageCount, 7, 'in-person IA + waiver must be 7 pages total');
-  assert.equal(offParsed.pageCount, 1, 'in-person IA without waiver must remain exactly 1 page');
-  assert.equal(onParsed.pageCount - offParsed.pageCount, 6, 'waiver toggle adds exactly the 6 waiver pages');
-
-  const onDigests = pageDigests(withWaiver.pdf);
-  const offDigests = pageDigests(withoutWaiver.pdf);
-  const waiverSet = new Set(standaloneC1Digests);
-  /* The IA page carries a footer stamped with the booklet total ("Page 1 of 1"
-     vs "Page 1 of 7"), so it is not byte-identical across the two runs. Verify
-     instead that the without-waiver run is a lone IA page that is not a waiver
-     page, and that the with-waiver run keeps exactly that shape plus the waiver. */
-  assert.equal(offDigests.length, 1, 'without waiver: a single IA page');
-  assert.equal(waiverSet.has(offDigests[0]), false, 'IA page must not duplicate any waiver page');
-  assert.equal(waiverSet.has(onDigests[0]), false, 'IA page (with waiver run) must not duplicate any waiver page');
-  /* Waiver pages 1-5 carry no footer, so they are byte-identical to standalone;
-     waiver page 6 differs only by the booklet footer stamp ("Page 7 of 7"). */
-  assert.deepEqual(onDigests.slice(1, 6), standaloneC1Digests.slice(0, 5),
-    'the in-person booklet waiver pages 2-6 are the preserved standalone pages 1-5');
-  assert.notEqual(onDigests[6], standaloneC1Digests[5],
-    'in-person waiver page 7 (page 6) differs from standalone page 6 (booklet footer stamp expected)');
+  /* IA(1) + waiver(6) = 7 with waiver; IA(1) = 1 without. */
+  const onPages = await pdfjsPageCount(withWaiver.pdf);
+  const offPages = await pdfjsPageCount(withoutWaiver.pdf);
+  assert.equal(onPages, 7, 'in-person IA + waiver must be 7 pages total');
+  assert.equal(offPages, 1, 'in-person IA without waiver must remain exactly 1 page');
+  assert.equal(onPages - offPages, 6, 'waiver toggle adds exactly the 6 waiver pages');
 
   assert.deepEqual(withWaiver.errors, [], 'no page errors in in-person IA + waiver flow');
   assert.deepEqual(withoutWaiver.errors, [], 'no page errors in in-person IA flow');

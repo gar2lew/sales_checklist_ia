@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile("service-worker.js", "utf8");
-assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.30';/, "waiver-only cleanup must advance from v2.7.0-alpha.29 to v2.7.0-alpha.30");
+assert.match(source, /const CACHE_VERSION = 'v2.7.0-alpha.31';/, "waiver source-pdf fix must advance from v2.7.0-alpha.30 to v2.7.0-alpha.31");
 
 const listeners = new Map();
 const openedCaches = [];
@@ -56,10 +56,10 @@ assert.deepEqual([...listeners.keys()].sort(), ["activate", "fetch", "install", 
 let lifecyclePromise;
 listeners.get("install")({ waitUntil(promise) { lifecyclePromise = promise; } });
 await lifecyclePromise;
-assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.30", "fresh install must populate the new cache");
+assert.equal(openedCaches[0], "sales-capture-v2.7.0-alpha.31", "fresh install must populate the new cache");
 assert.equal(skipWaitingCalls, 1, "fresh install must retain immediate worker activation");
 assert.deepEqual(cachedAssets, [
-  "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/app.js",
+  "/", "/index.html", "/manifest.webmanifest", "/css/app.css", "/js/db.js", "/js/app.js", "/lib/pdf-lib.min.js",
   "/lavida-template-page-1.jpg", "/lavida-template-page-2.jpg",
   "/templates/ia-perth-clean.jpg", "/templates/ia-brisbane-clean.jpg",
   "/templates/ASG-Disclosure-Waiver-2026.pdf", "/templates/rendered/waiver-page-1.jpg", "/templates/rendered/waiver-page-2.jpg",

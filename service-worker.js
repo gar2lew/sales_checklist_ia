@@ -2,7 +2,7 @@
   Sales Appointment Capture - Offline Service Worker
   Bump CACHE_VERSION whenever you want to force devices to download a fresh copy.
 */
-const CACHE_VERSION = 'v2.7.0-alpha.30';
+const CACHE_VERSION = 'v2.7.0-alpha.31';
 const CACHE_NAME = `sales-capture-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -10,7 +10,9 @@ const APP_SHELL = [
   '/index.html',
   '/manifest.webmanifest',
   '/css/app.css',
+  '/js/db.js',
   '/js/app.js',
+  '/lib/pdf-lib.min.js',
   '/lavida-template-page-1.jpg',
   '/lavida-template-page-2.jpg',
   '/templates/ia-perth-clean.jpg',
