@@ -293,11 +293,10 @@
 
       <div class="workspaceContent">
       <main>
-        <section class="card" id="appointmentInfoSection">
-          <h2>1. Appointment & client information</h2>
+<section class="card" id="appointmentInfoSection">
+          <h2>1. Client Details</h2>
           <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
-          <p class="hint">Fields marked <span class="required">*</span> are used to name the PDF file.</p>
-            <div class="fields three appointment-only">
+          <div class="fields three appointment-only">
             <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
             <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
             <div><label for="clientAddress">Client Current Address</label><input id="clientAddress" type="text" placeholder="Client current address"></div>
@@ -326,26 +325,28 @@
           <div class="toggleRow in-person-only" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeEOI"> Include EOI form</label>
             <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeIA"> Include IA form</label>
-            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeWaiver"> Include Waiver &amp; Disclosure</label>
+            <label style="font-weight:600; display:flex; align-items:center; gap:8px"><input type="checkbox" id="includeWaiver"> Include Waiver & Disclosure</label>
           </div>
         </section>
 
-        <!-- WAIVER & DISCLOSURE SECTION 2: Signature ============================== -->
+<!-- WAIVER & DISCLOSURE SECTION 2: Signature ============================== -->
         <section class="card" id="waiverSignatureSection" data-collapsible="true" style="display:none">
-          <h2>2. Waiver &amp; Disclosure</h2>
+          <h2>2. Waiver & Disclosure</h2>
           <span class="section-summary hidden" id="sectionSummary-waiverSignatureSection"></span>
-          <p class="hint">Enter the client details for the Waiver &amp; Disclosure form, then capture the signature below. The signing date is completed automatically when the client signs.</p>
+          <p class="hint">Client details are entered in <strong>Section 1</strong>. Capture signatures below — the signing date is completed automatically when the client signs.</p>
           <div class="subsection">
             <h3>Client 1</h3>
             <div class="fields two">
-              <div><label for="waiverClient1Name">Client 1 Name <span class="required">*</span></label><input id="waiverClient1Name" type="text" placeholder="Client 1 name"></div>
+              <div class="waiver-only"><label>Client 1 Name</label><div class="readonly-display" id="waiverClient1NameDisplay">Client 1</div></div>
+              <div class="in-person-only zoom-only"><label for="waiverClient1Name">Client 1 Name <span class="required">*</span></label><input id="waiverClient1Name" type="text" placeholder="Client 1 name"></div>
               <div><label for="waiverClient1Date">Signing Date <span class="required">*</span></label><input id="waiverClient1Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
             </div>
           </div>
           <div class="subsection waiver-client2 hidden" id="waiverClient2Block">
             <h3>Client 2</h3>
             <div class="fields two">
-              <div><label for="waiverClient2Name">Client 2 Name</label><input id="waiverClient2Name" type="text" placeholder="Client 2 name"></div>
+              <div class="waiver-only"><label>Client 2 Name</label><div class="readonly-display" id="waiverClient2NameDisplay">Client 2</div></div>
+              <div class="in-person-only zoom-only"><label for="waiverClient2Name">Client 2 Name</label><input id="waiverClient2Name" type="text" placeholder="Client 2 name"></div>
               <div><label for="waiverClient2Date">Signing Date</label><input id="waiverClient2Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
             </div>
           </div>

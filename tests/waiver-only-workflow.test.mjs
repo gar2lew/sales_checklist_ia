@@ -134,10 +134,10 @@ test('waiver-only validation requires client + waiver items only (no appointment
   /* Empty form: client name + waiver client 1 name get field flags; appointment fields never required */
   await page.click('#generateTop');
   let ids = await fieldErrorData(page);
-  assert.deepEqual(ids, ['clientName', 'waiverClient1Name'], 'client and waiver client 1 name flagged first');
+  assert.deepEqual(ids, ['clientName'], 'client name flagged first');
   assert.deepEqual(ids.filter(id => ['date','teamMember','contractDueDate'].includes(id)), [],
     'appointment date/team member/contract due date never flagged in waiver mode');
-  assert.match(await page.textContent('#status'), /Complete 3 required items before generating\./, 'status lists remaining waiver items');
+  assert.match(await page.textContent('#status'), /Complete 2 required items before generating\./, 'status lists remaining waiver items');
 
   /* Client name is copied to waiver name; only the drawn signature remains, via status (no field element) */
   await page.fill('#clientName', 'Fictional Test Client');

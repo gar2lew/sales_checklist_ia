@@ -1246,6 +1246,19 @@ var staff = ($('landingStaff').value || '').trim();
     if(c2Block){
       c2Block.classList.toggle('hidden', !hasClient2());
     }
+    /* Sync waiver name fields from Section 1 client names */
+    if(appointmentMode === 'waiverOnly'){
+      const c1Display = $('waiverClient1NameDisplay');
+      const c2Display = $('waiverClient2NameDisplay');
+      if(c1Display) c1Display.textContent = fieldText('clientName') || 'Client 1';
+      if(c2Display) c2Display.textContent = fieldText('client2Name') || 'Client 2';
+    } else {
+      /* In-person + waiver and Zoom + waiver: sync editable waiver fields */
+      const c1Input = $('waiverClient1Name');
+      const c2Input = $('waiverClient2Name');
+      if(c1Input && !c1Input.value) setControlValue('waiverClient1Name', fieldText('clientName'));
+      if(c2Input && !c2Input.value) setControlValue('waiverClient2Name', fieldText('client2Name'));
+    }
     /* Zoom + waiver: relocate the shared pads into the waiver stage so they
        are signable in the Zoom workflow; move them back when not in use. */
     relocateSignaturePads();
@@ -1285,16 +1298,19 @@ var staff = ($('landingStaff').value || '').trim();
   function waiverReadiness(){
     if(!waiverIncluded()) return { included:false, ready:true, items:[] };
     const items = [];
-    const hasClient2 = fieldText('client2Name') || fieldText('waiverClient2Name');
-    if(!fieldText('waiverClient1Name') && !fieldText('clientName'))
-      items.push({ id:'waiverClient1Name', message:'Enter Client 1 name for Waiver.' });
+    const isWaiverOnly = appointmentMode === 'waiverOnly';
+    const c1NameField = isWaiverOnly ? 'clientName' : 'waiverClient1Name';
+    const c2NameField = isWaiverOnly ? 'client2Name' : 'waiverClient2Name';
+    const hasClient2 = fieldText(c2NameField);
+    if(!fieldText(c1NameField))
+      items.push({ id:c1NameField, message:'Enter Client 1 name for Waiver.' });
     if(!hasSignature)
       items.push({ id:'waiverSignature1', message:'Capture Client 1 signature for Waiver.' });
     if(!fieldText('waiverClient1Date') && !fieldText('date'))
       items.push({ id:'waiverClient1Date', message:'Enter Client 1 date for Waiver.' });
     if(hasClient2){
-      if(!fieldText('waiverClient2Name') && !fieldText('client2Name'))
-        items.push({ id:'waiverClient2Name', message:'Enter Client 2 name for Waiver.' });
+      if(!fieldText(c2NameField))
+        items.push({ id:c2NameField, message:'Enter Client 2 name for Waiver.' });
       if(!hasSignature2)
         items.push({ id:'waiverSignature2', message:'Capture Client 2 signature for Waiver.' });
       if(!fieldText('waiverClient2Date') && !fieldText('date'))
@@ -1599,7 +1615,10 @@ var staff = ($('landingStaff').value || '').trim();
     el.dataset.bound = 'true';
     el.addEventListener('input',()=>{
       refreshFormBindings();
-      if(id==='clientName' || id==='client2Name') syncClient2FinanceState();
+      if(id==='clientName' || id==='client2Name') {
+        syncClient2FinanceState();
+        if(appointmentMode === 'waiverOnly') updateWaiverDetails();
+      }
       if(id==='client1FinancePercentage') syncFinanceCompatibility();
       if(id==='eoiPriceLand' || id==='eoiPriceHouse') updateHLTotal();
       if(id==='eoiPriceTotal') applyPriceFormat(el);
@@ -1611,7 +1630,7 @@ var staff = ($('landingStaff').value || '').trim();
       clearValidation();
       if(id==='includeIA' || id==='iaForm' || id==='showIaOverrides') { updateIaDetails(); updateIaOverrides(); }
       if(id==='includeEOI' || id==='showEoiOverrides') { updateEoiDetails(); updateEoiOverrides(); }
-      if(id==='includeWaiver' || id==='zoomIncludeWaiver' || id==='waiverClient1Name' || id==='waiverClient2Name' || id==='client2Name' || id==='waiverClient2Date') { updateWaiverDetails(); }
+      if(id==='includeWaiver' || id==='zoomIncludeWaiver' || id==='clientName' || id==='client2Name' || id==='waiverClient1Date' || id==='waiverClient2Date') { updateWaiverDetails(); }
       if(id==='clientName' || id==='client2Name') syncClient2FinanceState();
       if(id==='client1FinancePercentage') syncFinanceCompatibility();
       if(id==='eoiTemplate') { updateLaVidaDetails(); applyLaVidaDefaults(false); }
@@ -5953,6 +5972,11 @@ var staff = ($('landingStaff').value || '').trim();
   function getDraft(){
     syncFinanceCompatibility();
     const data={}; fields.forEach(id=>{const el=$(id); if(!el)return; data[id]=(el.type==='checkbox')?el.checked:el.value;});
+    /* In waiver-only mode, sync waiver name fields from client name fields for draft persistence */
+    if(appointmentMode === 'waiverOnly'){
+      data.waiverClient1Name = fieldText('clientName');
+      data.waiverClient2Name = fieldText('client2Name');
+    }
     data.eoiOwnership=eoiOwnership();
     data.signature=hasSignature?sig.toDataURL('image/png'):null;
     data.signature2=hasSignature2?sig2.toDataURL('image/png'):null;

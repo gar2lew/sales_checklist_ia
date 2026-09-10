@@ -86,12 +86,11 @@ test('waiver-only draft: save, auto-fill dates, restore, signature re-ink', asyn
     const page = await context.newPage();
     await startWaiverOnly(page);
 
-    await page.fill('#waiverClient1Name', 'Fictional Test Client One');
+    await page.fill('#clientName', 'Fictional Test Client One');
     await page.check('#waiverClient2Toggle');
     await page.fill('#client2Name', 'Fictional Test Client Two');
     await page.evaluate(() => { document.getElementById('client2Name').dispatchEvent(new Event('change', { bubbles:true })); });
     await page.waitForFunction(() => !document.getElementById('waiverClient2Block').classList.contains('hidden'));
-    await page.fill('#waiverClient2Name', 'Fictional Test Client Two');
     await page.evaluate(() => {
       const el = document.getElementById('date');
       el.value = '01/01/2025';
@@ -136,8 +135,8 @@ test('waiver-only draft: save, auto-fill dates, restore, signature re-ink', asyn
     await page.click('#resumeDraftBtn');
     await page.waitForFunction(() => document.documentElement.dataset.draftRestoreState === 'restored', null, { timeout:10000 });
 
-    assert.equal(await page.inputValue('#waiverClient1Name'), 'Fictional Test Client One', 'Client 1 name restored');
-    assert.equal(await page.inputValue('#waiverClient2Name'), 'Fictional Test Client Two', 'Client 2 name restored');
+    assert.equal(await page.inputValue('#clientName'), 'Fictional Test Client One', 'Client 1 name restored');
+    assert.equal(await page.inputValue('#client2Name'), 'Fictional Test Client Two', 'Client 2 name restored');
     assert.equal(await page.inputValue('#waiverClient1Date'), '15/03/2026', 'Client 1 signing date restored');
     assert.ok(await page.evaluate(() => document.getElementById('mainApp').classList.contains('show-waiver')), 'waiver-only mode restored');
     assert.ok(await inkRatio(page, '#signature') > 0.01, 'Client 1 signature re-inked after restore');
