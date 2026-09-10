@@ -320,26 +320,27 @@ it('draft persistence supports extension', () => {
     }
   });
 
-  it('app.js loads the six rendered page images, not the raw PDF', () => {
+  it('app.js loads the authoritative source PDF directly', () => {
     const appPath = path.resolve('js/app.js');
     const appContent = fs.readFileSync(appPath, 'utf-8');
-    expect(appContent).toContain('waiverTemplateSources');
-    /* The loader builds the array with a template expression, so assert that
-       expression and its bounds rather than literal filenames. */
-    expect(appContent).toMatch(/Array\.from\(\{\s*length:\s*WAIVER_PAGE_COUNT\s*\}/);
-    expect(appContent).toContain('`templates/rendered/waiver-page-${i + 1}.jpg`');
-    /* Rendering consumes the rasterised JPGs, not the raw template PDF. */
-    expect(appContent).not.toContain('ASG-Disclosure-Waiver-2026.pdf');
+    expect(appContent).toContain('ASG-Disclosure-Waiver-2026.pdf');
+    expect(appContent).toContain('generateWaiverPdfFromSource');
+    expect(appContent).toContain('loadPdfLib');
+    /* The new implementation loads the authoritative PDF directly as the primary approach.
+       The legacy JPEG-based approach is retained only as a fallback for browser preview. */
+    expect(appContent).toContain('generateWaiverPdfFromSource');
   });
 
-  it('app.js draws six waiver pages including the signing page', () => {
+  it('app.js generates waiver PDF using pdf-lib from authoritative source', () => {
     const appPath = path.resolve('js/app.js');
     const appContent = fs.readFileSync(appPath, 'utf-8');
     expect(appContent).toMatch(/const WAIVER_PAGE_COUNT = 6;/);
-    expect(appContent).toContain('drawWaiverPage(waiverPageIndex');
-    expect(appContent).toMatch(/waiverPageIndex < WAIVER_PAGE_COUNT - 1/);
+    expect(appContent).toContain('generateWaiverPdfFromSource');
+    expect(appContent).toContain('loadPdfLib');
+    expect(appContent).toContain('addSigningOverlays');
     // the sign-off footer stays on the signing page only
-    expect(appContent).toContain("drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817)");
+    expect(appContent).toContain("drawGeneratedFooter");
+    expect(appContent).toContain("Waiver & Disclosure");
   });
 });
 

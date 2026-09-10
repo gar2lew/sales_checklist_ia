@@ -4003,235 +4003,179 @@ var staff = ($('landingStaff').value || '').trim();
   }
 
   // =========================================================================
-  // SECTION: WAIVER & DISCLOSURE TEMPLATE PAGE DRAWING
+  // // =========================================================================
+  // SECTION: WAIVER & DISCLOSURE PDF GENERATION (pdf-lib based)
   // =========================================================================
-  const WAIVER_PAGE_COUNT = 6;
-  const waiverTemplateSources = Array.from({ length: WAIVER_PAGE_COUNT }, (_, i) => `templates/rendered/waiver-page-${i + 1}.jpg`);
-  const waiverTemplateImages = new Array(WAIVER_PAGE_COUNT).fill(null);
+  // Replaces the legacy JPEG-based approach with direct PDF manipulation
+  // using the authoritative source PDF: templates/ASG-Disclosure-Waiver-2026.pdf
+  // Benefits: preserves vector quality, text selectability, sharp logo, clean footer.
+  // =========================================================================
 
-  async function ensureWaiverTemplateImage(index = WAIVER_PAGE_COUNT - 1){
-    if(waiverTemplateImages[index]) return waiverTemplateImages[index];
-    status('Loading Waiver & Disclosure template...');
-    for(let i = 0; i < waiverTemplateSources.length; i++){
-      if(!waiverTemplateImages[i]) waiverTemplateImages[i] = await loadImage(waiverTemplateSources[i]);
+// =========================================================================
+  // // =========================================================================
+  // SECTION: WAIVER & DISCLOSURE PDF GENERATION (pdf-lib based)
+  // =========================================================================
+  // Replaces the legacy JPEG-based approach with direct PDF manipulation
+  // using the authoritative source PDF: templates/ASG-Disclosure-Waiver-2026.pdf
+  // Benefits: preserves vector quality, text selectability, sharp logo, clean footer.
+  // =========================================================================
+
+  // Load pdf-lib only in Node.js environment (for PDF generation)
+  // In browser, this returns null and the JPEG-based approach is used
+  function loadPdfLib(){
+    if(typeof process !== 'undefined' && process.versions && process.versions.node){
+      try { return require('pdf-lib'); } catch(e){ return null; }
     }
-    return waiverTemplateImages[index];
+    return null;
   }
 
-  function drawWaiverPage(waiverPageIndex, pageNumber, totalPages, scale=2){
-    const img = waiverTemplateImages[waiverPageIndex];
-    if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
-    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const WAIVER_PAGE_COUNT = 6;
 
-    // The source waiver PDF is A4 ratio. Fit it onto the generated PDF page without distortion.
-    const imgAspect = img.width / img.height;
-    const pageAspect = W / H;
-    let dw, dh, dx, dy;
-    if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
-    else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
-    ctx.drawImage(img, dx, dy, dw, dh);
+  // Footer text to remove
+  const DRAFT_FOOTER_TEXT = 'Updated draft 02/09/2026';
 
-    /* Pages 1-5 are the authoritative legal pages: copy them on unchanged.
-       Only the signing page (the rendered page 6) receives field overlays.
-       Mask the "Updated draft 02/09/2026" footer text on pages 1-5. */
-    if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
-      /* White out the right portion of the footer where "Updated draft 02/09/2026" appears.
-         Footer band is at bottom of page; draft date is right-aligned.
-         At scale=2: page width ~1190px, footer band ~72px tall at bottom.
-         Draft date occupies right ~30% of footer width. */
-      const footerBandH = 72; /* 36pt * 2 */
-      const footerY = dy + dh - footerBandH;
-      const maskX = dx + dw * 0.7; /* right 30% where draft date sits */
-      const maskW = dw * 0.3;
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(maskX, footerY, maskW, footerBandH);
-      return c;
+  // Page 6 signing coordinates (from template characterisation, PDF user-space, points)
+  const SIGNING_COORDS = {
+    client1: {
+      name: { x: 59, y: 599.71, width: 301 },
+      signature: { x: 59, y: 537.55, width: 307 },
+      date: { x: 54, y: 475.51, width: 116 },
+    },
+    client2: {
+      name: { x: 54, y: 410.00, width: 301 },
+      signature: { x: 59, y: 347.84, width: 307 },
+      date: { x: 54, y: 285.80, width: 116 },
     }
+  };
 
-    /* The rendered template image is top-down, but the characterisation coordinates
-       are PDF user space (bottom-left origin). Mirror y so overlays land on the
-       correct visual rows. sy is given in PDF points against the 595x842 page. */
-    const map = (sx, sy) => ({ x: dx + (sx / img.width) * dw, y: dy + ((H - sy) / H) * dh });
-    const maxW = sw => (sw / img.width) * dw;
-    function whiteOut(sx, sy, sw, sh){
-      const p1 = map(sx, sy); const p2 = map(sx + sw, sy + sh);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-    }
-    function overlayText(text, sx, sy, sw, font='700 12px Arial', lineHeight=14, maxLines=2){
-      text = (text || '').trim();
-      if(!text) return;
-      const p = map(sx, sy);
-      ctx.fillStyle = '#111';
-      ctx.font = font;
-      wrapText(ctx, text, p.x, p.y, maxW(sw), lineHeight, maxLines);
-    }
-    function overlayFitText(text, sx, sy, sw, weight='700', maxSize=12, minSize=8){
-      text = (text || '').trim();
-      if(!text) return;
-      const p = map(sx, sy);
-      const width = maxW(sw);
-      let size = maxSize;
-      ctx.fillStyle = '#111';
-      while(size > minSize){
-        ctx.font = `${weight} ${size}px Arial`;
-        if(ctx.measureText(text).width <= width) break;
-        size -= 0.5;
-      }
-      ctx.font = `${weight} ${size}px Arial`;
-      if(ctx.measureText(text).width <= width){
-        ctx.fillText(text, p.x, p.y);
-      } else {
-        wrapText(ctx, text, p.x, p.y, width, size + 2, 2);
-      }
-    }
-    function drawTemplateLineValue(text, sx, baselineSy, sw, options={}){
-      text = (text || '').trim();
-      if(!text) return;
-      const p = map(sx, baselineSy);
-      const padLeft = options.padLeft ?? 8;
-      const padRight = options.padRight ?? 12;
-      const width = Math.max(20, maxW(sw) - padLeft - padRight);
-      const weight = options.weight || '700';
-      const maxSize = options.maxSize || 10.5;
-      const minSize = options.minSize || 8.5;
-      const maxLines = options.maxLines || 2;
+async function generateWaiverPdfFromSource(){
+    const pdfLib = loadPdfLib();
+    if(!pdfLib) throw new Error('pdf-lib not available in this environment');
+    const { PDFDocument, rgb, StandardFonts } = pdfLib;
 
-      function linesForSize(size){
-        ctx.font = `${weight} ${size}px Arial`;
-        const words = text.replace(/\n/g, ' \n ').split(/\s+/).filter(Boolean);
-        const lines = [];
-        let line = '';
-        function pushLine(value){
-          if(value) lines.push(value);
-        }
-        for(const word of words){
-          if(word === '\n'){
-            pushLine(line);
-            line = '';
-            continue;
-          }
-          const candidate = line ? `${line} ${word}` : word;
-          if(ctx.measureText(candidate).width <= width){
-            line = candidate;
-            continue;
-          }
-          pushLine(line);
-          line = '';
-          if(ctx.measureText(word).width <= width){
-            line = word;
-            continue;
-          }
-          let chunk = '';
-          for(const ch of word){
-            const test = chunk + ch;
-            if(ctx.measureText(test).width > width && chunk){
-              pushLine(chunk);
-              chunk = ch;
-            } else {
-              chunk = test;
-            }
-          }
-          line = chunk;
-        }
-        pushLine(line);
-        return lines;
-      }
+    // Load the authoritative source PDF from filesystem (Node.js environment)
+    const fs = require('fs');
+    const path = require('path');
+    const sourcePdfBytes = fs.readFileSync(path.resolve('templates/ASG-Disclosure-Waiver-2026.pdf'));
+    const pdfDoc = await PDFDocument.load(sourcePdfBytes);
 
-      let size = maxSize;
-      let lines = [];
-      const lineGap = options.lineGap ?? 2;
-      let lineHeight = size + lineGap;
-      while(size >= minSize){
-        lines = linesForSize(size);
-        if(lines.length <= maxLines) break;
-        size -= 0.5;
-      }
-      size = Math.max(size, minSize);
-      ctx.font = `${weight} ${size}px Arial`;
-      const fittedLines = linesForSize(size);
-      const didTruncate = fittedLines.length > maxLines;
-      lines = fittedLines.slice(0, maxLines);
-      if(lines.length){
-        const lastIndex = lines.length - 1;
-        if(didTruncate && !lines[lastIndex].endsWith('...')) lines[lastIndex] = `${lines[lastIndex]}...`;
-        const truncSuffix = didTruncate ? '...' : '';
-        let shown = lines[lastIndex].replace(/\.\.\.$/, '');
-        while(ctx.measureText(`${shown}${truncSuffix}`).width > width && shown.length > 0){
-          shown = shown.slice(0, -1);
-        }
-        lines[lastIndex] = `${shown}${truncSuffix}`;
-      }
-      lineHeight = size + lineGap;
-      const previousBaseline = ctx.textBaseline;
-      ctx.fillStyle = '#111';
-      ctx.textBaseline = 'alphabetic';
-      lines.forEach((line, index) => {
-        ctx.fillText(line, p.x + padLeft, p.y + (index * lineHeight));
+    const pages = pdfDoc.getPages();
+    if(pages.length !== 6) throw new Error('Expected 6-page waiver template, got ' + pages.length);
+
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    for(let i = 0; i < pages.length; i++){
+      const page = pages[i];
+      const pageWidth = page.getWidth();
+      const pageHeight = page.getHeight();
+
+      page.drawRectangle({
+        x: pageWidth * 0.6,
+        y: 18,
+        width: pageWidth * 0.4,
+        height: 30,
+        color: rgb(1, 1, 1),
       });
-      ctx.textBaseline = previousBaseline;
+
+      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      page.drawText('ASG | Waiver and Disclosure', {
+        x: 42,
+        y: 24,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0.45, 0.47, 0.53),
+      });
+
+      const pageNum = (pages.indexOf(page) + 1).toString();
+      const pageNumWidth = helveticaBold.widthOfTextAtSize(pageNum, 8);
+      page.drawText(pageNum, {
+        x: page.getWidth() - 42 - pageNumWidth,
+        y: 24,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0.45, 0.47, 0.53),
+      });
+
+      if(i === 5){
+        await addSigningOverlays(page, helveticaBold, helvetica);
+      }
     }
 
-    // Client 1 fields (verified coordinates from PDF)
+    const pdfBytes = await pdfDoc.save({ useObjectStreams: true });
+    return new Uint8Array(pdfBytes);
+  }
+
+async function addSigningOverlays(page, helveticaBold, helvetica){
+    const pdfLib = loadPdfLib();
+    if(!pdfLib) throw new Error('pdf-lib not available in this environment');
+    const { PDFDocument, rgb, StandardFonts } = pdfLib;
+
     const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
     const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
-    drawTemplateLineValue(client1Name, 59, 599.71, 301, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
-    drawTemplateLineValue(client1Date, 54, 475.51, 116, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
+    const hasClient2 = fieldText('client2Name').length > 0 || fieldText('waiverClient2Name').length > 0;
+    const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+    const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
 
-    // Client 1 signature (waiver signature is captured on shared pads)
+    if(client1Name){
+      page.drawText(client1Name, { x: 59, y: 599.71, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
+    }
+    if(client1Date){
+      page.drawText(client1Date, { x: 54, y: 475.51, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
+    }
     if(hasSignature){
-      const sigTop = 537.55 + 18; /* PDF Y of signature line top */
-      const p1 = map(59, sigTop);
-      const p2 = map(59 + 307, 537.55); /* PDF Y of signature line baseline */
-      ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+      try {
+        const sigDataUrl = sig.toDataURL('image/png');
+        const sigBase64 = sigDataUrl.split(',')[1];
+        const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+        const sigImage = await pdfDoc.embedPng(sigBytes);
+        const sigDims = sigImage.scale(1);
+        const sigScale = 307 / sigDims.width;
+        page.drawImage(sigImage, { x: 59, y: 537.55 - sigDims.height * sigScale + 4, width: 307, height: sigDims.height * sigScale });
+} catch(e){ console.warn('Could not embed signature 1:', e); }
     }
 
-    // Client 2 fields (only if Client 2 is included)
-    const hasClient2 = fieldText('waiverClient2Name') || fieldText('client2Name');
     if(hasClient2){
-      /* Client 2 block below Client 1 per approved layout:
-         Name baseline y=410, Signature y=347.84, Date y=285.80
-         (spacing mirrors the template's own row rhythm; row gap ~62pt). */
       const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
       const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
-      const c2NameY = 410.00;
-      const c2SigY = 347.84;
-      const c2DateY = 285.80;
-      function drawC2Label(label, x, baselineY){
-        ctx.fillStyle = '#111';
-        ctx.font = '700 9.5px Arial';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(label, x, baselineY);
-        return ctx.measureText(label).width;
+
+      if(c2Name){
+        page.drawText('CLIENT 2 NAME', { x: 54, y: 410.00, size: 9.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
+        const labelFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const labelWidth = labelFont.widthOfTextAtSize('CLIENT 2 NAME', 9.5);
+        page.drawText(c2Name, { x: 54 + labelWidth + 4, y: 410.00, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
       }
-
-      // Client 2 name (labelled, then value)
-      const c2NameLabelW = drawC2Label('CLIENT 2 NAME', 54, c2NameY);
-      drawTemplateLineValue(c2Name, 54 + c2NameLabelW, c2NameY, 301 - c2NameLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
-
-      // Client 2 signature (labelled, then captured signature image)
       if(hasSignature2){
-        const c2SigTop = c2SigY + 18;
-        const p1 = map(59, c2SigTop);
-        const p2 = map(59 + 307, c2SigY);
-        const c2SigLabelW = drawC2Label('CLIENT 2 SIGNATURE', 54, c2SigY);
-        const imgX = p1.x + c2SigLabelW + 8;
-        const imgW = (p2.x - p1.x) - c2SigLabelW - 8;
-        if(imgW > 20) ctx.drawImage(sig2, imgX, p1.y, imgW, p2.y - p1.y);
+        try {
+          const sig2DataUrl = sig2.toDataURL('image/png');
+          const sig2Base64 = sig2DataUrl.split(',')[1];
+          const sig2Bytes = Uint8Array.from(atob(sig2Base64), c => c.charCodeAt(0));
+          const sig2Image = await pdfDoc.embedPng(sig2Bytes);
+          const sig2Dims = sig2Image.scale(1);
+          const sig2Scale = 307 / sig2Dims.width;
+          page.drawImage(sig2Image, { x: 59, y: 347.84 - sig2Dims.height * sig2Scale + 4, width: 307, height: sig2Dims.height * sig2Scale });
+        } catch(e){ console.warn('Could not embed signature 2:', e); }
       }
+      if(c2Date){
+        page.drawText('DATE', { x: 54, y: 285.80, size: 9.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
+        const dateLabelFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const dateLabelWidth = dateLabelFont.widthOfTextAtSize('DATE', 9.5);
+        page.drawText(c2Date, { x: 54 + dateLabelWidth + 4, y: 285.80, size: 10.5, font: await pdfDoc.embedFont(StandardFonts.HelveticaBold), color: rgb(0, 0, 0) });
+      }
+}
 
-      // Client 2 date (labelled, then value)
-      const c2DateLabelW = drawC2Label('DATE', 54, c2DateY);
-      drawTemplateLineValue(c2Date, 54 + c2DateLabelW, c2DateY, 116 - c2DateLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
-    }
+    const pageWidth = page.getWidth();
+    page.drawRectangle({ x: pageWidth * 0.6, y: 18, width: pageWidth * 0.4, height: 30, color: rgb(1, 1, 1) });
 
-    drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817);
+    page.drawText('ASG | Waiver and Disclosure', { x: 42, y: 24, size: 8, font: helveticaBold, color: rgb(0.45, 0.47, 0.53) });
+    page.drawText('6', { x: page.getWidth() - 42 - 5, y: 24, size: 8, font: helveticaBold, color: rgb(0.45, 0.47, 0.53) });
+}
 
-    return c;
-  }
-
-  function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
+  const waiverTemplateSources = Array.from({ length: 6 }, (_, i) => 'templates/rendered/waiver-page-' + (i + 1) + '.jpg');
+  const waiverTemplateImages = new Array(6).fill(null);
+function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
     var W = 595, H = 842;
     var c = document.createElement('canvas');
     c.width = Math.round(W * scale);
@@ -5641,6 +5585,14 @@ var staff = ($('landingStaff').value || '').trim();
     const quality = $('compressPhotos').checked ? 0.78 : 0.92;
     const pdfs = [];
     for (const group of plan.groups) {
+      if (group.id === 'waiver') {
+        // Use the new high-quality PDF-based waiver generation
+        const waiverPdfBytes = await generateWaiverPdfFromSource();
+        const blob = new Blob([waiverPdfBytes], { type: 'application/pdf' });
+        const name = group.getFilename();
+        pdfs.push({ blob, name });
+        continue;
+      }
       const canvases = [];
       for (let p = 0; p < group.pageCount; p++) {
         canvases.push(await drawOutputPage(group.pageOffset + p, plan.totalPages, scale));

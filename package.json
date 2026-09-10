@@ -31,6 +31,7 @@
   "homepage": "https://github.com/gar2lew/sales_checklist_ia#readme",
   "dependencies": {
     "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.61.1"
   },
   "devDependencies": {
