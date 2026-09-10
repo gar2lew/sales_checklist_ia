@@ -3,46 +3,46 @@
 ## Documentation Automation Result
 
 - Overall status: **WARN**
-- Summary: All structural checks passed; the intentional full-bleed navy cover requires human review.
+- Summary: All structural checks passed; advisory findings require human review.
 - Human visual review required: Yes
 
 ## Source
 
 - Application version: 2.7.0-alpha.1
 - Guide version: 1.0.0
-- Generated: 22 July 2026, 10:00 AM AWST
-- Git branch: fix/staff-dropdown-seeding-v2
-- Source commit: 9db1800ce947f634520bb391826ad44ded8a6b82
+- Generated: 9 September 2026
+- Git branch: main
+- Source commit: c56fe0035e2093e43cbd7d010657da7bf11b6b94
 
 ## Environment and Tooling
 
-- Node: 22.23.1
-- Python command: Python 3.12.13
-- LibreOffice: LibreOffice 26.2.4.2
-- Poppler pdfinfo: pdfinfo.exe 26.05.0
-- Poppler renderer: pdftoppm.exe 26.05.0
-- Platform: Windows x64
+- Node: 24.18.0
+- Python command: python
+- LibreOffice: soffice.com
+- Poppler pdfinfo: pdfinfo
+- Poppler renderer: pdftoppm.exe
+- Platform: win32 x64
 
 ## Screenshot Pipeline
 
 | Screenshot | Classification | SHA-256 | Last generated | Validation |
 |---|---|---|---|---|
-| 01-appointment-type-selection.png | UNCHANGED | `64ec142263da095e67425438e0a8ac5d4558f8d496d122c75edb85829ca666e9` | 2026-07-22T02:00:00.000Z | PASS |
-| 02-in-person-workspace.png | UNCHANGED | `dc43facbeb75cf9f6883f760c7e4534b1139050ca12d287bcdd39335d10b1cc6` | 2026-07-22T02:00:00.000Z | PASS |
-| 03-sale-details-mobile.png | UNCHANGED | `685713b4f6146172809f409c4834e92e431c81d1835804bc8ecd3288c266ca7b` | 2026-07-22T02:00:00.000Z | PASS |
-| 04-zoom-workspace.png | UNCHANGED | `e0b3cbe76b650883943c594b36889f8f2164b8596285ec4b465212fab111a6b9` | 2026-07-22T02:00:00.000Z | PASS |
-| 05-zoom-whiteboard.png | UNCHANGED | `f7bbe8712ca7774349babf9454355688ec529f0fb6decc06c9546a0781518c8e` | 2026-07-22T02:00:00.000Z | PASS |
-| 06-draft-controls.png | UNCHANGED | `d5ee28f32653f3a1f98b24b9f0177172e39539f1fd6a94aa5e9366397e0c81e3` | 2026-07-22T02:00:00.000Z | PASS |
-| 07-id-signatures.png | UNCHANGED | `e9df11086a3f43badf4e8c5e463dbaa1610b0bdef7a3c7e99a721c6b723cea51` | 2026-07-22T02:00:00.000Z | PASS |
-| 08-package-ready.png | UNCHANGED | `164e0c61636dedfc1ca957e89bcb3586c25e4ad2a1491d07beae5adefb231025` | 2026-07-22T02:00:00.000Z | PASS |
-| 09-downloads-started.png | UNCHANGED | `eb178566f740e55106dc9153280e4739c169b17ed91fb5abba6e23106c8cebec` | 2026-07-22T02:00:00.000Z | PASS |
+| 01-appointment-type-selection.png | UPDATED | `fc656c8b54c602db697839332f07008fa2f01e326e9cf19ffc7128f09585147e` | 2026-09-09T14:30:43.585Z | PASS |
+| 02-in-person-workspace.png | UPDATED | `9cd0d46ad5a8210fa65e9818d1d420350a04cfb354e78d8a3c72430608376638` | 2026-09-09T14:30:43.585Z | PASS |
+| 03-sale-details-mobile.png | UPDATED | `8bc637a5fbd7b921d762a8af1bc3cdd3f776198852631420ff3d3a429a18656a` | 2026-09-09T14:30:43.585Z | PASS |
+| 04-zoom-workspace.png | UPDATED | `54a513f5173fde0246d42842b775a8ef3e3b82e27540d39303e2d63b9198fe83` | 2026-09-09T14:30:43.585Z | PASS |
+| 05-zoom-whiteboard.png | UPDATED | `d6404d65f5c07852fedce1fc4982ecce5924e81d393faa68effeed70ec8074ef` | 2026-09-09T14:30:43.585Z | PASS |
+| 06-draft-controls.png | UPDATED | `63c90a7c4ab02c5b84268b37cb52e694697d10449a555d452c900996bac4c3c7` | 2026-09-09T14:30:43.585Z | PASS |
+| 07-id-signatures.png | UPDATED | `d22ec32b205410c7a187f0745d2123c4f2bffc78b8c1a6af6c75c2bd68dca32d` | 2026-09-09T14:30:43.585Z | PASS |
+| 08-package-ready.png | UPDATED | `8b1ba4437014054fd872320b0645d64a66f238566bb40ff6d7b800a4ac19cb48` | 2026-09-09T14:30:43.585Z | PASS |
+| 09-downloads-started.png | UPDATED | `f018e3d3341da7322aabea9ca8497e29f4de8cc5975ec628d75f4cd28671f86a` | 2026-09-09T14:30:43.585Z | PASS |
 
 ## Document Generation
 
 | Artifact | Canonical path | Result | Bytes | SHA-256 | Generation | Pages | Metadata |
 |---|---|---|---:|---|---|---:|---|
-| DOCX | docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.docx | UPDATED | 3608829 | `2349af8e385c4239a90663a8096accd979f0208638fe94f2d7430d6c84153828` | PASS | n/a | PASS |
-| PDF | docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.pdf | UPDATED | 1325931 | `b64a98d0f46c324485b43c0f55e1d6fc8264e1ded8c7af0bd2fe949b7dffd419` | PASS | 17 | PASS |
+| DOCX | docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.docx | updated | 3660056 | `6c31b23e44bb0a527da7870d4b807e7d039a3ba9cb54be13135f2c2cb3782201` | PASS | n/a | PASS |
+| PDF | docs/user-guides/ASG_Sales_Appointment_Capture_User_Guide.pdf | updated | 1510531 | `ae32a88051f82c676efd62835e00a0b838e32d7cf19d3d7c292657f22a44ad30` | PASS | 17 | PASS |
 
 - Observed determinism contract: DOCX may be byte-identical across unchanged runs.
 - LibreOffice PDF bytes may vary despite equivalent validated content.
@@ -53,26 +53,26 @@
 |---|---|---|---|---|---|
 | docx | PASS | DOCX_VALID | DOCX structure, metadata, relationships, and media are valid. | No action required. | mediaCount=10 |
 | markdown | PASS | MARKDOWN_VALID | Canonical Markdown metadata, links, screenshots, and hashes are valid. | No action required. | none |
-| pdf | PASS | PDF_VALID | PDF structure and Poppler metadata are valid. | No action required. | encrypted=false, pageSize="A4", pages=17 |
+| pdf | PASS | PDF_VALID | PDF structure and Poppler metadata are valid. | No action required. | encrypted=false, pageSize="595.304 x 841.89 pts (A4)", pages=17, pdfVersion="1.7" |
 | render | PASS | RENDER_COMPLETE | All 17 PDF pages rendered successfully. | No action required. | height=1123, width=794 |
-| visual | WARN | VISUAL_EDGE | The intentional full-bleed navy cover reaches the page edge. | Retain human review for the cover and changed layouts. | edgeRatio=1, page=1 |
+| visual | WARN | VISUAL_EDGE | Content contacts a large portion of the page edge. | Review possible clipping manually. | edgeRatio=1 |
 
 ## Cleanup and Safety
 
-- Temporary directories: removed
+- Temporary directories: cleanup pending
 - Remaining documentation server processes: 0
 - Remaining LibreOffice processes: 0
 - Remaining Poppler processes: 0
 - Occupied documentation ports: 0
-- Write boundary: PASS
-- Runtime integrity: PASS
+- Write boundary: pending
+- Runtime integrity: pending
 
 ## Human Review
 
 Automated heuristics detect obvious corruption only; human visual review remains required for changed screenshots and changed document layouts.
 
-Pages 1, 8 and 17 were inspected manually; no clipping, distortion or legibility issue was found.
+Automation does not replace human page-by-page review.
 
 ## Final Decision
 
-**WARN** — All structural checks passed; the intentional full-bleed navy cover requires human review.
+**WARN** — All structural checks passed; advisory findings require human review.

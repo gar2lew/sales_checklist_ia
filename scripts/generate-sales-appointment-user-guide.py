@@ -141,7 +141,7 @@ def add_cover(document: Document) -> None:
     run.font.bold = True
     run.font.color.rgb = RGBColor.from_string(GOLD)
     run.font.letter_spacing = Pt(1.4)
-    title = cell.add_paragraph("Sales Appointment\nCapture")
+    title = cell.add_paragraph("Client Appointment\nChecklist")
     title.style = document.styles["Title"]
     title.paragraph_format.space_after = Pt(14)
     subtitle = cell.add_paragraph("Staff User Guide")

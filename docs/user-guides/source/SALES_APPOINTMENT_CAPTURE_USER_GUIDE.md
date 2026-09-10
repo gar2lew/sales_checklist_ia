@@ -3,9 +3,9 @@
 <!-- docs-automation:metadata:start -->
 **Application version:** 2.7.0-alpha.1<br>
 **Guide version:** 1.0.0<br>
-**Generated:** 22 July 2026<br>
-**Git branch:** fix/staff-dropdown-seeding-v2<br>
-**Source commit:** 9db1800ce947f634520bb391826ad44ded8a6b82
+**Generated:** 9 September 2026<br>
+**Git branch:** main<br>
+**Source commit:** c56fe0035e2093e43cbd7d010657da7bf11b6b94
 <!-- docs-automation:metadata:end -->
 
 ## Staff User Guide

@@ -1058,9 +1058,9 @@ test('canonical guide contains one generated metadata block immediately below it
   assert.deepEqual(parseGeneratedMetadata(source), {
     'Application version': '2.7.0-alpha.1',
     'Guide version': '1.0.0',
-    Generated: '22 July 2026',
-    'Git branch': 'fix/staff-dropdown-seeding-v2',
-    'Source commit': '9db1800ce947f634520bb391826ad44ded8a6b82',
+    Generated: '9 September 2026',
+    'Git branch': 'main',
+    'Source commit': 'c56fe0035e2093e43cbd7d010657da7bf11b6b94',
   });
 });
 
