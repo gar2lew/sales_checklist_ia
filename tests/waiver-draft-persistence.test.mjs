@@ -147,6 +147,64 @@ test('waiver-only draft: save, auto-fill dates, restore, signature re-ink', asyn
   }
 });
 
+test('signing timestamps and timestamp preference survive draft save/restore', async () => {
+  /* Scenario D: signedAt1/signedAt2 + includeSignatureTimestamp persist via draft */
+  {
+    const context = await browser.newContext({ viewport:{width:1688,height:1000} });
+    const errors = [];
+    installSafeHooks(context, errors);
+    const page = await context.newPage();
+    await startWaiverOnly(page);
+
+    await page.fill('#clientName', 'Fictional Test Client One');
+    await page.check('#waiverClient2Toggle');
+    await page.fill('#client2Name', 'Fictional Test Client Two');
+    await page.evaluate(() => { document.getElementById('client2Name').dispatchEvent(new Event('change', { bubbles:true })); });
+    await page.evaluate(() => {
+      const el = document.getElementById('includeSignatureTimestamp');
+      el.checked = false;
+      el.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+
+    await drawOnPad(page, '#signature');
+    await drawOnPad(page, '#signature2');
+
+    const before = await page.evaluate(() => ({
+      signedAt1: window._testState.getSignedAt1(),
+      signedAt2: window._testState.getSignedAt2(),
+    }));
+    assert.ok(before.signedAt1 && before.signedAt2, 'both signing times captured before saving');
+
+    await page.evaluate(() => document.getElementById('saveDraft').click());
+    await page.waitForFunction(() => {
+      const el = document.getElementById('saveStatus');
+      return el && el.textContent.trim() === 'Saved just now';
+    }, null, { timeout:10000 });
+
+    const saved = await readActiveDraft(page);
+    assert.equal(saved.draft.signedAt1, before.signedAt1, 'signedAt1 persisted in the draft');
+    assert.equal(saved.draft.signedAt2, before.signedAt2, 'signedAt2 persisted in the draft');
+    assert.equal(saved.draft.includeSignatureTimestamp, false, 'timestamp preference persisted');
+
+    await page.reload({ waitUntil:'networkidle' });
+    await page.click('#resumeDraftBtn');
+    await page.waitForFunction(() => document.documentElement.dataset.draftRestoreState === 'restored', null, { timeout:10000 });
+
+    const restored = await page.evaluate(() => ({
+      s1: window._testState.getSignedAt1(),
+      s2: window._testState.getSignedAt2(),
+      ts: document.getElementById('includeSignatureTimestamp').checked,
+    }));
+    assert.equal(restored.s1, before.signedAt1, 'signedAt1 restored exactly');
+    assert.equal(restored.s2, before.signedAt2, 'signedAt2 restored exactly');
+    assert.equal(restored.ts, false, 'timestamp preference restored OFF');
+
+    assert.deepEqual(errors, [], 'no page errors during timestamp draft save/restore');
+    await context.close();
+    console.log('PASS signing timestamps and timestamp preference survive draft save/restore');
+  }
+});
+
 test('legacy draft (no waiver keys) restores with waiver off, valid', async () => {
   /* Scenario B: legacy draft without any waiver keys loads with waiver off */
   {

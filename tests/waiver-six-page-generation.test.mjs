@@ -524,6 +524,167 @@ test('regression: In-Person without waiver unchanged (single-page delta with IA 
   console.log('PASS In-Person without waiver unchanged; waiver adds exactly 6 pages');
 });
 
+/* ------------------------------------------------------------------ */
+/* Signing timestamp + Client 2 matrix tests                           */
+/* ------------------------------------------------------------------ */
+
+async function page6RawText(buf){
+  const pages = await extractPageText(buf);
+  return pages[5].raw;
+}
+
+function countIn(text, needle){
+  return text.split(needle).length - 1;
+}
+
+const STAMP_RE = /Digitally\s+signed\s+\d{2}\/\d{2}\/\d{4}\s+\d{1,2}:\d{2}\s+(?:AM|PM)\s+\((?:[A-Z]{3,5}|UTC[+-]\d{2}:\d{2})\)/;
+const ZONE_RE = /\(([A-Z]{3,5}|UTC[+-]\d{2}:\d{2})\)/;
+
+async function buildWaiverPage(page, { client2, timestampOn }){
+  await page.fill('#clientName', CLIENT_1);
+  if(!timestampOn){
+    await page.evaluate(() => {
+      const el = document.getElementById('includeSignatureTimestamp');
+      el.checked = false;
+      el.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+  }
+  await signClient1(page);
+  if(client2){
+    await page.check('#waiverClient2Toggle');
+    await page.fill('#client2Name', CLIENT_2);
+    await drawOnPad(page, '#signature2');
+    await page.fill('#waiverClient2Date', DATE);
+    await page.waitForFunction((d) => {
+      const el = document.getElementById('waiverClient2Date');
+      return el && el.value === d;
+    }, DATE, { timeout:5000 });
+  }
+  await generateAndWaitReady(page);
+  const state = await page.evaluate(() => ({
+    signedAt1: window._testState.getSignedAt1(),
+    signedAt2: window._testState.getSignedAt2(),
+    tsEnabled: window._testState.isSignatureTimestampEnabled(),
+  }));
+  const downloads = await captureDownloads(page, 1, () => page.click('#downloadPackage'));
+  return { pdf: downloads[0].data, ...state };
+}
+
+test('timestamp A: Client 1 only, timestamp ON — one signed box, no Client 2 block', async () => {
+  const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await enterMode(page, 'waiverOnly');
+
+  const { pdf, signedAt1, signedAt2, tsEnabled } = await buildWaiverPage(page, { client2:false, timestampOn:true });
+  const raw = await page6RawText(pdf);
+
+  assert.ok(tsEnabled, 'timestamp preference defaults to ON');
+  assert.ok(signedAt1, 'Client 1 signing time captured');
+  assert.equal(signedAt2, null, 'no Client 2 signing time when Client 2 is absent');
+  assert.equal(countIn(raw, 'Digitally signed'), 1, 'exactly one Client 1 timestamp box');
+  assert.match(raw, STAMP_RE, 'timestamp line must read "Digitally signed DD/MM/YYYY h:mm AM/PM (ZONE)"');
+  assert.match(raw, ZONE_RE, 'timestamp must include a valid timezone/offset suffix');
+  assert.equal(countIn(raw, 'CLIENT 2 NAME'), 0, 'no client 2 block when Client 2 is not enabled');
+
+  assert.deepEqual(errors, [], 'no page errors in combo A');
+  await context.close();
+  console.log('PASS timestamp matrix A (Client 1 only, timestamp ON)');
+});
+
+test('timestamp B: Client 1 only, timestamp OFF — no timestamp box anywhere', async () => {
+  const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await enterMode(page, 'waiverOnly');
+
+  const { pdf, signedAt1, tsEnabled } = await buildWaiverPage(page, { client2:false, timestampOn:false });
+  const raw = await page6RawText(pdf);
+
+  assert.equal(tsEnabled, false, 'timestamp preference respects the toggle');
+  assert.ok(signedAt1, 'signing time is still captured internally when the box is off');
+  assert.equal(countIn(raw, 'Digitally signed'), 0, 'no timestamp box when the option is disabled');
+
+  assert.deepEqual(errors, [], 'no page errors in combo B');
+  await context.close();
+  console.log('PASS timestamp matrix B (Client 1 only, timestamp OFF)');
+});
+
+test('timestamp C: both clients, timestamp ON — two independent signed boxes', async () => {
+  const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await enterMode(page, 'waiverOnly');
+
+  const { pdf, signedAt1, signedAt2 } = await buildWaiverPage(page, { client2:true, timestampOn:true });
+  const raw = await page6RawText(pdf);
+
+  assert.ok(signedAt1 && signedAt2, 'both clients capture independent signing times');
+  assert.ok(new Date(signedAt2).getTime() >= new Date(signedAt1).getTime(),
+    'Client 2 signing time must be captured at or after Client 1');
+  assert.equal(countIn(raw, 'Digitally signed'), 2, 'two separate timestamp boxes for two clients');
+  const allStamps = raw.match(new RegExp(STAMP_RE.source, 'g')) || [];
+  assert.equal(allStamps.length, 2, 'both timestamp stamps must be well-formed');
+  const zoneMatches = raw.match(ZONE_RE);
+  assert.ok(zoneMatches, 'at least one timestamp carries a valid zone');
+  assert.equal(countIn(raw, 'CLIENT 2 NAME'), 1, 'Client 2 name label present');
+  assert.equal(countIn(raw, 'CLIENT 2 SIGNATURE'), 1, 'Client 2 signature label present');
+  assert.equal(countIn(raw, 'DATE (2)'), 1, 'Client 2 date label present');
+
+  assert.deepEqual(errors, [], 'no page errors in combo C');
+  await context.close();
+  console.log('PASS timestamp matrix C (both clients, timestamp ON)');
+});
+
+test('timestamp D: both clients, timestamp OFF — Client 2 block present, no boxes', async () => {
+  const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await enterMode(page, 'waiverOnly');
+
+  const { pdf, signedAt1, signedAt2, tsEnabled } = await buildWaiverPage(page, { client2:true, timestampOn:false });
+  const raw = await page6RawText(pdf);
+
+  assert.equal(tsEnabled, false, 'timestamp preference off');
+  assert.ok(signedAt1 && signedAt2, 'signing times still captured internally');
+  assert.equal(countIn(raw, 'Digitally signed'), 0, 'no timestamp boxes when disabled');
+  assert.equal(countIn(raw, 'CLIENT 2 NAME'), 1, 'Client 2 block still present without timestamps');
+
+  assert.deepEqual(errors, [], 'no page errors in combo D');
+  await context.close();
+  console.log('PASS timestamp matrix D (both clients, timestamp OFF)');
+});
+
+test('timestamp regeneration: capture time is preserved across regenerations', async () => {
+  const context = await browser.newContext({ acceptDownloads:true, viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await enterMode(page, 'waiverOnly');
+
+  const { pdf, signedAt1 } = await buildWaiverPage(page, { client2:false, timestampOn:true });
+  const raw1 = await page6RawText(pdf);
+  const stamp1 = raw1.match(STAMP_RE) || [];
+  assert.equal(stamp1.length, 1, 'first generation carries the timestamp');
+
+  await generateAndWaitReady(page);
+  const downloads2 = await captureDownloads(page, 1, () => page.click('#downloadPackage'));
+  const raw2 = await page6RawText(downloads2[0].data);
+  const stamp2 = raw2.match(STAMP_RE);
+
+  assert.deepEqual(stamp1, stamp2, 'the printed timestamp must not change on regeneration');
+  const after = await page.evaluate(() => ({ s1: window._testState.getSignedAt1(), s2: window._testState.getSignedAt2() }));
+  assert.equal(after.s1, signedAt1, 'signedAt1 state is unchanged after regeneration');
+
+  assert.deepEqual(errors, [], 'no page errors during regeneration');
+  await context.close();
+  console.log('PASS timestamp preserved across regeneration');
+});
+
 afterAll(async () => {
   await browser.close();
   server.close();
