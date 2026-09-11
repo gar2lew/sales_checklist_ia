@@ -4235,13 +4235,15 @@ var staff = ($('landingStaff').value || '').trim();
         const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
         const sigImage = await pdfDoc.embedPng(sigBytes);
         const sigDims = sigImage.scale(1);
-        const lineW = lineX1 - lineX0;
-        const scale = Math.min(160 / sigDims.width, 36 / sigDims.height, 1);
+        // Cap at the signature's natural bounds: never enlarge, and do not
+        // stretch to fill the signing width. 135pt is a comfortable signature
+        // width; taller/narrower cropped signatures keep their proportions.
+        const scale = Math.min(135 / sigDims.width, 36 / sigDims.height, 1);
         const width = sigDims.width * scale;
         const height = sigDims.height * scale;
-        // Anchor the signature so its BOTTOM is at least 5pt ABOVE the underline.
-        // This gives a clear 5-8pt gap so the signature never touches or crosses the line.
-        const GAP_ABOVE_LINE = 6;
+        // Anchor the signature so its BOTTOM sits 8pt ABOVE the underline.
+        // The lowest ink never touches or crosses the line.
+        const GAP_ABOVE_LINE = 8;
         page.drawImage(sigImage, { x: lineX0 + 4, y: lineY + GAP_ABOVE_LINE, width, height });
       }catch(e){ console.warn('Could not embed signature:', e); }
     }
@@ -4340,10 +4342,12 @@ var staff = ($('landingStaff').value || '').trim();
       const C2_SIG_Y = 375;
       const C2_DATE_Y = 325;
 
-      function drawUnderline(y) {
+      // Signature line stops a little short of the timestamp box for balance.
+      const SIG_LINE_END = 350;
+      function drawUnderline(y, endX = FIELD_END) {
         page.drawLine({
           start: { x: FIELD_X, y: y - 2 },
-          end: { x: FIELD_END, y: y - 2 },
+          end: { x: endX, y: y - 2 },
           thickness: 0.6,
           color: black
         });
@@ -4370,7 +4374,7 @@ var staff = ($('landingStaff').value || '').trim();
 
       // Signature row
       page.drawText('Signature', { x: LABEL_X, y: C1_SIG_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
-      drawUnderline(C1_SIG_Y);
+      drawUnderline(C1_SIG_Y, SIG_LINE_END);
       if (hasSignature && sig1Canvas) {
         await drawWaiverSignature(page, sig1Canvas, pdfDoc, FIELD_X, FIELD_END, C1_SIG_Y - 2);
       }
@@ -4416,7 +4420,7 @@ var staff = ($('landingStaff').value || '').trim();
 
         // Signature row
         page.drawText('Signature', { x: LABEL_X, y: C2_SIG_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
-        drawUnderline(C2_SIG_Y);
+        drawUnderline(C2_SIG_Y, SIG_LINE_END);
         if (hasSignature2 && sig2Canvas) {
           await drawWaiverSignature(page, sig2Canvas, pdfDoc, FIELD_X, FIELD_END, C2_SIG_Y - 2);
         }
@@ -4511,12 +4515,14 @@ var staff = ($('landingStaff').value || '').trim();
       const labelFont = () => { ctx.font = '700 9px Arial'; ctx.fillStyle = '#111'; };
       const valueFont = () => { ctx.font = '700 10.5px Arial'; ctx.fillStyle = '#111'; };
       const sectionFont = () => { ctx.font = '700 10px Arial'; ctx.fillStyle = '#111'; };
-      const underline = (baseline) => {
+      // Signature line stops a little short of the timestamp box for balance.
+      const SIG_LINE_END = 350;
+      const underline = (baseline, endX = FIELD_END) => {
         ctx.strokeStyle = '#111';
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         ctx.moveTo(sx(FIELD_X), sy(baseline - 2));
-        ctx.lineTo(sx(FIELD_END), sy(baseline - 2));
+        ctx.lineTo(sx(endX), sy(baseline - 2));
         ctx.stroke();
       };
 
@@ -4544,14 +4550,14 @@ var staff = ($('landingStaff').value || '').trim();
       // Signature row
       labelFont();
       ctx.fillText('Signature', sx(LABEL_X), sy(C1_SIG_Y));
-      underline(C1_SIG_Y);
+      underline(C1_SIG_Y, SIG_LINE_END);
       if (hasSignature && sig1Canvas) {
         const b = signatureInkBounds(sig1Canvas);
         if (b) {
-          const scale = Math.min(160 / b.w, 36 / b.h, 1);
+          const scale = Math.min(135 / b.w, 36 / b.h, 1);
           const w = b.w * scale, h = b.h * scale;
-          // Ink bottom sits at underline + 6 (underline at C1_SIG_Y - 2); dest top = bottom - h
-          ctx.drawImage(sig1Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C1_SIG_Y + 4 - h), w, h);
+          // Ink bottom sits 8pt above the underline (line at C1_SIG_Y - 2); dest top = bottom - h
+          ctx.drawImage(sig1Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C1_SIG_Y + 6 - h), w, h);
         }
       }
 
@@ -4609,14 +4615,14 @@ var staff = ($('landingStaff').value || '').trim();
         // Signature row
         labelFont();
         ctx.fillText('Signature', sx(LABEL_X), sy(C2_SIG_Y));
-        underline(C2_SIG_Y);
+        underline(C2_SIG_Y, SIG_LINE_END);
         if (hasSignature2 && sig2Canvas) {
           const b = signatureInkBounds(sig2Canvas);
           if (b) {
-            const scale = Math.min(160 / b.w, 36 / b.h, 1);
+            const scale = Math.min(135 / b.w, 36 / b.h, 1);
             const w = b.w * scale, h = b.h * scale;
-            // Ink bottom sits at underline + 6 (underline at C2_SIG_Y - 2); dest top = bottom - h
-            ctx.drawImage(sig2Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C2_SIG_Y + 4 - h), w, h);
+            // Ink bottom sits 8pt above the underline (line at C2_SIG_Y - 2); dest top = bottom - h
+            ctx.drawImage(sig2Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C2_SIG_Y + 6 - h), w, h);
           }
         }
 
