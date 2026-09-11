@@ -4220,30 +4220,31 @@ var staff = ($('landingStaff').value || '').trim();
     return !!el.checked;
   }
   // Draw a captured signature PNG scaled from its ink bounding box so it sits
-  // naturally above the underline. Small signatures keep their real proportions
-  // and are never stretched to fill the whole line.
-  async function drawWaiverSignature(page, canvas, pdfDoc, lineX0, lineX1, lineY){
-    try{
-      const bounds = signatureInkBounds(canvas);
-      if(!bounds || bounds.w < 2 || bounds.h < 2) return;
-      const crop = document.createElement('canvas');
-      crop.width = bounds.w;
-      crop.height = bounds.h;
-      crop.getContext('2d').drawImage(canvas, bounds.x, bounds.y, bounds.w, bounds.h, 0, 0, bounds.w, bounds.h);
-      const sigDataUrl = crop.toDataURL('image/png');
-      const sigBase64 = sigDataUrl.split(',')[1];
-      const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
-      const sigImage = await pdfDoc.embedPng(sigBytes);
-      const sigDims = sigImage.scale(1);
-      const lineW = lineX1 - lineX0;
-      const scale = Math.min((lineW * 0.62) / sigDims.width, 30 / sigDims.height, 1);
-      const width = sigDims.width * scale;
-      const height = sigDims.height * scale;
-      // Anchor the LOWEST stroke just above the printed line so the mark reads
-      // as handwriting written on the line, with most ink above it.
-      page.drawImage(sigImage, { x: lineX0 + 4, y: lineY + 1.5, width, height });
-    }catch(e){ console.warn('Could not embed signature:', e); }
-  }
+    // naturally above the underline. Small signatures keep their real proportions
+    // and are never stretched to fill the whole line.
+    async function drawWaiverSignature(page, canvas, pdfDoc, lineX0, lineX1, lineY){
+      try{
+        const bounds = signatureInkBounds(canvas);
+        if(!bounds || bounds.w < 2 || bounds.h < 2) return;
+        const crop = document.createElement('canvas');
+        crop.width = bounds.w;
+        crop.height = bounds.h;
+        crop.getContext('2d').drawImage(canvas, bounds.x, bounds.y, bounds.w, bounds.h, 0, 0, bounds.w, bounds.h);
+        const sigDataUrl = crop.toDataURL('image/png');
+        const sigBase64 = sigDataUrl.split(',')[1];
+        const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+        const sigImage = await pdfDoc.embedPng(sigBytes);
+        const sigDims = sigImage.scale(1);
+        const lineW = lineX1 - lineX0;
+        const scale = Math.min(160 / sigDims.width, 36 / sigDims.height, 1);
+        const width = sigDims.width * scale;
+        const height = sigDims.height * scale;
+        // Anchor the signature so its BOTTOM is at least 5pt ABOVE the underline.
+        // This gives a clear 5-8pt gap so the signature never touches or crosses the line.
+        const GAP_ABOVE_LINE = 6;
+        page.drawImage(sigImage, { x: lineX0 + 4, y: lineY + GAP_ABOVE_LINE, width, height });
+      }catch(e){ console.warn('Could not embed signature:', e); }
+    }
   // Split a DD/MM/YYYY value into write-in parts.
   function splitDateParts(value){
     const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
@@ -4251,19 +4252,19 @@ var staff = ($('landingStaff').value || '').trim();
     return { day: m[1], month: m[2], year: m[3], year20: m[3].slice(0, 2), yearYY: m[3].slice(2) };
   }
   // Draw one clean date field for the signing panel: day / month / year with
-  // slashes, drawn as separate items so the value stays fully searchable.
-  function drawWaiverDateField(page, font, value, x0, baselineY){
-    const parts = splitDateParts(value);
-    const s = 10.5;
-    if(!parts){ page.drawText(value.trim(), { x: x0, y: baselineY, size: s, font: font }); return; }
-    const items = [parts.day, '/', parts.month, '/', parts.year];
-    let x = x0;
-    for(let i = 0; i < items.length; i++){
-      page.drawText(items[i], { x: x, y: baselineY, size: s, font: font });
-      x += font.widthOfTextAtSize(items[i], s);
-      if(i < items.length - 1) x += 9;
+    // slashes, drawn as separate items so the value stays fully searchable.
+    function drawWaiverDateField(page, font, value, x0, baselineY){
+      const parts = splitDateParts(value);
+      const s = 10.5;
+      if(!parts){ page.drawText(value.trim(), { x: x0, y: baselineY, size: s, font: font }); return; }
+      // Draw with spaces around slashes for clean visual format: 11 / 09 / 2026
+      const items = [parts.day, ' / ', parts.month, ' / ', parts.year];
+      let x = x0;
+      for(let i = 0; i < items.length; i++){
+        page.drawText(items[i], { x: x, y: baselineY, size: s, font: font });
+        x += font.widthOfTextAtSize(items[i], s);
+      }
     }
-  }
   // Small rounded box placed to the right of a signature line showing the
   // captured signing time. Omitted entirely when no signedAt exists.
   function drawSignatureTimestampBox(page, pdfLib, helveticaBold, helvetica, x, bottomY, iso){
@@ -4292,83 +4293,147 @@ var staff = ($('landingStaff').value || '').trim();
   }
 
   // Signing panel drawn onto page 6 of the source template: washes out the old
-  // printed guide zone (BL 450-660) with a white rectangle and redraws one
-  // designed form - CLIENT 1 / CLIENT 2 sections with aligned label, field and
-  // timestamp columns (positions calibrated from the authoritative page 6).
-  async function addSigningOverlays(page, pdfDoc, helveticaBold, helvetica){
-    const pdfLib = loadPdfLib();
-    const { rgb } = pdfLib;
-    const black = rgb(0, 0, 0);
-    const white = rgb(1, 1, 1);
+    // printed guide zone with one clean white rectangle and redraws the ENTIRE
+    // signing panel from scratch. No legacy labels (CLIENT'S NAME:, CLIENT'S SIGNATURE:,
+    // DATE:, 20____) remain visible. The new panel uses:
+    // CLIENT 1 / CLIENT 2 headers
+    // Name / Signature / Date field labels
+    // Clean date format: 11 / 09 / 2026
+    // Signatures float clearly above underlines with 5-8pt gap
+    // Timestamp boxes aligned to the right of signature rows
+    async function addSigningOverlays(page, pdfDoc, helveticaBold, helvetica){
+      const pdfLib = loadPdfLib();
+      const { rgb } = pdfLib;
+      const black = rgb(0, 0, 0);
+      const white = rgb(1, 1, 1);
+      const grey = rgb(0.58, 0.61, 0.68);
 
-    const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
-    const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
-    const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
-    const hasClient2 = c2Name.length > 0;
-    const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
+      const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
+      const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
+      const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+      const hasClient2 = c2Name && c2Name.trim().length > 0;
+      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
 
-    const sig1Canvas = typeof document !== 'undefined' ? document.getElementById('signature') : null;
-    const sig2Canvas = typeof document !== 'undefined' ? document.getElementById('signature2') : null;
+      const sig1Canvas = typeof document !== 'undefined' ? document.getElementById('signature') : null;
+      const sig2Canvas = typeof document !== 'undefined' ? document.getElementById('signature2') : null;
 
-    /* Unified signing panel (page 6 only). The whole old printed guide zone
-       (BL 450-660) is washed out with one white rectangle - this does not touch
-       clause 18 (which ends at BL ~663) or the footer (BL ~31) - and the panel
-       is redrawn as one designed form: CLIENT 1 / CLIENT 2 sections with aligned
-       label, field and timestamp columns. White-out is a visual cleanup layer
-       only; the source PDF content underneath is never modified. */
-    const FIELD_X = 175, FIELD_END = 360;
-    const C1_HEADER = 640, C1_NAME = 620, C1_SIG = 572, C1_DATE = 524;
-    const DIVIDER = 482;
-    const C2_HEADER = 468, C2_NAME = 446, C2_SIG = 398, C2_DATE = 350;
-    const BOX_X = 380;
+      // Layout constants (PDF user space, bottom-left origin, A4 = 595 x 842)
+      // White-out covers from below clause 18 (~663) down to above footer (~60)
+      // The signing panel sits within this clean region.
+      const LEFT_MARGIN = 54;
+      const LABEL_X = 54;
+      const FIELD_X = 150;
+      const FIELD_END = 360;
+      const BOX_X = 385;
+      const SECTION_LABEL_SIZE = 10;
+      const FIELD_LABEL_SIZE = 9;
+      const FIELD_VALUE_SIZE = 10.5;
 
-    function row(valueBaseline){
-      page.drawLine({ start: { x: FIELD_X, y: valueBaseline - 2 }, end: { x: FIELD_END, y: valueBaseline - 2 }, thickness: 0.6, color: black });
-    }
-    page.drawRectangle({ x: 40, y: 450, width: 470, height: 210, color: white });
+      // Vertical positions (baselines) - compact but not cramped
+      const C1_HEADER_Y = 635;
+      const C1_NAME_Y = 610;
+      const C1_SIG_Y = 560;
+      const C1_DATE_Y = 510;
+      const DIVIDER_Y = 475;
+      const C2_HEADER_Y = 450;
+      const C2_NAME_Y = 425;
+      const C2_SIG_Y = 375;
+      const C2_DATE_Y = 325;
 
-    // ---- CLIENT 1 ----
-    page.drawText('CLIENT 1', { x: 54, y: C1_HEADER, size: 10, font: helveticaBold, color: black });
-    page.drawText("CLIENT'S NAME:", { x: 54, y: C1_NAME, size: 9.5, font: helveticaBold, color: black });
-    if(client1Name) page.drawText(client1Name.trim(), { x: FIELD_X, y: C1_NAME, size: 10.5, font: helveticaBold, color: black });
-    row(C1_NAME);
+      function drawUnderline(y) {
+        page.drawLine({
+          start: { x: FIELD_X, y: y - 2 },
+          end: { x: FIELD_END, y: y - 2 },
+          thickness: 0.6,
+          color: black
+        });
+      }
 
-    page.drawText("CLIENT'S SIGNATURE:", { x: 54, y: C1_SIG, size: 9.5, font: helveticaBold, color: black });
-    row(C1_SIG);
-    if(hasSignature && sig1Canvas) await drawWaiverSignature(page, sig1Canvas, pdfDoc, FIELD_X, FIELD_END, C1_SIG - 2);
+      // ONE clean white rectangle covering the entire old signing area
+          // Starts below clause 18 (ends ~663), ends above footer (~60)
+          // Height = 660 - 60 = 600
+          page.drawRectangle({ x: 40, y: 60, width: 515, height: 600, color: white });
 
-    page.drawText('DATE:', { x: 54, y: C1_DATE, size: 9.5, font: helveticaBold, color: black });
-    if(client1Date) drawWaiverDateField(page, helveticaBold, client1Date, FIELD_X, C1_DATE);
-    row(C1_DATE);
+      // =========================================
+      // CLIENT 1 SECTION
+      // =========================================
 
-    const timestampEnabled = isSignatureTimestampEnabled();
-    if(timestampEnabled && signedAt1 && hasSignature && sig1Canvas){
-      drawSignatureTimestampBox(page, pdfLib, helveticaBold, helvetica, BOX_X, C1_SIG - 16, signedAt1);
-    }
+      // Header: CLIENT 1
+      page.drawText('CLIENT 1', { x: LABEL_X, y: C1_HEADER_Y, size: SECTION_LABEL_SIZE, font: helveticaBold, color: black });
 
-    // ---- divider ----
-    page.drawLine({ start: { x: 54, y: DIVIDER }, end: { x: 505, y: DIVIDER }, thickness: 0.7, color: rgb(0.58, 0.61, 0.68) });
+      // Name row
+      page.drawText('Name', { x: LABEL_X, y: C1_NAME_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+      if (client1Name) {
+        page.drawText(client1Name.trim(), { x: FIELD_X, y: C1_NAME_Y, size: FIELD_VALUE_SIZE, font: helveticaBold, color: black });
+      }
+      drawUnderline(C1_NAME_Y);
 
-    // ---- CLIENT 2 ----
-    if(hasClient2){
-      page.drawText('CLIENT 2', { x: 54, y: C2_HEADER, size: 10, font: helveticaBold, color: black });
-      page.drawText('CLIENT 2 NAME:', { x: 54, y: C2_NAME, size: 9.5, font: helveticaBold, color: black });
-      if(c2Name) page.drawText(c2Name.trim(), { x: FIELD_X, y: C2_NAME, size: 10.5, font: helveticaBold, color: black });
-      row(C2_NAME);
+      // Signature row
+      page.drawText('Signature', { x: LABEL_X, y: C1_SIG_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+      drawUnderline(C1_SIG_Y);
+      if (hasSignature && sig1Canvas) {
+        await drawWaiverSignature(page, sig1Canvas, pdfDoc, FIELD_X, FIELD_END, C1_SIG_Y - 2);
+      }
 
-      page.drawText('CLIENT 2 SIGNATURE:', { x: 54, y: C2_SIG, size: 9.5, font: helveticaBold, color: black });
-      row(C2_SIG);
-      if(hasSignature2 && sig2Canvas) await drawWaiverSignature(page, sig2Canvas, pdfDoc, FIELD_X, FIELD_END, C2_SIG - 2);
+      // Date row
+      page.drawText('Date', { x: LABEL_X, y: C1_DATE_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+      if (client1Date) {
+        drawWaiverDateField(page, helveticaBold, client1Date, FIELD_X, C1_DATE_Y);
+      }
+      drawUnderline(C1_DATE_Y);
 
-      page.drawText('DATE (2):', { x: 54, y: C2_DATE, size: 9.5, font: helveticaBold, color: black });
-      if(c2Date) drawWaiverDateField(page, helveticaBold, c2Date, FIELD_X, C2_DATE);
-      row(C2_DATE);
+      // Timestamp box for Client 1 (aligned to signature row)
+      const timestampEnabled = isSignatureTimestampEnabled();
+      if (timestampEnabled && signedAt1 && hasSignature && sig1Canvas) {
+        drawSignatureTimestampBox(page, pdfLib, helveticaBold, helvetica, BOX_X, C1_SIG_Y - 16, signedAt1);
+      }
 
-      if(timestampEnabled && signedAt2 && hasSignature2 && sig2Canvas){
-        drawSignatureTimestampBox(page, pdfLib, helveticaBold, helvetica, BOX_X, C2_SIG - 16, signedAt2);
+      // =========================================
+      // DIVIDER
+      // =========================================
+      if (hasClient2) {
+        page.drawLine({
+          start: { x: LEFT_MARGIN, y: DIVIDER_Y },
+          end: { x: 505, y: DIVIDER_Y },
+          thickness: 0.5,
+          color: grey
+        });
+      }
+
+      // =========================================
+      // CLIENT 2 SECTION
+      // =========================================
+      if (hasClient2) {
+        // Header: CLIENT 2
+        page.drawText('CLIENT 2', { x: LABEL_X, y: C2_HEADER_Y, size: SECTION_LABEL_SIZE, font: helveticaBold, color: black });
+
+        // Name row
+        page.drawText('Name', { x: LABEL_X, y: C2_NAME_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+        if (c2Name) {
+          page.drawText(c2Name.trim(), { x: FIELD_X, y: C2_NAME_Y, size: FIELD_VALUE_SIZE, font: helveticaBold, color: black });
+        }
+        drawUnderline(C2_NAME_Y);
+
+        // Signature row
+        page.drawText('Signature', { x: LABEL_X, y: C2_SIG_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+        drawUnderline(C2_SIG_Y);
+        if (hasSignature2 && sig2Canvas) {
+          await drawWaiverSignature(page, sig2Canvas, pdfDoc, FIELD_X, FIELD_END, C2_SIG_Y - 2);
+        }
+
+        // Date row
+        page.drawText('Date', { x: LABEL_X, y: C2_DATE_Y, size: FIELD_LABEL_SIZE, font: helveticaBold, color: black });
+        if (c2Date) {
+          drawWaiverDateField(page, helveticaBold, c2Date, FIELD_X, C2_DATE_Y);
+        }
+        drawUnderline(C2_DATE_Y);
+
+        // Timestamp box for Client 2 (aligned to signature row)
+        if (timestampEnabled && signedAt2 && hasSignature2 && sig2Canvas) {
+          drawSignatureTimestampBox(page, pdfLib, helveticaBold, helvetica, BOX_X, C2_SIG_Y - 16, signedAt2);
+        }
       }
     }
-  }
 
   const waiverTemplateSources = Array.from({ length: 6 }, (_, i) => 'templates/rendered/waiver-page-' + (i + 1) + '.jpg');
   const waiverTemplateImages = new Array(6).fill(null);
@@ -4383,153 +4448,206 @@ var staff = ($('landingStaff').value || '').trim();
   }
 
   function drawWaiverPage(waiverPageIndex, pageNumber, totalPages, scale=2){
-    const img = waiverTemplateImages[waiverPageIndex];
-    if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
-    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+      const img = waiverTemplateImages[waiverPageIndex];
+      if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
+      const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
 
-    // The source waiver PDF is A4 ratio. Fit it onto the generated page without distortion.
-    const imgAspect = img.width / img.height;
-    const pageAspect = W / H;
-    let dw, dh, dx, dy;
-    if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
-    else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
-    ctx.drawImage(img, dx, dy, dw, dh);
+      // The source waiver PDF is A4 ratio. Fit it onto the generated page without distortion.
+      const imgAspect = img.width / img.height;
+      const pageAspect = W / H;
+      let dw, dh, dx, dy;
+      if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
+      else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
+      ctx.drawImage(img, dx, dy, dw, dh);
 
-    // PDF user space (bottom-left origin) to canvas pixels (top-down origin).
-    const sx = v => dx + (v / img.width) * dw;
-    const sy = v => dy + ((H - v) / H) * dh;
+      // PDF user space (bottom-left origin) to canvas pixels (top-down origin).
+      const sx = v => dx + (v / img.width) * dw;
+      const sy = v => dy + ((H - v) / H) * dh;
 
-    /* The waiver-page JPGs are rendered from the sanitised source, so the
-       (draft-stamped) footer band is already gone. Cover any residual ink in
-       the footer band on pages 1-5 so canvases never show the draft date. */
-    if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
-      const bandTopPdfY = 46;
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(dx, sy(bandTopPdfY), dw, dy + dh - sy(bandTopPdfY));
+      /* The waiver-page JPGs are rendered from the sanitised source, so the
+         (draft-stamped) footer band is already gone. Cover any residual ink in
+         the footer band on pages 1-5 so canvases never show the draft date. */
+      if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
+        const bandTopPdfY = 46;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(dx, sy(bandTopPdfY), dw, dy + dh - sy(bandTopPdfY));
+        return c;
+      }
+
+      // Signing panel (mirrors addSigningOverlays on page 6)
+      const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
+      const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
+      const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+      const hasClient2 = c2Name && c2Name.trim().length > 0;
+      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
+
+      const sig1Canvas = typeof document !== 'undefined' ? document.getElementById('signature') : null;
+      const sig2Canvas = typeof document !== 'undefined' ? document.getElementById('signature2') : null;
+
+      // Layout constants (PDF user space, bottom-left origin, A4 = 595 x 842)
+      // White-out covers from below clause 18 (~663) down to above footer (~60)
+      // The signing panel sits within this clean region.
+      const LEFT_MARGIN = 54;
+      const LABEL_X = 54;
+      const FIELD_X = 150;
+      const FIELD_END = 360;
+      const BOX_X = 385;
+      const SECTION_LABEL_SIZE = 10;
+      const FIELD_LABEL_SIZE = 9;
+      const FIELD_VALUE_SIZE = 10.5;
+
+      // Vertical positions (baselines) - compact but not cramped
+      const C1_HEADER_Y = 635;
+      const C1_NAME_Y = 610;
+      const C1_SIG_Y = 560;
+      const C1_DATE_Y = 510;
+      const DIVIDER_Y = 475;
+      const C2_HEADER_Y = 450;
+      const C2_NAME_Y = 425;
+      const C2_SIG_Y = 375;
+      const C2_DATE_Y = 325;
+
+      const labelFont = () => { ctx.font = '700 9px Arial'; ctx.fillStyle = '#111'; };
+      const valueFont = () => { ctx.font = '700 10.5px Arial'; ctx.fillStyle = '#111'; };
+      const sectionFont = () => { ctx.font = '700 10px Arial'; ctx.fillStyle = '#111'; };
+      const underline = (baseline) => {
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(sx(FIELD_X), sy(baseline - 2));
+        ctx.lineTo(sx(FIELD_END), sy(baseline - 2));
+        ctx.stroke();
+      };
+
+      // ONE clean white rectangle covering the entire old signing area
+            // Starts below clause 18 (ends ~663), ends above footer (~60)
+            // PDF y: 60 to 660 → canvas y: sy(660) to sy(60) → height = sy(60) - sy(660)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(sx(40), sy(660), sx(515) - sx(40), sy(60) - sy(660));
+
+      // =========================================
+      // CLIENT 1 SECTION
+      // =========================================
+
+      // Header: CLIENT 1
+      sectionFont();
+      ctx.fillText('CLIENT 1', sx(LABEL_X), sy(C1_HEADER_Y));
+
+      // Name row
+      labelFont();
+      ctx.fillText('Name', sx(LABEL_X), sy(C1_NAME_Y));
+      valueFont();
+      if (client1Name) ctx.fillText(client1Name.trim(), sx(FIELD_X), sy(C1_NAME_Y));
+      underline(C1_NAME_Y);
+
+      // Signature row
+      labelFont();
+      ctx.fillText('Signature', sx(LABEL_X), sy(C1_SIG_Y));
+      underline(C1_SIG_Y);
+      if (hasSignature && sig1Canvas) {
+        const b = signatureInkBounds(sig1Canvas);
+        if (b) {
+          const scale = Math.min(160 / b.w, 36 / b.h, 1);
+          const w = b.w * scale, h = b.h * scale;
+          // Ink bottom sits at underline + 6 (underline at C1_SIG_Y - 2); dest top = bottom - h
+          ctx.drawImage(sig1Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C1_SIG_Y + 4 - h), w, h);
+        }
+      }
+
+      // Date row
+      labelFont();
+      ctx.fillText('Date', sx(LABEL_X), sy(C1_DATE_Y));
+      valueFont();
+      if (client1Date) {
+        const parts = splitDateParts(client1Date);
+        if (parts) {
+          // Draw with spaces around slashes: 11 / 09 / 2026
+          let x = FIELD_X;
+          for (const item of [parts.day, ' / ', parts.month, ' / ', parts.year]) {
+            ctx.fillText(item, sx(x), sy(C1_DATE_Y));
+            x += ctx.measureText(item).width;
+          }
+        } else {
+          ctx.fillText(client1Date.trim(), sx(FIELD_X), sy(C1_DATE_Y));
+        }
+      }
+      underline(C1_DATE_Y);
+
+      // Timestamp box for Client 1 (aligned to signature row)
+      if (isSignatureTimestampEnabled() && signedAt1 && hasSignature) {
+        drawTimestampPreviewBox(ctx, sx, sy, BOX_X, C1_SIG_Y - 16, signedAt1);
+      }
+
+      // =========================================
+      // DIVIDER
+      // =========================================
+      if (hasClient2) {
+        ctx.strokeStyle = 'rgba(148,156,173,0.5)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(sx(LEFT_MARGIN), sy(DIVIDER_Y));
+        ctx.lineTo(sx(505), sy(DIVIDER_Y));
+        ctx.stroke();
+      }
+
+      // =========================================
+      // CLIENT 2 SECTION
+      // =========================================
+      if (hasClient2) {
+        // Header: CLIENT 2
+        sectionFont();
+        ctx.fillText('CLIENT 2', sx(LABEL_X), sy(C2_HEADER_Y));
+
+        // Name row
+        labelFont();
+        ctx.fillText('Name', sx(LABEL_X), sy(C2_NAME_Y));
+        valueFont();
+        if (c2Name) ctx.fillText(c2Name.trim(), sx(FIELD_X), sy(C2_NAME_Y));
+        underline(C2_NAME_Y);
+
+        // Signature row
+        labelFont();
+        ctx.fillText('Signature', sx(LABEL_X), sy(C2_SIG_Y));
+        underline(C2_SIG_Y);
+        if (hasSignature2 && sig2Canvas) {
+          const b = signatureInkBounds(sig2Canvas);
+          if (b) {
+            const scale = Math.min(160 / b.w, 36 / b.h, 1);
+            const w = b.w * scale, h = b.h * scale;
+            // Ink bottom sits at underline + 6 (underline at C2_SIG_Y - 2); dest top = bottom - h
+            ctx.drawImage(sig2Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C2_SIG_Y + 4 - h), w, h);
+          }
+        }
+
+        // Date row
+        labelFont();
+        ctx.fillText('Date', sx(LABEL_X), sy(C2_DATE_Y));
+        valueFont();
+        if (c2Date) {
+          const parts = splitDateParts(c2Date);
+          if (parts) {
+            let x = FIELD_X;
+            for (const item of [parts.day, ' / ', parts.month, ' / ', parts.year]) {
+              ctx.fillText(item, sx(x), sy(C2_DATE_Y));
+              x += ctx.measureText(item).width;
+            }
+          } else {
+            ctx.fillText(c2Date.trim(), sx(FIELD_X), sy(C2_DATE_Y));
+          }
+        }
+        underline(C2_DATE_Y);
+
+        // Timestamp box for Client 2 (aligned to signature row)
+        if (isSignatureTimestampEnabled() && signedAt2 && hasSignature2) {
+          drawTimestampPreviewBox(ctx, sx, sy, BOX_X, C2_SIG_Y - 16, signedAt2);
+        }
+      }
+
+      drawGeneratedFooter(ctx, pageNumber, totalPages, 'Waiver & Disclosure', 42, 817);
+
       return c;
     }
-
-    // Signing panel (mirrors addSigningOverlays on page 6)
-    const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
-    const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
-    const FIELD_X = 175, FIELD_END = 360;
-    const C1_HEADER = 640, C1_NAME = 620, C1_SIG = 572, C1_DATE = 524;
-    const DIVIDER = 482;
-    const C2_HEADER = 468, C2_NAME = 446, C2_SIG = 398, C2_DATE = 350;
-    const BOX_X = 380;
-    const labelFont = () => { ctx.font = '700 9.5px Arial'; ctx.fillStyle = '#111'; };
-    const valueFont = () => { ctx.font = '700 10.5px Arial'; ctx.fillStyle = '#111'; };
-    const underline = (baseline) => {
-      ctx.strokeStyle = '#111';
-      ctx.lineWidth = 0.6;
-      ctx.beginPath();
-      ctx.moveTo(sx(FIELD_X), sy(baseline - 2));
-      ctx.lineTo(sx(FIELD_END), sy(baseline - 2));
-      ctx.stroke();
-    };
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(sx(40), sy(660), (510 - 40) * sx(1), (660 - 450) * sy(1));
-    ctx.textBaseline = 'alphabetic';
-
-    // ---- CLIENT 1 ----
-    ctx.fillStyle = '#111';
-    ctx.font = '700 10px Arial';
-    ctx.fillText('CLIENT 1', sx(54), sy(C1_HEADER));
-    labelFont();
-    ctx.fillText("CLIENT'S NAME:", sx(54), sy(C1_NAME));
-    valueFont();
-    if(client1Name) ctx.fillText(client1Name.trim(), sx(FIELD_X), sy(C1_NAME));
-    underline(C1_NAME);
-    labelFont();
-    ctx.fillText("CLIENT'S SIGNATURE:", sx(54), sy(C1_SIG));
-    underline(C1_SIG);
-    if(hasSignature && sig){
-      const b = signatureInkBounds(sig);
-      if(b){
-        const scale = Math.min((185 * 0.62) / b.w, 30 / b.h, 1);
-        const w = b.w * scale, h = b.h * scale;
-        ctx.drawImage(sig, b.x, b.y, b.w, b.h, sx(179), sy(C1_SIG - 0.5 + h), w, h);
-      }
-    }
-    labelFont();
-    ctx.fillText('DATE:', sx(54), sy(C1_DATE));
-    valueFont();
-    if(client1Date){
-      const parts = splitDateParts(client1Date);
-      if(parts){
-        let x = FIELD_X;
-        for(const item of [parts.day, '/', parts.month, '/', parts.year]){
-          ctx.fillText(item, sx(x), sy(C1_DATE));
-          x += ctx.measureText(item).width + 9;
-        }
-      }else{
-        ctx.fillText(client1Date.trim(), sx(FIELD_X), sy(C1_DATE));
-      }
-    }
-    underline(C1_DATE);
-
-    // Client 1 timestamp box (only when enabled and a signing time was captured)
-    if(isSignatureTimestampEnabled() && signedAt1 && hasSignature){
-      drawTimestampPreviewBox(ctx, sx, sy, BOX_X, C1_SIG - 16, signedAt1);
-    }
-
-    // ---- divider ----
-    ctx.strokeStyle = 'rgba(148,156,173,0.85)';
-    ctx.lineWidth = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(sx(54), sy(DIVIDER));
-    ctx.lineTo(sx(505), sy(DIVIDER));
-    ctx.stroke();
-
-    // ---- CLIENT 2 (only if included; mirrors Client 1) ----
-    const client2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
-    if(client2Name){
-      ctx.fillStyle = '#111';
-      ctx.font = '700 10px Arial';
-      ctx.fillText('CLIENT 2', sx(54), sy(C2_HEADER));
-      labelFont();
-      ctx.fillText('CLIENT 2 NAME:', sx(54), sy(C2_NAME));
-      valueFont();
-      if(client2Name.trim()) ctx.fillText(client2Name.trim(), sx(FIELD_X), sy(C2_NAME));
-      underline(C2_NAME);
-      labelFont();
-      ctx.fillText('CLIENT 2 SIGNATURE:', sx(54), sy(C2_SIG));
-      underline(C2_SIG);
-      if(hasSignature2 && sig2){
-        const b = signatureInkBounds(sig2);
-        if(b){
-          const scale = Math.min((185 * 0.62) / b.w, 30 / b.h, 1);
-          const w = b.w * scale, h = b.h * scale;
-          ctx.drawImage(sig2, b.x, b.y, b.w, b.h, sx(179), sy(C2_SIG - 0.5 + h), w, h);
-        }
-      }
-      labelFont();
-      ctx.fillText('DATE (2):', sx(54), sy(C2_DATE));
-      valueFont();
-      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
-      if(c2Date){
-        const parts = splitDateParts(c2Date);
-        if(parts){
-          let x = FIELD_X;
-          for(const item of [parts.day, '/', parts.month, '/', parts.year20 + parts.yearYY]){
-            ctx.fillText(item, sx(x), sy(C2_DATE));
-            x += ctx.measureText(item).width + 9;
-          }
-        }else{
-          ctx.fillText(c2Date.trim(), sx(FIELD_X), sy(C2_DATE));
-        }
-      }
-      underline(C2_DATE);
-      if(isSignatureTimestampEnabled() && signedAt2 && hasSignature2){
-        drawTimestampPreviewBox(ctx, sx, sy, BOX_X, C2_SIG - 16, signedAt2);
-      }
-    }
-
-    drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817);
-
-    return c;
-  }
 
   // Approximate timestamp box for the on-screen preview. The vector PDF is the
   // source of truth; this just mirrors its position, box and three lines.
