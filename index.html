@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Client Appointment Checklist</title>
   <link rel="icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="css/app.css">
 
   <meta name="theme-color" content="#1e3a5f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Client Checklist" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
 </head>
 <body>
   <!-- LANDING SCREEN ========================================================= -->
@@ -147,6 +147,7 @@
             <span class="brandVersion" data-app-version-label>Version 1.6.2</span>
           </div>
           <button class="btn toolbar-btn small" id="backToStart" title="Change appointment type" style="display:none">&larr; Change Type</button>
+          <button class="btn toolbar-btn small" id="startFreshAppointment" title="Clear this form and start a new appointment" style="display:none">＋ Start fresh</button>
           <div class="statusBadge">Status: <span id="status" role="status" aria-live="polite" aria-atomic="true">Ready.</span> <span id="connectionStatus" class="connection-status" role="status" aria-live="polite">Online</span></div>
         </div>
         
@@ -213,6 +214,7 @@
             <span>Appointment Summary</span>
             <div class="summary-card-header-actions">
               <span id="appointmentStatus" class="appointment-status">🟠 6 Items Remaining</span>
+              <span id="nextRequiredItem" class="next-required-item">Next: Client 1 Name</span>
               <button type="button" class="btn small summary-disclosure" id="summaryDisclosure" aria-expanded="false" aria-controls="summaryDetails">Show details</button>
             </div>
           </div>
@@ -297,29 +299,29 @@
           <h2>1. Client Details</h2>
           <span class="section-summary hidden" id="sectionSummary-appointmentInfoSection"></span>
           <div class="fields three appointment-only">
-            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
-            <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name"></div>
-            <div><label for="clientAddress">Client Current Address</label><input id="clientAddress" type="text" placeholder="Client current address"></div>
+            <div><label for="date">Date <span class="required">*</span></label><input id="date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" enterkeyhint="next"></div>
+                        <div id="teamMemberControl"><label for="teamMember">Team Member <span class="required">*</span></label><input id="teamMember" type="text" placeholder="Your name" autocomplete="off" autocapitalize="words" enterkeyhint="next"></div>
+                        <div><label for="clientAddress">Client Current Address</label><input id="clientAddress" type="text" placeholder="Client current address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
           </div>
           <div class="fields appointment-only" style="margin-top:12px">
-            <div><label for="propertySaleAddress">Address of Property Sale</label><input id="propertySaleAddress" type="text" placeholder="Property being sold"></div>
+            <div><label for="propertySaleAddress">Address of Property Sale</label><input id="propertySaleAddress" type="text" placeholder="Property being sold" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
           </div>
           
           <div class="subsection" style="margin-top:16px">
             <h3>Client 1</h3>
             <div class="fields three">
-              <div><label for="clientName">Name <span class="required">*</span></label><input id="clientName" type="text" placeholder="Client 1 name"></div>
-              <div><label for="clientPhone">Contact Number</label><input id="clientPhone" type="tel" placeholder="Client 1 phone"></div>
-              <div><label for="clientEmail">Email</label><input id="clientEmail" type="email" placeholder="client1@example.com"></div>
+              <div><label for="clientName">Name <span class="required">*</span></label><input id="clientName" type="text" placeholder="Client 1 name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="clientPhone">Contact Number</label><input id="clientPhone" type="tel" placeholder="Client 1 phone" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="clientEmail">Email</label><input id="clientEmail" type="email" placeholder="client1@example.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
             </div>
           </div>
 
           <div class="subsection" style="margin-top:16px">
             <h3>Client 2 <label class="waiver-only client2-toggle-label" style="font-weight:600; font-size:13px; margin-left:12px; cursor:pointer"><input type="checkbox" id="waiverClient2Toggle"> Include Client 2</label></h3>
             <div class="fields three" id="client2Fields">
-              <div><label for="client2Name">Name</label><input id="client2Name" type="text" placeholder="Client 2 name"></div>
-              <div><label for="client2Phone">Contact Number</label><input id="client2Phone" type="tel" placeholder="Client 2 phone"></div>
-              <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com"></div>
+              <div><label for="client2Name">Name</label><input id="client2Name" type="text" placeholder="Client 2 name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="client2Phone">Contact Number</label><input id="client2Phone" type="tel" placeholder="Client 2 phone" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="client2Email">Email</label><input id="client2Email" type="email" placeholder="client2@example.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
             </div>
           </div>
           <div class="toggleRow in-person-only" style="margin-top:20px; display:flex; gap:24px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:16px">
@@ -338,16 +340,16 @@
             <h3>Client 1</h3>
             <div class="fields two">
               <div class="waiver-only"><label>Client 1 Name</label><div class="readonly-display" id="waiverClient1NameDisplay">Client 1</div></div>
-              <div class="in-person-only zoom-only"><label for="waiverClient1Name">Client 1 Name <span class="required">*</span></label><input id="waiverClient1Name" type="text" placeholder="Client 1 name"></div>
-              <div><label for="waiverClient1Date">Signing Date <span class="required">*</span></label><input id="waiverClient1Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+              <div class="in-person-only zoom-only"><label for="waiverClient1Name">Client 1 Name <span class="required">*</span></label><input id="waiverClient1Name" type="text" placeholder="Client 1 name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="waiverClient1Date">Signing Date <span class="required">*</span></label><input id="waiverClient1Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" enterkeyhint="next"></div>
             </div>
           </div>
           <div class="subsection waiver-client2 hidden" id="waiverClient2Block">
             <h3>Client 2</h3>
             <div class="fields two">
               <div class="waiver-only"><label>Client 2 Name</label><div class="readonly-display" id="waiverClient2NameDisplay">Client 2</div></div>
-              <div class="in-person-only zoom-only"><label for="waiverClient2Name">Client 2 Name</label><input id="waiverClient2Name" type="text" placeholder="Client 2 name"></div>
-              <div><label for="waiverClient2Date">Signing Date</label><input id="waiverClient2Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+              <div class="in-person-only zoom-only"><label for="waiverClient2Name">Client 2 Name</label><input id="waiverClient2Name" type="text" placeholder="Client 2 name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="waiverClient2Date">Signing Date</label><input id="waiverClient2Date" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" enterkeyhint="next"></div>
             </div>
           </div>
           <div class="subsection">
@@ -383,20 +385,20 @@
               <label class="radioCard"><input type="radio" name="firstConsultGoalType" value="other" id="fcGoalOther"> Other</label>
             </div>
             <div class="field" style="margin-top:12px">
-              <label for="fcPreferredSuburbs">Preferred Suburbs</label>
-              <input id="fcPreferredSuburbs" type="text" placeholder="Preferred suburbs or areas">
-            </div>
+                          <label for="fcPreferredSuburbs">Preferred Suburbs</label>
+                          <input id="fcPreferredSuburbs" type="text" placeholder="Preferred suburbs or areas" autocomplete="street-address" autocapitalize="words" spellcheck="false" enterkeyhint="next">
+                        </div>
           </div>
           <div class="subsection">
-            <h3>Consultation Notes</h3>
-            <label for="firstConsultNotes">Notes</label>
-            <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Capture key discussion points and client objectives from the initial discovery meeting."></textarea>
-          </div>
-          <div class="subsection">
-            <h3>Additional Notes</h3>
-            <label for="fcAdditionalNotes">Additional notes</label>
-            <textarea id="fcAdditionalNotes" class="zoom-notes" placeholder="Any additional observations or follow-up items."></textarea>
-          </div>
+                      <h3>Consultation Notes</h3>
+                      <label for="firstConsultNotes">Notes</label>
+                      <textarea id="firstConsultNotes" class="zoom-notes" placeholder="Capture key discussion points and client objectives from the initial discovery meeting." autocapitalize="sentences" spellcheck="false" enterkeyhint="next"></textarea>
+                    </div>
+                    <div class="subsection">
+                      <h3>Additional Notes</h3>
+                      <label for="fcAdditionalNotes">Additional notes</label>
+                      <textarea id="fcAdditionalNotes" class="zoom-notes" placeholder="Any additional observations or follow-up items." autocapitalize="sentences" spellcheck="false" enterkeyhint="next"></textarea>
+                    </div>
         </section>
 
         <!-- ZOOM SECTION 3: Financial Position ===================================== -->
@@ -405,15 +407,15 @@
           <span class="section-summary hidden" id="sectionSummary-fcFinancial"></span>
           <p class="hint">Current financial position — enter approximate figures.</p>
           <div class="fields two zoom-fin-grid">
-            <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$"></div>
-            <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$"></div>
-            <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$"></div>
-            <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$"></div>
-            <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details"></div>
-            <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$"></div>
-            <div><label for="fcMinBudget">Min Budget</label><input id="fcMinBudget" type="text" placeholder="$"></div>
-            <div><label for="fcMaxBudget">Max Budget</label><input id="fcMaxBudget" type="text" placeholder="$"></div>
-          </div>
+                      <div><label for="firstConsultAnnualIncome">Annual Income</label><input id="firstConsultAnnualIncome" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="firstConsultExistingMortgage">Existing Mortgage</label><input id="firstConsultExistingMortgage" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="firstConsultSavings">Savings</label><input id="firstConsultSavings" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="firstConsultSuper">Super Balance</label><input id="firstConsultSuper" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="firstConsultInvestmentProperties">Investment Properties</label><input id="firstConsultInvestmentProperties" type="text" placeholder="Number or details" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="firstConsultBorrowingCapacity">Borrowing Capacity</label><input id="firstConsultBorrowingCapacity" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="fcMinBudget">Min Budget</label><input id="fcMinBudget" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                      <div><label for="fcMaxBudget">Max Budget</label><input id="fcMaxBudget" type="text" placeholder="$" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                    </div>
 	        </section>
 
 	        <!-- ZOOM SECTION 5: Professional Team ====================================== -->
@@ -444,8 +446,10 @@
           <div class="subsection" style="margin-top:16px">
             <h3>Recommended Property</h3>
             <div class="fields two">
-              <div><label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details"></div>
-            </div>
+                        <div id="clientReviewProperty">
+                          <label for="clientReviewProperty">Recommended Property</label><input id="clientReviewProperty" type="text" placeholder="Property address or details" autocomplete="street-address" autocapitalize="words" spellcheck="false" enterkeyhint="next">
+                        </div>
+                      </div>
           </div>
         </section>
 
@@ -455,26 +459,26 @@
           <span class="section-summary hidden" id="sectionSummary-crNextActions"></span>
           <p class="hint">Document the recommended strategy, timeline, and next steps for this client.</p>
           <div class="subsection">
-            <h3>Recommended Strategy</h3>
-            <label for="clientReviewStrategy">Strategy details</label>
-            <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..."></textarea>
-          </div>
-          <div class="subsection">
-            <h3>Next Steps</h3>
-            <label for="clientReviewNextActions">Next steps</label>
-            <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..."></textarea>
-          </div>
+                      <h3>Recommended Strategy</h3>
+                      <label for="clientReviewStrategy">Strategy details</label>
+                      <textarea id="clientReviewStrategy" class="zoom-notes" placeholder="Outline the recommended strategy..." autocapitalize="sentences" spellcheck="false" enterkeyhint="next"></textarea>
+                    </div>
+                    <div class="subsection">
+                      <h3>Next Steps</h3>
+                      <label for="clientReviewNextActions">Next steps</label>
+                      <textarea id="clientReviewNextActions" class="zoom-notes" placeholder="Outline the next actions..." autocapitalize="sentences" spellcheck="false" enterkeyhint="next"></textarea>
+                    </div>
           <div class="subsection">
             <h3>Timeline & Schedule</h3>
             <div class="fields two">
-              <div id="clientReviewTimelineControl">
-                <label for="clientReviewTimeline">Estimated Timeline</label>
-                <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
-              </div>
-              <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date"></div>
-              <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes"></div>
-              <div><label for="crInspections">Property Inspections</label><input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates"></div>
-            </div>
+                          <div id="clientReviewTimelineControl">
+                            <label for="clientReviewTimeline">Estimated Timeline</label>
+                            <select id="clientReviewTimeline"><option value="">Select timeline</option></select>
+                          </div>
+                          <div><label for="crNextAppointmentDate">Next Appointment Date</label><input id="crNextAppointmentDate" type="date" enterkeyhint="next"></div>
+                          <div><label for="crScheduleNotes">Schedule Notes</label><input id="crScheduleNotes" type="text" placeholder="Appointment time or scheduling notes" spellcheck="false" enterkeyhint="next"></div>
+                          <div><label for="crInspections">Property Inspections</label><input id="crInspections" type="text" placeholder="Scheduled inspections or viewing dates" spellcheck="false" enterkeyhint="next"></div>
+                        </div>
           </div>
         </section>
 
@@ -590,7 +594,7 @@
         </section>
 
         <!-- ZOOM SECTION: Package Preview ======================================== -->
-        <section class="card zoom-only" id="zoomPackagePreview" data-collapsible="true">
+        <section class="card zoom-only" id="zoomPackagePreview" data-collapsible="true" data-default-collapsed="true">
           <h2>Package Preview</h2>
           <p class="hint">Estimated document and package size based on current selections.</p>
           <div id="packagePreviewContent">
@@ -599,7 +603,7 @@
         </section>
 
         <!-- ZOOM SECTION 5: Attachments ========================================= -->
-        <section class="card zoom-only" id="zoomAttachmentsSection" data-collapsible="true">
+        <section class="card zoom-only" id="zoomAttachmentsSection" data-collapsible="true" data-default-collapsed="true">
           <h2>5. Attachments</h2>
           <p class="hint">Generated documents will appear here once available.</p>
           <div class="fields two" style="margin-top:12px">
@@ -610,7 +614,7 @@
           </div>
         </section>
 
-        <section class="card in-person-only" id="eoiDetailsCard" data-collapsible="true">
+        <section class="card in-person-only" id="eoiDetailsCard" data-collapsible="true" data-default-collapsed="true">
           <h2>2. Expression of Interest form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
           <span class="section-summary hidden" id="sectionSummary-eoiDetailsCard"></span>
           <p class="hint">Include this when an Expression of Interest needs to be added to the final PDF. Client 1 details are filled from the appointment details. Use this section as the source for sale/property details.</p>
@@ -635,33 +639,33 @@
               <div class="subsection">
                 <h3>Client 1 EOI Details</h3>
                 <div class="fields two">
-                  <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Client Name"></div>
-                  <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Client Phone"></div>
-                </div>
-                <div class="fields two" style="margin-top:12px">
-                  <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Client Email"></div>
-                  <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Client Residential Address"></div>
+                  <div><label for="eoiClient1Name">Name</label><input id="eoiClient1Name" type="text" placeholder="Client Name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                                    <div><label for="eoiClient1Mobile">Mobile</label><input id="eoiClient1Mobile" type="tel" placeholder="Client Phone" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                                  </div>
+                                  <div class="fields two" style="margin-top:12px">
+                                    <div><label for="eoiClient1Email">Email Address</label><input id="eoiClient1Email" type="email" placeholder="Client Email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
+                                    <div><label for="eoiClient1Address">Residential / Contact Address</label><input id="eoiClient1Address" type="text" placeholder="Client Residential Address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
                 </div>
               </div>
 
               <div class="subsection">
-                <h3>Client 2 EOI Details</h3>
-                <div class="fields two">
-                  <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Client 2 Name"></div>
-                  <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Client 2 Phone"></div>
-                </div>
-                <div class="fields two" style="margin-top:12px">
-                  <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Client 2 Email"></div>
-                  <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Client Residential Address"></div>
-                </div>
-              </div>
+                              <h3>Client 2 EOI Details</h3>
+                              <div class="fields two">
+                                <div><label for="eoiClient2Name">Name</label><input id="eoiClient2Name" type="text" placeholder="Client 2 Name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                                <div><label for="eoiClient2Mobile">Mobile</label><input id="eoiClient2Mobile" type="tel" placeholder="Client 2 Phone" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                              </div>
+                              <div class="fields two" style="margin-top:12px">
+                                <div><label for="eoiClient2Email">Email Address</label><input id="eoiClient2Email" type="email" placeholder="Client 2 Email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
+                                <div><label for="eoiClient2Address">Residential / Contact Address</label><input id="eoiClient2Address" type="text" placeholder="Client Residential Address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
+                              </div>
+                            </div>
 
               <div class="subsection">
                 <h3>Other EOI Details</h3>
                 <div class="fields three">
-                  <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property Sale Address"></div>
-                  <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
-                  <div id="eoiStaffMemberControl"><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Team Member"></div>
+                  <div><label for="eoiSaleAddress">Property Sold Address / Address of Sale</label><input id="eoiSaleAddress" type="text" placeholder="Property Sale Address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
+                                    <div><label for="eoiDate">EOI Date</label><input id="eoiDate" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" enterkeyhint="next"></div>
+                                    <div id="eoiStaffMemberControl"><label for="eoiStaffMember">Staff Member</label><input id="eoiStaffMember" type="text" placeholder="Team Member" autocomplete="off" autocapitalize="words" enterkeyhint="next"></div>
                 </div>
               </div>
             </div>
@@ -792,21 +796,21 @@
                   <div><label for="laVidaConveyancerChoice">Settlement / Conveyancer</label><select id="laVidaConveyancerChoice"></select></div>
                 </div>
                 <div class="fields two" id="laVidaFinanceBrokerManual" style="margin-top:12px;display:none">
-                  <div><label for="laVidaFinanceBrokerName">Finance Broker Name</label><input id="laVidaFinanceBrokerName" type="text" placeholder="Finance broker name"></div>
-                  <div><label for="laVidaFinanceBrokerEmail">Finance Broker Email</label><input id="laVidaFinanceBrokerEmail" type="email" placeholder="broker@example.com"></div>
-                  <div><label for="laVidaFinanceBrokerPhone">Finance Broker Phone</label><input id="laVidaFinanceBrokerPhone" type="tel" placeholder="Phone optional"></div>
-                </div>
-                <div class="fields two" id="laVidaConveyancerManual" style="margin-top:12px;display:none">
-                  <div><label for="laVidaConveyancerName">Settlement / Conveyancer Name</label><input id="laVidaConveyancerName" type="text" placeholder="Settlement or conveyancer name"></div>
-                  <div><label for="laVidaConveyancerEmail">Settlement / Conveyancer Email</label><input id="laVidaConveyancerEmail" type="email" placeholder="conveyancer@example.com"></div>
-                  <div><label for="laVidaConveyancerPhone">Settlement / Conveyancer Phone</label><input id="laVidaConveyancerPhone" type="tel" placeholder="Phone optional"></div>
-                </div>
+                                  <div><label for="laVidaFinanceBrokerName">Finance Broker Name</label><input id="laVidaFinanceBrokerName" type="text" placeholder="Finance broker name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                                  <div><label for="laVidaFinanceBrokerEmail">Finance Broker Email</label><input id="laVidaFinanceBrokerEmail" type="email" placeholder="broker@example.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
+                                  <div><label for="laVidaFinanceBrokerPhone">Finance Broker Phone</label><input id="laVidaFinanceBrokerPhone" type="tel" placeholder="Phone optional" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                                </div>
+                                <div class="fields two" id="laVidaConveyancerManual" style="margin-top:12px;display:none">
+                                  <div><label for="laVidaConveyancerName">Settlement / Conveyancer Name</label><input id="laVidaConveyancerName" type="text" placeholder="Settlement or conveyancer name" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                                  <div><label for="laVidaConveyancerEmail">Settlement / Conveyancer Email</label><input id="laVidaConveyancerEmail" type="email" placeholder="conveyancer@example.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" enterkeyhint="next"></div>
+                                  <div><label for="laVidaConveyancerPhone">Settlement / Conveyancer Phone</label><input id="laVidaConveyancerPhone" type="tel" placeholder="Phone optional" autocomplete="tel" inputmode="tel" spellcheck="false" enterkeyhint="next"></div>
+                                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="card in-person-only" id="iaDetailsCard" data-collapsible="true">
+        <section class="card in-person-only" id="iaDetailsCard" data-collapsible="true" data-default-collapsed="true">
           <h2>3. Irrevocable Authority form <span style="font-size:12px;color:var(--muted);font-weight:700">optional</span></h2>
           <span class="section-summary hidden" id="sectionSummary-iaDetailsCard"></span>
           <p class="hint">Choose Perth or Brisbane and complete the fields below. IA Property should be the EOI property sold address; Address for IA should be the client residential/contact address unless manually edited.</p>
@@ -827,21 +831,21 @@
 
             <!-- Toggleable overrides container -->
             <div id="iaOverridesContent" style="display: none">
-              <div class="fields two">
-                <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Client Name(s)"></div>
-                <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Client Address"></div>
-              </div>
-              <div class="fields two" style="margin-top:12px">
-                <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Property Sale Address"></div>
-                <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off"></div>
-              </div>
-            </div>
+                          <div class="fields two">
+                            <div><label for="iaClientNames">Client Name(s) for IA</label><input id="iaClientNames" type="text" placeholder="Client Name(s)" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                            <div><label for="iaAddress">Address for IA</label><input id="iaAddress" type="text" placeholder="Client Address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
+                          </div>
+                          <div class="fields two" style="margin-top:12px">
+                            <div><label for="iaProperty">Property Sold Address for IA</label><input id="iaProperty" type="text" placeholder="Property Sale Address" autocomplete="street-address" autocapitalize="words" enterkeyhint="next"></div>
+                            <div><label for="iaDate">IA Date</label><input id="iaDate" type="text" class="dateInput" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" enterkeyhint="next"></div>
+                          </div>
+                        </div>
 
             <!-- Always visible IA fields -->
             <div class="fields two" style="margin-top:12px">
-              <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000"></div>
-              <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer"></div>
-            </div>
+                          <div><label for="iaAmount">Authority Amount</label><input id="iaAmount" type="text" value="$10,000" placeholder="$10,000" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
+                          <div id="solicitorControl"><label for="iaSolicitor">Solicitor / Conveyancer</label><input id="iaSolicitor" type="text" placeholder="Name of solicitor or conveyancer" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next"></div>
+                        </div>
             <div id="authorityExplanation" class="callout" style="margin-top:8px; color:var(--navy)">
               This amount authorises ASG to receive <strong id="authorityAmtLabel">$10,000</strong> from the proceeds of your loan or finance at settlement. This authority only applies if your purchase proceeds to settlement.
             </div>
@@ -990,7 +994,27 @@
           <div class="mapped-fields-list hidden" id="mappedFieldsList" role="list" aria-label="Fields on this preview page"></div>
         </section>
       </aside>
+      <aside class="waiverPreview" id="waiverPreview" aria-label="Waiver preview">
+        <section class="card">
+          <div class="previewHeading"><h2>Waiver preview</h2></div>
+          <p class="hint">Let the client read the complete Waiver &amp; Disclosure before signing.</p>
+          <button type="button" class="waiverPreviewOpen" id="waiverPreviewOpen" aria-expanded="false" aria-controls="waiverPreviewDialog">
+            <img src="templates/rendered/waiver-page-1.jpg" alt="First page of the Waiver and Disclosure">
+            <span>Tap to read the full waiver</span>
+          </button>
+        </section>
+      </aside>
       </div>
+    </div>
+  </div>
+
+  <div class="waiverPreviewDialog" id="waiverPreviewDialog" role="dialog" aria-modal="true" aria-labelledby="waiverPreviewDialogTitle" hidden>
+    <div class="waiverPreviewDialogPanel">
+      <div class="waiverPreviewDialogHeader">
+        <div><h2 id="waiverPreviewDialogTitle">Waiver &amp; Disclosure</h2><p class="hint">Review all pages before signing.</p></div>
+        <button type="button" class="btn small" id="waiverPreviewClose">Close preview</button>
+      </div>
+      <div class="waiverPreviewPages" id="waiverPreviewPages" aria-live="polite"></div>
     </div>
   </div>
 
@@ -1007,9 +1031,9 @@
         <h3 style="margin:0 0 8px;color:var(--navy);font-size:15px">Admin Access</h3>
         <p class="hint">Enter the admin PIN to edit settings on this device.</p>
         <div class="fields two">
-          <div><label for="settingsPin">Admin PIN</label><input id="settingsPin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter PIN"></div>
-          <div style="display:flex;align-items:end"><button type="button" class="btn small" id="unlockSettings">Unlock Settings</button></div>
-        </div>
+                  <div><label for="settingsPin">Admin PIN</label><input id="settingsPin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter PIN" enterkeyhint="done"></div>
+                  <div style="display:flex;align-items:end"><button type="button" class="btn small" id="unlockSettings">Unlock Settings</button></div>
+                </div>
         <div class="fieldError hidden" id="settingsPinError">Incorrect PIN.</div>
       </div>
       <div class="settingsImportExport">
@@ -1081,7 +1105,7 @@
         <div class="settingsSection">
           <h3>PDF Defaults</h3>
           <div class="fields two">
-            <div><label for="defaultAuthorityAmount">Default Authority Amount</label><input id="defaultAuthorityAmount" type="text" placeholder="$10,000"></div>
+            <div><label for="defaultAuthorityAmount">Default Authority Amount</label><input id="defaultAuthorityAmount" type="text" placeholder="$10,000" inputmode="numeric" spellcheck="false" enterkeyhint="next"></div>
             <div><label for="defaultFinancePercent">Default Finance %</label><select id="defaultFinancePercent"></select></div>
             <div><label for="defaultBranch">Default Branch</label><select id="defaultBranch"></select></div>
             <label class="check"><input type="checkbox" id="defaultCompressPhotos"><span>Compress Photos by Default</span></label>
@@ -1176,9 +1200,9 @@
   </div>
   <div class="toast" id="toast"></div>
 
-<script src="/js/db.js"></script>
-  <script src="/lib/pdf-lib.min.js"></script>
-  <script src="/js/app.js"></script>
+<script src="js/db.js"></script>
+  <script src="lib/pdf-lib.min.js"></script>
+  <script src="js/app.js"></script>
 
 <script>
   // PWA offline support. The service worker caches this app so staff can open it without internet after their first online visit.

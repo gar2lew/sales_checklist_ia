@@ -53,7 +53,7 @@ test('zoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle
       navHeight:nav.getBoundingClientRect().height
     };
   });
-  assert.deepEqual(timeline,{display:'flex',count:9,sameRow:true,fullWidthRows:false,navHeight:55});
+  assert.deepEqual(timeline,{display:'flex',count:9,sameRow:true,fullWidthRows:false,navHeight:57});
 
   const initialCanvas = await page.locator('#whiteboardCanvas').evaluate(canvas => ({
     width:canvas.width,

@@ -1,0 +1,64 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/dev/Irrevoccable Authority CHECKLIST[39m
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs
+[22m[39m
+All waiver-only workflow tests PASSED
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mwaiver-only standalone presentation (header, timeline, hidden appointment UI)
+[22m[39mPASS waiver-only standalone presentation
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mwaiver-only validation requires client + waiver items only (no appointment fields)
+[22m[39mPASS waiver-only validation scope
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mwaiver-only ready flow: Client 2 optional, PDF ready state, no ZIP controls
+[22m[39mPASS waiver-only ready flow
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mwaiver-only Client 2 enforced once enabled
+[22m[39mPASS waiver-only Client 2 enforced
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mregression: in-person and zoom timelines and waiver toggles unchanged
+[22m[39mPASS in-person/zoom regression
+
+[90mstdout[2m | tests/waiver-only-workflow.test.mjs[2m > [22m[2mwaiver-only mobile: no horizontal overflow, 44px touch targets, ready actions usable
+[22m[39mPASS waiver-only mobile
+
+ [32m✓[39m tests/waiver-only-workflow.test.mjs [2m([22m[2m6 tests[22m[2m)[22m[33m 6297[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only standalone presentation (header, timeline, hidden appointment UI) [33m 778[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only validation requires client + waiver items only (no appointment fields) [33m 914[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only ready flow: Client 2 optional, PDF ready state, no ZIP controls [33m 1276[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only Client 2 enforced once enabled [33m 1357[2mms[22m[39m
+   [33m[2m✓[22m[39m regression: in-person and zoom timelines and waiver toggles unchanged [33m 978[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only mobile: no horizontal overflow, 44px touch targets, ready actions usable [33m 944[2mms[22m[39m
+[90mstdout[2m | tests/waiver-draft-persistence.test.mjs
+[22m[39m
+All waiver draft persistence tests PASSED
+
+[90mstdout[2m | tests/waiver-draft-persistence.test.mjs[2m > [22m[2mwaiver-only draft: save, auto-fill dates, restore, signature re-ink
+[22m[39mPASS waiver-only draft: save, auto-fill dates, restore, signature re-ink
+
+[90mstdout[2m | tests/waiver-draft-persistence.test.mjs[2m > [22m[2mlegacy draft (no waiver keys) restores with waiver off, valid
+[22m[39mPASS legacy draft (no waiver keys) restores with waiver off, valid
+
+[90mstdout[2m | tests/waiver-draft-persistence.test.mjs[2m > [22m[2mexpired draft purged at startup and not restored
+[22m[39mPASS expired draft purged at startup and not restored
+
+ [32m✓[39m tests/waiver-draft-persistence.test.mjs [2m([22m[2m3 tests[22m[2m)[22m[33m 4526[2mms[22m[39m
+   [33m[2m✓[22m[39m waiver-only draft: save, auto-fill dates, restore, signature re-ink [33m 1975[2mms[22m[39m
+   [33m[2m✓[22m[39m legacy draft (no waiver keys) restores with waiver off, valid [33m 1305[2mms[22m[39m
+   [33m[2m✓[22m[39m expired draft purged at startup and not restored [33m 1206[2mms[22m[39m
+[90mstdout[2m | tests/zoom-timeline-whiteboard.test.mjs[2m > [22m[2mzoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle, in-person boundary
+[22m[39mPASS Zoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle, and in-person boundary
+
+ [32m✓[39m tests/zoom-timeline-whiteboard.test.mjs [2m([22m[2m1 test[22m[2m)[22m[33m 3627[2mms[22m[39m
+   [33m[2m✓[22m[39m zoom timeline layout, whiteboard reveal/resize/drawing, observer lifecycle, in-person boundary [33m 3584[2mms[22m[39m
+[90mstderr[2m | tests/waiver-template-characterisation.test.mjs[2m > [22m[2mWaiver & Disclosure Template Characterisation
+[22m[39mWarning: TT: undefined function: 21
+
+[90mstderr[2m | tests/waiver-template-characterisation.test.mjs[2m > [22m[2mWaiver & Disclosure Template Characterisation
+[22m[39mWarning: TT: undefined function: 21
+
+[90mstderr[2m | tests/waiver-template-characterisation.test.mjs[2m > [22m[2mWaiver & Disclosure Template Characterisation[2m > [22m[2mno WITNESS field on any page
+[22m[39mWarning: TT: undefined function: 21
+
+ [32m✓[39m tests/waiver-template-characterisation.test.mjs [2m([22m[2m26 tests[22m[2m)[22m[32m 182[2mms[22m[39m

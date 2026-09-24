@@ -1,0 +1,37 @@
+{
+  "comboA": {
+    "client2": false,
+    "timestampOn": true,
+    "signedAt1": "2026-09-11T05:20:49.220Z",
+    "signedAt2": null,
+    "tsEnabled": true,
+    "pdfBytes": 542764
+  },
+  "comboB": {
+    "client2": false,
+    "timestampOn": false,
+    "signedAt1": "2026-09-11T05:20:52.535Z",
+    "signedAt2": null,
+    "tsEnabled": false,
+    "pdfBytes": 542537
+  },
+  "comboC": {
+    "client2": true,
+    "timestampOn": true,
+    "signedAt1": "2026-09-11T05:20:55.635Z",
+    "signedAt2": "2026-09-11T05:20:57.519Z",
+    "tsEnabled": true,
+    "pdfBytes": 553935
+  },
+  "comboD": {
+    "client2": true,
+    "timestampOn": false,
+    "signedAt1": "2026-09-11T05:21:00.669Z",
+    "signedAt2": "2026-09-11T05:21:02.552Z",
+    "tsEnabled": false,
+    "pdfBytes": 553632
+  },
+  "rb": {
+    "errors": []
+  }
+}

@@ -1,0 +1,1120 @@
+{
+  "finalA": {
+    "probes": {
+      "pages": 6,
+      "dateC1": true,
+      "dateC2": false,
+      "c1NameRight": 206.2,
+      "c2NameRight": null,
+      "c1Gap": 0,
+      "c1Ink": 0.044873745056282326,
+      "c1Below": 0,
+      "c2Gap": 0,
+      "c2Ink": 0,
+      "c2Below": 0,
+      "residualZone": {
+        "headerToNameValue": 0,
+        "betweenDateAndSig": 0.02490689013035382,
+        "aboveSigToLine": 0,
+        "oldSigRow": 0,
+        "oldDateRowZone": 0,
+        "belowC2Date": 0,
+        "panelTopMargin": 0
+      },
+      "dividerLine": 0,
+      "dividerZoneClean": true,
+      "clauseLastLine": 0.019741652449427247,
+      "clauseRows": true,
+      "footerText": true,
+      "footerPixels": 0.047402769203633476,
+      "signatureTextSearchable": true,
+      "c1BoxText": true,
+      "c2BoxText": false,
+      "c1BoxFillLight": 0.7736547567800258,
+      "c2BoxFillLight": 0,
+      "c1NameExtent": {
+        "top": 618,
+        "bot": 608
+      },
+      "c2NameExtent": null
+    },
+    "ascii": [
+      "680|     - #   #        +# #-# ##-+-        ",
+      "674|                                        ",
+      "668|    ## ##                               ",
+      "662|                                        ",
+      "656|                                        ",
+      "650|                                        ",
+      "644|                                        ",
+      "638|                                        ",
+      "632|                                        ",
+      "626|                                        ",
+      "620|                                        ",
+      "614|  #      ####                           ",
+      "608|         ################               ",
+      "602|                                        ",
+      "596|                                        ",
+      "590|                           -------      ",
+      "584|                           ---#---      ",
+      "578|                           -------      ",
+      "572|          #                -#+-#--      ",
+      "566|                           -------      ",
+      "560|  -                        -------      ",
+      "554|                           -------      ",
+      "548|                           -------      ",
+      "542|                                        ",
+      "536|                                        ",
+      "530|                                        ",
+      "524|                                        ",
+      "518|                                        ",
+      "512|  -          #                          ",
+      "506|                                        ",
+      "500|                                        ",
+      "494|                                        ",
+      "488|                                        ",
+      "482|                                        ",
+      "476|                                        ",
+      "470|                                        ",
+      "464|                                        ",
+      "458|                                        ",
+      "452|                                        ",
+      "446|                                        ",
+      "440|                                        ",
+      "434|                                        ",
+      "428|                                        ",
+      "422|                                        ",
+      "416|                                        ",
+      "410|                                        ",
+      "404|                                        ",
+      "398|                                        ",
+      "392|                                        ",
+      "386|                                        ",
+      "380|                                        ",
+      "374|                                        ",
+      "368|                                        ",
+      "362|                                        ",
+      "356|                                        ",
+      "350|                                        ",
+      "344|                                        ",
+      "338|                                        ",
+      "332|                                        ",
+      "326|                                        ",
+      "320|                                        ",
+      "314|                                        ",
+      "308|                                        ",
+      "302|                                        ",
+      "296|                                        ",
+      "290|                                        "
+    ],
+    "diag": {},
+    "rows": {
+      "24": [
+        {
+          "str": "ASG | Waiver and Disclosure",
+          "x": 42
+        },
+        {
+          "str": "6",
+          "x": 548.9
+        }
+      ],
+      "510": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "560": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "610": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "John Smith",
+          "x": 150
+        }
+      ],
+      "635": [
+        {
+          "str": "CLIENT 1",
+          "x": 54
+        }
+      ],
+      "704": [
+        {
+          "str": "18",
+          "x": 53.5
+        },
+        {
+          "str": "I, the Client, acknowledge receipt of this Disclosure and Waiver, confirm that I have read and understood it, and agree",
+          "x": 82
+        }
+      ],
+      "725.6": [
+        {
+          "str": "ACKNOWLEDGEMENT OF THIS WAIVER AND DISCLOSURE",
+          "x": 53.3
+        }
+      ],
+      "691.2": [
+        {
+          "str": "to be bound by it, subject to clause 17.9. I understand that it applies to all Appointments, whether in person, via Zoom",
+          "x": 82
+        }
+      ],
+      "678.5": [
+        {
+          "str": "or through any",
+          "x": 82
+        },
+        {
+          "str": "other online or remote communication method, and to the Client Company Pack and associated",
+          "x": 141.3
+        }
+      ],
+      "665.6": [
+        {
+          "str": "communications.",
+          "x": 82
+        }
+      ],
+      "599.7": [
+        {
+          "str": "C",
+          "x": 54
+        },
+        {
+          "str": "LIENT’S NAME: ___________________________________________________",
+          "x": 59
+        }
+      ],
+      "537.6": [
+        {
+          "str": "CLIENT’S SIGNATURE: _______________________________________________",
+          "x": 54
+        }
+      ],
+      "475.5": [
+        {
+          "str": "DATE: _____ / _____ / 20____",
+          "x": 54
+        }
+      ],
+      "582.9": [
+        {
+          "str": "Digitally signed",
+          "x": 391
+        }
+      ],
+      "571.4": [
+        {
+          "str": "11/09/2026 1:59 PM",
+          "x": 391
+        }
+      ],
+      "559.9": [
+        {
+          "str": "(AWST)",
+          "x": 391
+        }
+      ]
+    }
+  },
+  "finalB": {
+    "probes": {
+      "pages": 6,
+      "dateC1": true,
+      "dateC2": false,
+      "c1NameRight": 206.2,
+      "c2NameRight": null,
+      "c1Gap": 0,
+      "c1Ink": 0.044873745056282326,
+      "c1Below": 0,
+      "c2Gap": 0,
+      "c2Ink": 0,
+      "c2Below": 0,
+      "residualZone": {
+        "headerToNameValue": 0,
+        "betweenDateAndSig": 0.02490689013035382,
+        "aboveSigToLine": 0,
+        "oldSigRow": 0,
+        "oldDateRowZone": 0,
+        "belowC2Date": 0,
+        "panelTopMargin": 0
+      },
+      "dividerLine": 0,
+      "dividerZoneClean": true,
+      "clauseLastLine": 0.019741652449427247,
+      "clauseRows": true,
+      "footerText": true,
+      "footerPixels": 0.047402769203633476,
+      "signatureTextSearchable": true,
+      "c1BoxText": false,
+      "c2BoxText": false,
+      "c1BoxFillLight": 0,
+      "c2BoxFillLight": 0,
+      "c1NameExtent": {
+        "top": 618,
+        "bot": 608
+      },
+      "c2NameExtent": null
+    },
+    "ascii": [
+      "680|     - #   #        +# #-# ##-+-        ",
+      "674|                                        ",
+      "668|    ## ##                               ",
+      "662|                                        ",
+      "656|                                        ",
+      "650|                                        ",
+      "644|                                        ",
+      "638|                                        ",
+      "632|                                        ",
+      "626|                                        ",
+      "620|                                        ",
+      "614|  #      ####                           ",
+      "608|         ################               ",
+      "602|                                        ",
+      "596|                                        ",
+      "590|                                        ",
+      "584|                                        ",
+      "578|                                        ",
+      "572|          #                             ",
+      "566|                                        ",
+      "560|  -                                     ",
+      "554|                                        ",
+      "548|                                        ",
+      "542|                                        ",
+      "536|                                        ",
+      "530|                                        ",
+      "524|                                        ",
+      "518|                                        ",
+      "512|  -          #                          ",
+      "506|                                        ",
+      "500|                                        ",
+      "494|                                        ",
+      "488|                                        ",
+      "482|                                        ",
+      "476|                                        ",
+      "470|                                        ",
+      "464|                                        ",
+      "458|                                        ",
+      "452|                                        ",
+      "446|                                        ",
+      "440|                                        ",
+      "434|                                        ",
+      "428|                                        ",
+      "422|                                        ",
+      "416|                                        ",
+      "410|                                        ",
+      "404|                                        ",
+      "398|                                        ",
+      "392|                                        ",
+      "386|                                        ",
+      "380|                                        ",
+      "374|                                        ",
+      "368|                                        ",
+      "362|                                        ",
+      "356|                                        ",
+      "350|                                        ",
+      "344|                                        ",
+      "338|                                        ",
+      "332|                                        ",
+      "326|                                        ",
+      "320|                                        ",
+      "314|                                        ",
+      "308|                                        ",
+      "302|                                        ",
+      "296|                                        ",
+      "290|                                        "
+    ],
+    "diag": {},
+    "rows": {
+      "24": [
+        {
+          "str": "ASG | Waiver and Disclosure",
+          "x": 42
+        },
+        {
+          "str": "6",
+          "x": 548.9
+        }
+      ],
+      "510": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "560": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "610": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "John Smith",
+          "x": 150
+        }
+      ],
+      "635": [
+        {
+          "str": "CLIENT 1",
+          "x": 54
+        }
+      ],
+      "704": [
+        {
+          "str": "18",
+          "x": 53.5
+        },
+        {
+          "str": "I, the Client, acknowledge receipt of this Disclosure and Waiver, confirm that I have read and understood it, and agree",
+          "x": 82
+        }
+      ],
+      "725.6": [
+        {
+          "str": "ACKNOWLEDGEMENT OF THIS WAIVER AND DISCLOSURE",
+          "x": 53.3
+        }
+      ],
+      "691.2": [
+        {
+          "str": "to be bound by it, subject to clause 17.9. I understand that it applies to all Appointments, whether in person, via Zoom",
+          "x": 82
+        }
+      ],
+      "678.5": [
+        {
+          "str": "or through any",
+          "x": 82
+        },
+        {
+          "str": "other online or remote communication method, and to the Client Company Pack and associated",
+          "x": 141.3
+        }
+      ],
+      "665.6": [
+        {
+          "str": "communications.",
+          "x": 82
+        }
+      ],
+      "599.7": [
+        {
+          "str": "C",
+          "x": 54
+        },
+        {
+          "str": "LIENT’S NAME: ___________________________________________________",
+          "x": 59
+        }
+      ],
+      "537.6": [
+        {
+          "str": "CLIENT’S SIGNATURE: _______________________________________________",
+          "x": 54
+        }
+      ],
+      "475.5": [
+        {
+          "str": "DATE: _____ / _____ / 20____",
+          "x": 54
+        }
+      ]
+    }
+  },
+  "finalC": {
+    "probes": {
+      "pages": 6,
+      "dateC1": true,
+      "dateC2": true,
+      "c1NameRight": 206.2,
+      "c2NameRight": 211.4,
+      "c1Gap": 0,
+      "c1Ink": 0.044873745056282326,
+      "c1Below": 0,
+      "c2Gap": 0,
+      "c2Ink": 0.04251597201095224,
+      "c2Below": 0,
+      "residualZone": {
+        "headerToNameValue": 0,
+        "betweenDateAndSig": 0.02490689013035382,
+        "aboveSigToLine": 0,
+        "oldSigRow": 0,
+        "oldDateRowZone": 0,
+        "belowC2Date": 0,
+        "panelTopMargin": 0
+      },
+      "dividerLine": 0.2,
+      "dividerZoneClean": true,
+      "clauseLastLine": 0.019741652449427247,
+      "clauseRows": true,
+      "footerText": true,
+      "footerPixels": 0.047402769203633476,
+      "signatureTextSearchable": true,
+      "c1BoxText": true,
+      "c2BoxText": true,
+      "c1BoxFillLight": 0.7736547567800258,
+      "c2BoxFillLight": 0.7197589324149807,
+      "c1NameExtent": {
+        "top": 618,
+        "bot": 608
+      },
+      "c2NameExtent": {
+        "top": 433,
+        "bot": 423
+      }
+    },
+    "ascii": [
+      "680|     - #   #        +# #-# ##-+-        ",
+      "674|                                        ",
+      "668|    ## ##                               ",
+      "662|                                        ",
+      "656|                                        ",
+      "650|                                        ",
+      "644|                                        ",
+      "638|                                        ",
+      "632|                                        ",
+      "626|                                        ",
+      "620|                                        ",
+      "614|  #      ####                           ",
+      "608|         ################               ",
+      "602|                                        ",
+      "596|                                        ",
+      "590|                           -------      ",
+      "584|                           ---#---      ",
+      "578|                           -------      ",
+      "572|          #                -#+-#--      ",
+      "566|                           -------      ",
+      "560|  -                        -------      ",
+      "554|                           -------      ",
+      "548|                           -------      ",
+      "542|                                        ",
+      "536|                                        ",
+      "530|                                        ",
+      "524|                                        ",
+      "518|                                        ",
+      "512|  -          #                          ",
+      "506|                                        ",
+      "500|                                        ",
+      "494|                                        ",
+      "488|                                        ",
+      "482|                                        ",
+      "476|                                        ",
+      "470|                                        ",
+      "464|                                        ",
+      "458|                                        ",
+      "452|                                        ",
+      "446|                                        ",
+      "440|                                        ",
+      "434|                                        ",
+      "428|  #      ##                             ",
+      "422|                                        ",
+      "416|                                        ",
+      "410|                           -------      ",
+      "404|                           -------      ",
+      "398|                           -------      ",
+      "392|                           -#--#--      ",
+      "386|                           -------      ",
+      "380|   -              #        -------      ",
+      "374|  #                        -------      ",
+      "368|                           -------      ",
+      "362|                           -------      ",
+      "356|                                        ",
+      "350|                                        ",
+      "344|                                        ",
+      "338|                                        ",
+      "332|                                        ",
+      "326|            #                           ",
+      "320|                                        ",
+      "314|                                        ",
+      "308|                                        ",
+      "302|                                        ",
+      "296|                                        ",
+      "290|                                        "
+    ],
+    "diag": {
+      "valueZone": [
+        "620|                                        ",
+        "618|                                        ",
+        "616| #            .  ##                     ",
+        "614| .##          .. .+                     ",
+        "612| .##          +. #+                     ",
+        "610|                                        ",
+        "608|             ########################## ",
+        "606|                                        ",
+        "604|                                        ",
+        "602|                                        ",
+        "600|                                        ",
+        "598|                                        ",
+        "596|                                        "
+      ],
+      "dividerZone": [
+        "482|                              ",
+        "481|                              ",
+        "480|                              ",
+        "479|                              ",
+        "478|                              ",
+        "477|                              ",
+        "476|                              ",
+        "475| ++++++++++++++++++++++++++++ ",
+        "474|                              ",
+        "473|                              ",
+        "472|                              ",
+        "471|                              ",
+        "470|                              ",
+        "469|                              ",
+        "468|                              "
+      ],
+      "clauseEdgeZone": [
+        "668| ###                       ",
+        "667| ##                        ",
+        "666| ###                       ",
+        "665|                           ",
+        "664|                           ",
+        "663|                           ",
+        "662|                           ",
+        "661|                           ",
+        "660|                           ",
+        "659|                           ",
+        "658|                           "
+      ]
+    },
+    "rows": {
+      "24": [
+        {
+          "str": "ASG | Waiver and Disclosure",
+          "x": 42
+        },
+        {
+          "str": "6",
+          "x": 548.9
+        }
+      ],
+      "325": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "375": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "425": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "Jenny Smith",
+          "x": 150
+        }
+      ],
+      "450": [
+        {
+          "str": "CLIENT 2",
+          "x": 54
+        }
+      ],
+      "510": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "560": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "610": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "John Smith",
+          "x": 150
+        }
+      ],
+      "635": [
+        {
+          "str": "CLIENT 1",
+          "x": 54
+        }
+      ],
+      "704": [
+        {
+          "str": "18",
+          "x": 53.5
+        },
+        {
+          "str": "I, the Client, acknowledge receipt of this Disclosure and Waiver, confirm that I have read and understood it, and agree",
+          "x": 82
+        }
+      ],
+      "725.6": [
+        {
+          "str": "ACKNOWLEDGEMENT OF THIS WAIVER AND DISCLOSURE",
+          "x": 53.3
+        }
+      ],
+      "691.2": [
+        {
+          "str": "to be bound by it, subject to clause 17.9. I understand that it applies to all Appointments, whether in person, via Zoom",
+          "x": 82
+        }
+      ],
+      "678.5": [
+        {
+          "str": "or through any",
+          "x": 82
+        },
+        {
+          "str": "other online or remote communication method, and to the Client Company Pack and associated",
+          "x": 141.3
+        }
+      ],
+      "665.6": [
+        {
+          "str": "communications.",
+          "x": 82
+        }
+      ],
+      "599.7": [
+        {
+          "str": "C",
+          "x": 54
+        },
+        {
+          "str": "LIENT’S NAME: ___________________________________________________",
+          "x": 59
+        }
+      ],
+      "537.6": [
+        {
+          "str": "CLIENT’S SIGNATURE: _______________________________________________",
+          "x": 54
+        }
+      ],
+      "475.5": [
+        {
+          "str": "DATE: _____ / _____ / 20____",
+          "x": 54
+        }
+      ],
+      "582.9": [
+        {
+          "str": "Digitally signed",
+          "x": 391
+        }
+      ],
+      "571.4": [
+        {
+          "str": "11/09/2026 1:59 PM",
+          "x": 391
+        }
+      ],
+      "559.9": [
+        {
+          "str": "(AWST)",
+          "x": 391
+        }
+      ],
+      "397.9": [
+        {
+          "str": "Digitally signed",
+          "x": 391
+        }
+      ],
+      "386.4": [
+        {
+          "str": "11/09/2026 1:59 PM",
+          "x": 391
+        }
+      ],
+      "374.9": [
+        {
+          "str": "(AWST)",
+          "x": 391
+        }
+      ]
+    }
+  },
+  "finalD": {
+    "probes": {
+      "pages": 6,
+      "dateC1": true,
+      "dateC2": true,
+      "c1NameRight": 206.2,
+      "c2NameRight": 211.4,
+      "c1Gap": 0,
+      "c1Ink": 0.044873745056282326,
+      "c1Below": 0,
+      "c2Gap": 0,
+      "c2Ink": 0.04251597201095224,
+      "c2Below": 0,
+      "residualZone": {
+        "headerToNameValue": 0,
+        "betweenDateAndSig": 0.02490689013035382,
+        "aboveSigToLine": 0,
+        "oldSigRow": 0,
+        "oldDateRowZone": 0,
+        "belowC2Date": 0,
+        "panelTopMargin": 0
+      },
+      "dividerLine": 0.2,
+      "dividerZoneClean": true,
+      "clauseLastLine": 0.019741652449427247,
+      "clauseRows": true,
+      "footerText": true,
+      "footerPixels": 0.047402769203633476,
+      "signatureTextSearchable": true,
+      "c1BoxText": false,
+      "c2BoxText": false,
+      "c1BoxFillLight": 0,
+      "c2BoxFillLight": 0,
+      "c1NameExtent": {
+        "top": 618,
+        "bot": 608
+      },
+      "c2NameExtent": {
+        "top": 433,
+        "bot": 423
+      }
+    },
+    "ascii": [
+      "680|     - #   #        +# #-# ##-+-        ",
+      "674|                                        ",
+      "668|    ## ##                               ",
+      "662|                                        ",
+      "656|                                        ",
+      "650|                                        ",
+      "644|                                        ",
+      "638|                                        ",
+      "632|                                        ",
+      "626|                                        ",
+      "620|                                        ",
+      "614|  #      ####                           ",
+      "608|         ################               ",
+      "602|                                        ",
+      "596|                                        ",
+      "590|                                        ",
+      "584|                                        ",
+      "578|                                        ",
+      "572|          #                             ",
+      "566|                                        ",
+      "560|  -                                     ",
+      "554|                                        ",
+      "548|                                        ",
+      "542|                                        ",
+      "536|                                        ",
+      "530|                                        ",
+      "524|                                        ",
+      "518|                                        ",
+      "512|  -          #                          ",
+      "506|                                        ",
+      "500|                                        ",
+      "494|                                        ",
+      "488|                                        ",
+      "482|                                        ",
+      "476|                                        ",
+      "470|                                        ",
+      "464|                                        ",
+      "458|                                        ",
+      "452|                                        ",
+      "446|                                        ",
+      "440|                                        ",
+      "434|                                        ",
+      "428|  #      ##                             ",
+      "422|                                        ",
+      "416|                                        ",
+      "410|                                        ",
+      "404|                                        ",
+      "398|                                        ",
+      "392|                                        ",
+      "386|                                        ",
+      "380|   -              #                     ",
+      "374|  #                                     ",
+      "368|                                        ",
+      "362|                                        ",
+      "356|                                        ",
+      "350|                                        ",
+      "344|                                        ",
+      "338|                                        ",
+      "332|                                        ",
+      "326|            #                           ",
+      "320|                                        ",
+      "314|                                        ",
+      "308|                                        ",
+      "302|                                        ",
+      "296|                                        ",
+      "290|                                        "
+    ],
+    "diag": {},
+    "rows": {
+      "24": [
+        {
+          "str": "ASG | Waiver and Disclosure",
+          "x": 42
+        },
+        {
+          "str": "6",
+          "x": 548.9
+        }
+      ],
+      "325": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "375": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "425": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "Jenny Smith",
+          "x": 150
+        }
+      ],
+      "450": [
+        {
+          "str": "CLIENT 2",
+          "x": 54
+        }
+      ],
+      "510": [
+        {
+          "str": "Date",
+          "x": 54
+        },
+        {
+          "str": "11",
+          "x": 150
+        },
+        {
+          "str": "/",
+          "x": 164.6
+        },
+        {
+          "str": "09",
+          "x": 170.4
+        },
+        {
+          "str": "/",
+          "x": 185
+        },
+        {
+          "str": "2026",
+          "x": 190.9
+        }
+      ],
+      "560": [
+        {
+          "str": "Signature",
+          "x": 54
+        }
+      ],
+      "610": [
+        {
+          "str": "Name",
+          "x": 54
+        },
+        {
+          "str": "John Smith",
+          "x": 150
+        }
+      ],
+      "635": [
+        {
+          "str": "CLIENT 1",
+          "x": 54
+        }
+      ],
+      "704": [
+        {
+          "str": "18",
+          "x": 53.5
+        },
+        {
+          "str": "I, the Client, acknowledge receipt of this Disclosure and Waiver, confirm that I have read and understood it, and agree",
+          "x": 82
+        }
+      ],
+      "725.6": [
+        {
+          "str": "ACKNOWLEDGEMENT OF THIS WAIVER AND DISCLOSURE",
+          "x": 53.3
+        }
+      ],
+      "691.2": [
+        {
+          "str": "to be bound by it, subject to clause 17.9. I understand that it applies to all Appointments, whether in person, via Zoom",
+          "x": 82
+        }
+      ],
+      "678.5": [
+        {
+          "str": "or through any",
+          "x": 82
+        },
+        {
+          "str": "other online or remote communication method, and to the Client Company Pack and associated",
+          "x": 141.3
+        }
+      ],
+      "665.6": [
+        {
+          "str": "communications.",
+          "x": 82
+        }
+      ],
+      "599.7": [
+        {
+          "str": "C",
+          "x": 54
+        },
+        {
+          "str": "LIENT’S NAME: ___________________________________________________",
+          "x": 59
+        }
+      ],
+      "537.6": [
+        {
+          "str": "CLIENT’S SIGNATURE: _______________________________________________",
+          "x": 54
+        }
+      ],
+      "475.5": [
+        {
+          "str": "DATE: _____ / _____ / 20____",
+          "x": 54
+        }
+      ]
+    }
+  }
+}

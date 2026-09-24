@@ -1,0 +1,41 @@
+{
+  "finalA": {
+    "client2": false,
+    "timestampOn": true,
+    "signedAt1": "2026-09-11T05:59:10.243Z",
+    "signedAt2": null,
+    "tsEnabled": true,
+    "c2Name": "",
+    "pdfBytes": 539302
+  },
+  "finalB": {
+    "client2": false,
+    "timestampOn": false,
+    "signedAt1": "2026-09-11T05:59:12.411Z",
+    "signedAt2": null,
+    "tsEnabled": false,
+    "c2Name": "",
+    "pdfBytes": 539073
+  },
+  "finalC": {
+    "client2": true,
+    "timestampOn": true,
+    "signedAt1": "2026-09-11T05:59:14.577Z",
+    "signedAt2": "2026-09-11T05:59:15.660Z",
+    "tsEnabled": true,
+    "c2Name": "Jenny Smith",
+    "pdfBytes": 545922
+  },
+  "finalD": {
+    "client2": true,
+    "timestampOn": false,
+    "signedAt1": "2026-09-11T05:59:17.926Z",
+    "signedAt2": "2026-09-11T05:59:19.028Z",
+    "tsEnabled": false,
+    "c2Name": "Jenny Smith",
+    "pdfBytes": 545628
+  },
+  "rb": {
+    "errors": []
+  }
+}

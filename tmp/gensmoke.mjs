@@ -1,0 +1,42 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const context = await browser.newContext({ viewport:{width:1440,height:900} });
+await context.addInitScript(() => { window.confirm = () => true; });
+const page = await context.newPage();
+page.setDefaultTimeout(30000);
+page.on('console', m => { if(m.type() === 'error') console.log('ERR ', m.text().slice(0,160)); });
+page.on('pageerror', e => console.log('PAGEERR ', String(e).slice(0,200)));
+await page.goto('http://127.0.0.1:8766/', { waitUntil:'networkidle' });
+await page.click('.mode-card[data-mode="waiverOnly"]');
+await page.selectOption('#landingStaff', 'Garry Lewis');
+await page.click('#landingContinue');
+await page.waitForSelector('#waiverSignatureSection:not([hidden])', { timeout:5000 });
+await page.fill('#clientName', 'Fictional Test Client');
+await page.locator('#signature').scrollIntoViewIfNeeded();
+const box = await page.locator('#signature').boundingBox();
+await page.mouse.move(box.x + 40, box.y + box.height/2);
+await page.mouse.down();
+await page.mouse.move(box.x + box.width - 40, box.y + box.height/2, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+await page.click('#generateTop');
+for (let i = 0; i < 20; i++) {
+  const visible = await page.locator('#appointmentPackageReady:not([hidden])').isVisible().catch(() => false);
+  if (visible) { console.log('READY after ~' + ((i+1)*2) + 's'); break; }
+  await page.waitForTimeout(2000);
+  if (i === 19) console.log('READY never appeared');
+}
+const title = await page.locator('#appointmentPackageReadyTitle').textContent().catch(() => 'n/a');
+const status = await page.locator('#status').textContent().catch(() => 'n/a');
+const dlVisible = await page.locator('#downloadPackage').isVisible().catch(() => false);
+console.log('TITLE=' + title.trim());
+console.log('STATUS=' + (status || '').trim().slice(0,80));
+console.log('DOWNLOAD_VISIBLE=' + dlVisible);
+const dv = await page.locator('#downloadPackage').boundingBox().catch(() => null);
+console.log('DOWNLOAD_BOX=' + JSON.stringify(dv));
+const capturePdf = page.waitForResponse(r => r.url().includes('.pdf') || r.url().includes('jsPDF'), { timeout: 10000 }).then(() => 'PDF_REQ', () => 'NO_PDF_REQ');
+const dlRes = await page.click('#downloadPackage').then(() => 'CLICKED', e => 'CLICK_ERR ' + e.message.split('\n')[0]);
+console.log('DOWNLOAD=' + dlRes + ' ' + await capturePdf.catch(() => ''));
+await page.waitForTimeout(500);
+console.log('STATUS2=' + (await page.locator('#status').textContent().catch(() => '')).trim().slice(0,80));
+await browser.close();

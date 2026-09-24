@@ -1,0 +1,32 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport:{width:1440,height:900} });
+page.setDefaultTimeout(20000);
+page.addInitScript(() => {
+  window.confirm = () => true;
+  const proto = CanvasRenderingContext2D.prototype;
+  window.__ops = { measure:0, fill:0, draw:0 };
+  const om = proto.measureText, of = proto.fillText, od = proto.drawImage;
+  proto.measureText = function(t){ window.__ops.measure++; if(window.__ops.measure <= 60) console.log('[OP] measure #'+window.__ops.measure+' len='+String(t).length); return om.call(this, t); };
+  proto.fillText = function(t){ window.__ops.fill++; if(window.__ops.fill <= 60) console.log('[OP] fill #'+window.__ops.fill+' val='+JSON.stringify(String(t)).slice(0,80)); return of.apply(this, arguments); };
+  proto.drawImage = function(){ window.__ops.draw++; if(window.__ops.draw <= 40) console.log('[OP] draw #'+window.__ops.draw); return od.apply(this, arguments); };
+});
+page.on('console', m => { if(m.text().startsWith('[OP]') || m.text().includes('PAGEERR')) console.log('C', m.text()); });
+await page.goto('http://127.0.0.1:8766/', { waitUntil:'networkidle' });
+await page.click('.mode-card[data-mode="waiverOnly"]');
+await page.selectOption('#landingStaff', 'Garry Lewis');
+await page.click('#landingContinue');
+await page.waitForSelector('#waiverSignatureSection:not([hidden])', { timeout:5000 });
+await page.fill('#clientName', 'Fictional Test Client');
+await page.locator('#signature').scrollIntoViewIfNeeded();
+const box = await page.locator('#signature').boundingBox();
+await page.mouse.move(box.x + 40, box.y + box.height/2);
+await page.mouse.down();
+await page.mouse.move(box.x + box.width - 40, box.y + box.height/2, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+const clickP = Promise.race([ page.click('#generateTop').then(()=>console.log('CLICKED'), e=>console.log('ERR '+e.message.split('\n')[0])), new Promise(r => setTimeout(() => { console.log('CLICKTIMEOUT'); r(); }, 12000)) ]);
+for (let i = 0; i < 3; i++) { await new Promise(r => setTimeout(r, 8000)); console.log('TICK', (i+1)*8+'s'); }
+const counts = await page.evaluate(() => window.__ops).catch(() => ({}));
+console.log('COUNTS ' + JSON.stringify(counts));
+await browser.close();

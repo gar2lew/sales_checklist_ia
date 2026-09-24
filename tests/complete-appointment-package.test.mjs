@@ -286,7 +286,7 @@ try {
   const source = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../service-worker.js', import.meta.url), 'utf8');
   assert.match(source, /const APP_VERSION = '2\.7\.0-alpha\.1';/);
-  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.21';/);
+  assert.match(worker, /const CACHE_VERSION = 'v2\.7\.0-alpha\.32';/);
 
   console.log(JSON.stringify({
     packageResult:{

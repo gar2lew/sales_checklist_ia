@@ -1,0 +1,229 @@
+SECTION: WAIVER & DISCLOSURE TEMPLATE PAGE DRAWING
+  // =========================================================================
+  const WAIVER_PAGE_COUNT = 6;
+  const waiverTemplateSources = Array.from({ length: WAIVER_PAGE_COUNT }, (_, i) => `templates/rendered/waiver-page-${i + 1}.jpg`);
+  const waiverTemplateImages = new Array(WAIVER_PAGE_COUNT).fill(null);
+
+  async function ensureWaiverTemplateImage(index = WAIVER_PAGE_COUNT - 1){
+    if(waiverTemplateImages[index]) return waiverTemplateImages[index];
+    status('Loading Waiver & Disclosure template...');
+    for(let i = 0; i < waiverTemplateSources.length; i++){
+      if(!waiverTemplateImages[i]) waiverTemplateImages[i] = await loadImage(waiverTemplateSources[i]);
+    }
+    return waiverTemplateImages[index];
+  }
+
+  function drawWaiverPage(waiverPageIndex, pageNumber, totalPages, scale=2){
+    const img = waiverTemplateImages[waiverPageIndex];
+    if(!img) throw new Error('Waiver & Disclosure template page ' + (waiverPageIndex + 1) + ' has not loaded.');
+    const W=595,H=842; const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale); const ctx=c.getContext('2d'); ctx.scale(scale,scale);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+    // The source waiver PDF is A4 ratio. Fit it onto the generated PDF page without distortion.
+    const imgAspect = img.width / img.height;
+    const pageAspect = W / H;
+    let dw, dh, dx, dy;
+    if(imgAspect > pageAspect){ dw = W; dh = W / imgAspect; dx = 0; dy = (H - dh) / 2; }
+    else { dh = H; dw = H * imgAspect; dx = (W - dw) / 2; dy = 0; }
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    /* Pages 1-5 are the authoritative legal pages: copy them on unchanged.
+       Only the signing page (the rendered page 6) receives field overlays.
+       Mask the "Updated draft 02/09/2026" footer text on pages 1-5. */
+    if(waiverPageIndex < WAIVER_PAGE_COUNT - 1){
+      /* White out the right portion of the footer where "Updated draft 02/09/2026" appears.
+         Footer band is at bottom of page; draft date is right-aligned.
+         At scale=2: page width ~1190px, footer band ~72px tall at bottom.
+         Draft date occupies right ~30% of footer width. */
+      const footerBandH = 72; /* 36pt * 2 */
+      const footerY = dy + dh - footerBandH;
+      const maskX = dx + dw * 0.7; /* right 30% where draft date sits */
+      const maskW = dw * 0.3;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(maskX, footerY, maskW, footerBandH);
+      return c;
+    }
+
+    /* The rendered template image is top-down, but the characterisation coordinates
+       are PDF user space (bottom-left origin). Mirror y so overlays land on the
+       correct visual rows. sy is given in PDF points against the 595x842 page. */
+    const map = (sx, sy) => ({ x: dx + (sx / img.width) * dw, y: dy + ((H - sy) / H) * dh });
+    const maxW = sw => (sw / img.width) * dw;
+    function whiteOut(sx, sy, sw, sh){
+      const p1 = map(sx, sy); const p2 = map(sx + sw, sy + sh);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+    function overlayText(text, sx, sy, sw, font='700 12px Arial', lineHeight=14, maxLines=2){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, sy);
+      ctx.fillStyle = '#111';
+      ctx.font = font;
+      wrapText(ctx, text, p.x, p.y, maxW(sw), lineHeight, maxLines);
+    }
+    function overlayFitText(text, sx, sy, sw, weight='700', maxSize=12, minSize=8){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, sy);
+      const width = maxW(sw);
+      let size = maxSize;
+      ctx.fillStyle = '#111';
+      while(size > minSize){
+        ctx.font = `${weight} ${size}px Arial`;
+        if(ctx.measureText(text).width <= width) break;
+        size -= 0.5;
+      }
+      ctx.font = `${weight} ${size}px Arial`;
+      if(ctx.measureText(text).width <= width){
+        ctx.fillText(text, p.x, p.y);
+      } else {
+        wrapText(ctx, text, p.x, p.y, width, size + 2, 2);
+      }
+    }
+    function drawTemplateLineValue(text, sx, baselineSy, sw, options={}){
+      text = (text || '').trim();
+      if(!text) return;
+      const p = map(sx, baselineSy);
+      const padLeft = options.padLeft ?? 8;
+      const padRight = options.padRight ?? 12;
+      const width = Math.max(20, maxW(sw) - padLeft - padRight);
+      const weight = options.weight || '700';
+      const maxSize = options.maxSize || 10.5;
+      const minSize = options.minSize || 8.5;
+      const maxLines = options.maxLines || 2;
+
+      function linesForSize(size){
+        ctx.font = `${weight} ${size}px Arial`;
+        const words = text.replace(/\n/g, ' \n ').split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = '';
+        function pushLine(value){
+          if(value) lines.push(value);
+        }
+        for(const word of words){
+          if(word === '\n'){
+            pushLine(line);
+            line = '';
+            continue;
+          }
+          const candidate = line ? `${line} ${word}` : word;
+          if(ctx.measureText(candidate).width <= width){
+            line = candidate;
+            continue;
+          }
+          pushLine(line);
+          line = '';
+          if(ctx.measureText(word).width <= width){
+            line = word;
+            continue;
+          }
+          let chunk = '';
+          for(const ch of word){
+            const test = chunk + ch;
+            if(ctx.measureText(test).width > width && chunk){
+              pushLine(chunk);
+              chunk = ch;
+            } else {
+              chunk = test;
+            }
+          }
+          line = chunk;
+        }
+        pushLine(line);
+        return lines;
+      }
+
+      let size = maxSize;
+      let lines = [];
+      const lineGap = options.lineGap ?? 2;
+      let lineHeight = size + lineGap;
+      while(size >= minSize){
+        lines = linesForSize(size);
+        if(lines.length <= maxLines) break;
+        size -= 0.5;
+      }
+      size = Math.max(size, minSize);
+      ctx.font = `${weight} ${size}px Arial`;
+      const fittedLines = linesForSize(size);
+      const didTruncate = fittedLines.length > maxLines;
+      lines = fittedLines.slice(0, maxLines);
+      if(lines.length){
+        const lastIndex = lines.length - 1;
+        if(didTruncate && !lines[lastIndex].endsWith('...')) lines[lastIndex] = `${lines[lastIndex]}...`;
+        const truncSuffix = didTruncate ? '...' : '';
+        let shown = lines[lastIndex].replace(/\.\.\.$/, '');
+        while(ctx.measureText(`${shown}${truncSuffix}`).width > width && shown.length > 0){
+          shown = shown.slice(0, -1);
+        }
+        lines[lastIndex] = `${shown}${truncSuffix}`;
+      }
+      lineHeight = size + lineGap;
+      const previousBaseline = ctx.textBaseline;
+      ctx.fillStyle = '#111';
+      ctx.textBaseline = 'alphabetic';
+      lines.forEach((line, index) => {
+        ctx.fillText(line, p.x + padLeft, p.y + (index * lineHeight));
+      });
+      ctx.textBaseline = previousBaseline;
+    }
+
+    // Client 1 fields (verified coordinates from PDF)
+    const client1Name = fieldText('waiverClient1Name') || fieldText('clientName');
+    const client1Date = fieldText('waiverClient1Date') || fieldText('date') || '';
+    drawTemplateLineValue(client1Name, 59, 599.71, 301, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
+    drawTemplateLineValue(client1Date, 54, 475.51, 116, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 0, padRight: 16});
+
+    // Client 1 signature (waiver signature is captured on shared pads)
+    if(hasSignature){
+      const sigTop = 537.55 + 18; /* PDF Y of signature line top */
+      const p1 = map(59, sigTop);
+      const p2 = map(59 + 307, 537.55); /* PDF Y of signature line baseline */
+      ctx.drawImage(sig, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+
+    // Client 2 fields (only if Client 2 is included)
+    const hasClient2 = fieldText('waiverClient2Name') || fieldText('client2Name');
+    if(hasClient2){
+      /* Client 2 block below Client 1 per approved layout:
+         Name baseline y=410, Signature y=347.84, Date y=285.80
+         (spacing mirrors the template's own row rhythm; row gap ~62pt). */
+      const c2Name = fieldText('waiverClient2Name') || fieldText('client2Name');
+      const c2Date = fieldText('waiverClient2Date') || fieldText('date') || '';
+      const c2NameY = 410.00;
+      const c2SigY = 347.84;
+      const c2DateY = 285.80;
+      function drawC2Label(label, x, baselineY){
+        ctx.fillStyle = '#111';
+        ctx.font = '700 9.5px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(label, x, baselineY);
+        return ctx.measureText(label).width;
+      }
+
+      // Client 2 name (labelled, then value)
+      const c2NameLabelW = drawC2Label('CLIENT 2 NAME', 54, c2NameY);
+      drawTemplateLineValue(c2Name, 54 + c2NameLabelW, c2NameY, 301 - c2NameLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+
+      // Client 2 signature (labelled, then captured signature image)
+      if(hasSignature2){
+        const c2SigTop = c2SigY + 18;
+        const p1 = map(59, c2SigTop);
+        const p2 = map(59 + 307, c2SigY);
+        const c2SigLabelW = drawC2Label('CLIENT 2 SIGNATURE', 54, c2SigY);
+        const imgX = p1.x + c2SigLabelW + 8;
+        const imgW = (p2.x - p1.x) - c2SigLabelW - 8;
+        if(imgW > 20) ctx.drawImage(sig2, imgX, p1.y, imgW, p2.y - p1.y);
+      }
+
+      // Client 2 date (labelled, then value)
+      const c2DateLabelW = drawC2Label('DATE', 54, c2DateY);
+      drawTemplateLineValue(c2Date, 54 + c2DateLabelW, c2DateY, 116 - c2DateLabelW, {maxLines: 1, maxSize: 10.5, minSize: 8.5, padLeft: 8, padRight: 16});
+    }
+
+    drawGeneratedFooter(ctx,pageNumber,totalPages,'Waiver & Disclosure',42,817);
+
+    return c;
+  }
+
+  

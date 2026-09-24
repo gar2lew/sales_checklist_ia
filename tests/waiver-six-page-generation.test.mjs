@@ -630,9 +630,10 @@ test('timestamp C: both clients, timestamp ON — two independent signed boxes',
   assert.equal(allStamps.length, 2, 'both timestamp stamps must be well-formed');
   const zoneMatches = raw.match(ZONE_RE);
   assert.ok(zoneMatches, 'at least one timestamp carries a valid zone');
-  assert.equal(countIn(raw, 'CLIENT 2 NAME'), 1, 'Client 2 name label present');
-  assert.equal(countIn(raw, 'CLIENT 2 SIGNATURE'), 1, 'Client 2 signature label present');
-  assert.equal(countIn(raw, 'DATE (2)'), 1, 'Client 2 date label present');
+  assert.equal(countIn(raw, 'CLIENT 2'), 1, 'Client 2 header present');
+  assert.equal(countIn(raw, 'Name'), 2, 'Name labels present for both clients');
+  assert.equal(countIn(raw, 'Signature'), 2, 'Signature labels present for both clients');
+  assert.equal(countIn(raw, 'Date'), 2, 'Date labels present for both clients');
 
   assert.deepEqual(errors, [], 'no page errors in combo C');
   await context.close();
@@ -652,7 +653,7 @@ test('timestamp D: both clients, timestamp OFF — Client 2 block present, no bo
   assert.equal(tsEnabled, false, 'timestamp preference off');
   assert.ok(signedAt1 && signedAt2, 'signing times still captured internally');
   assert.equal(countIn(raw, 'Digitally signed'), 0, 'no timestamp boxes when disabled');
-  assert.equal(countIn(raw, 'CLIENT 2 NAME'), 1, 'Client 2 block still present without timestamps');
+  assert.equal(countIn(raw, 'CLIENT 2'), 1, 'Client 2 header still present without timestamps');
 
   assert.deepEqual(errors, [], 'no page errors in combo D');
   await context.close();

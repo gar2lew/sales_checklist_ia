@@ -1,0 +1,262 @@
+{
+  "fingerprint": {
+    "before": 682321576,
+    "after": 1549534447,
+    "len": 34813392,
+    "crossDiff": 52597
+  },
+  "probe": {
+    "pixIter": 8703348,
+    "firstDiff": 10953516,
+    "firstDiffVals": {
+      "a": 248,
+      "b": 230
+    },
+    "dimProbe": {
+      "w": 2481,
+      "h": 3508,
+      "fbW": 2481
+    },
+    "px10k": {
+      "a": 255,
+      "b": 255
+    },
+    "px1M": {
+      "a": 255,
+      "b": 255
+    }
+  },
+  "report": [
+    {
+      "name": "sigA",
+      "sig": "sig1",
+      "src": {
+        "w": 868,
+        "h": 30
+      },
+      "expected": {
+        "w": 135,
+        "h": 4.7,
+        "scale": 0.1555
+      },
+      "measured": {
+        "w": 134.9,
+        "h": 4.8,
+        "x0": 154,
+        "x1": 288.9,
+        "gap": 8.2
+      },
+      "aspect": {
+        "src": 28.93,
+        "dst": 28.1
+      },
+      "checks": {
+        "notEnlargedByWidth": true,
+        "notEnlargedByHeight": true,
+        "withinWidthCap": true,
+        "withinHeightCap": true,
+        "aspectPreserved": true,
+        "dimsMatch": true,
+        "floatsAbove": true,
+        "gapClean": true,
+        "withinField": true,
+        "noBoxOverlap": true,
+        "noLabelOverlap": true
+      },
+      "extras": {
+        "boxBorder": false
+      }
+    },
+    {
+      "name": "sigB",
+      "sig": "sig1",
+      "src": {
+        "w": 517,
+        "h": 78
+      },
+      "expected": {
+        "w": 135,
+        "h": 20.4,
+        "scale": 0.2611
+      },
+      "measured": {
+        "w": 134.9,
+        "h": 20.4,
+        "x0": 154,
+        "x1": 288.9,
+        "gap": 8.2
+      },
+      "aspect": {
+        "src": 6.63,
+        "dst": 6.61
+      },
+      "checks": {
+        "notEnlargedByWidth": true,
+        "notEnlargedByHeight": true,
+        "withinWidthCap": true,
+        "withinHeightCap": true,
+        "aspectPreserved": true,
+        "dimsMatch": true,
+        "floatsAbove": true,
+        "gapClean": true,
+        "withinField": true,
+        "noBoxOverlap": true,
+        "noLabelOverlap": true
+      },
+      "extras": {
+        "boxBorder": false
+      }
+    },
+    {
+      "name": "sigC",
+      "sig": "sig1",
+      "src": {
+        "w": 857,
+        "h": 35
+      },
+      "expected": {
+        "w": 135,
+        "h": 5.5,
+        "scale": 0.1575
+      },
+      "measured": {
+        "w": 134.9,
+        "h": 5.5,
+        "x0": 154,
+        "x1": 288.9,
+        "gap": 8.2
+      },
+      "aspect": {
+        "src": 24.49,
+        "dst": 24.43
+      },
+      "checks": {
+        "notEnlargedByWidth": true,
+        "notEnlargedByHeight": true,
+        "withinWidthCap": true,
+        "withinHeightCap": true,
+        "aspectPreserved": true,
+        "dimsMatch": true,
+        "floatsAbove": true,
+        "gapClean": true,
+        "withinField": true,
+        "noBoxOverlap": true,
+        "noLabelOverlap": true
+      },
+      "extras": {
+        "boxBorder": false
+      }
+    },
+    {
+      "name": "finalC",
+      "sig": "sig1",
+      "src": {
+        "w": 796,
+        "h": 48
+      },
+      "expected": {
+        "w": 135,
+        "h": 8.1,
+        "scale": 0.1696
+      },
+      "measured": {
+        "w": 134.9,
+        "h": 8.2,
+        "x0": 154,
+        "x1": 288.9,
+        "gap": 8.2
+      },
+      "aspect": {
+        "src": 16.58,
+        "dst": 16.53
+      },
+      "checks": {
+        "notEnlargedByWidth": true,
+        "notEnlargedByHeight": true,
+        "withinWidthCap": true,
+        "withinHeightCap": true,
+        "aspectPreserved": true,
+        "dimsMatch": true,
+        "floatsAbove": true,
+        "gapClean": true,
+        "withinField": true,
+        "noBoxOverlap": true,
+        "noLabelOverlap": true
+      },
+      "extras": {
+        "boxBorder": false
+      }
+    },
+    {
+      "name": "finalC",
+      "sig": "sig2",
+      "src": {
+        "w": 751,
+        "h": 45
+      },
+      "expected": {
+        "w": 135,
+        "h": 8.1,
+        "scale": 0.1798
+      },
+      "measured": {
+        "w": 134.9,
+        "h": 8.2,
+        "x0": 154,
+        "x1": 288.9,
+        "gap": 8.2
+      },
+      "aspect": {
+        "src": 16.69,
+        "dst": 16.53
+      },
+      "checks": {
+        "notEnlargedByWidth": true,
+        "notEnlargedByHeight": true,
+        "withinWidthCap": true,
+        "withinHeightCap": true,
+        "aspectPreserved": true,
+        "dimsMatch": true,
+        "floatsAbove": true,
+        "gapClean": true,
+        "withinField": true,
+        "noBoxOverlap": true,
+        "noLabelOverlap": true
+      },
+      "extras": {
+        "boxBorder": false
+      }
+    }
+  ],
+  "beforeAfter": {
+    "diffPixels": 17533,
+    "diffInside": 17533,
+    "diffOutside": 0,
+    "diffBBoxPt": {
+      "x0": 154,
+      "x1": 448.5,
+      "ylo": 372.8,
+      "yhi": 577.3
+    },
+    "identicalOutsideSignatureAreas": true
+  },
+  "sanity": {
+    "pagesF": 6,
+    "dateC1": true,
+    "dateC2": true,
+    "c2Name": true,
+    "fullC1": true,
+    "c1Box": true,
+    "c2Box": true,
+    "sigLineBand": {
+      "left": 150,
+      "right": 349,
+      "minY": 558,
+      "maxY": 558,
+      "endsAt350": true
+    },
+    "divider": true,
+    "clause": true,
+    "footer": true
+  }
+}

@@ -1,0 +1,71 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/dev/Irrevoccable Authority CHECKLIST[39m
+
+[90mstdout[2m | tests/waiver-six-page-generation.test.mjs
+[22m[39m
+All six-page waiver generation tests PASSED
+
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1: vector 6-page waiver, text extractable, draft absent
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1: vector 6-page waiver, text extractable, draft absent
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1: vector 6-page waiver, text extractable, draft absent
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1: vector 6-page waiver, text extractable, draft absent
+[22m[39mWarning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mstandalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6
+[22m[39mWarning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mIn-Person + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mIn-Person + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mIn-Person + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mIn-Person + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mZoom + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mZoom + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mZoom + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: TT: undefined function: 21
+System.Management.Automation.RemoteException
+[90mstderr[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mZoom + waiver: combined canvas PDF + vector ZIP waiver entry
+[22m[39mWarning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+System.Management.Automation.RemoteException
+[90mstdout[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mregression: Zoom without waiver stays 11 pages with no waiver entry
+[22m[39mPASS Zoom without waiver unchanged (11 pages, 3 ZIP entries)
+
+[90mstdout[2m | tests/waiver-six-page-generation.test.mjs[2m > [22m[2mregression: In-Person without waiver unchanged (single-page delta with IA on)
+[22m[39mPASS In-Person without waiver unchanged; waiver adds exactly 6 pages
+
+ [31mG¥»[39m tests/waiver-six-page-generation.test.mjs [2m([22m[2m6 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 12756[2mms[22m[39m
+[31m   [31m+ù[31m standalone Client 1: vector 6-page waiver, text extractable, draft absent[39m[33m 1368[2mms[22m[39m
+[31m   [31m+ù[31m standalone Client 1 + Client 2: vector waiver, Jane Smith + CLIENT 2 on page 6[39m[33m 1812[2mms[22m[39m
+[31m   [31m+ù[31m In-Person + waiver: combined canvas PDF + vector ZIP waiver entry[39m[33m 1909[2mms[22m[39m
+[31m   [31m+ù[31m Zoom + waiver: combined canvas PDF + vector ZIP waiver entry[39m[33m 2862[2mms[22m[39m
+   [33m[2mG£ô[22m[39m regression: Zoom without waiver stays 11 pages with no waiver entry [33m 1824[2mms[22m[39m
+   [33m[2mG£ô[22m[39m regression: In-Person without waiver unchanged (single-page delta with IA on) [33m 2916[2mms[22m[39m
+System.Management.Automation.RemoteException
+[31mGÄ»GÄ»GÄ»GÄ»GÄ»GÄ»GÄ»[39m[1m[41m Failed Tests 4 [49m[22m[31mGÄ»GÄ»GÄ»GÄ»GÄ»GÄ»GÄ»[39m
+System.Management.Automation.RemoteException

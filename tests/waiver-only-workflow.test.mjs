@@ -24,8 +24,10 @@ const server = createServer((request, response) => {
   const relative = pathname === '/' ? 'index.html' : decodeURIComponent(pathname.slice(1));
   const file = resolve(root, normalize(relative));
   if(!file.startsWith(root)) return response.writeHead(403).end();
-  try { response.writeHead(200, { 'Content-Type':mime[extname(file)] || 'application/octet-stream' }).end(readFileSync(file)); }
-  catch { response.writeHead(404).end(); }
+  try {
+    const body = readFileSync(file);
+    response.writeHead(200, { 'Content-Type':mime[extname(file)] || 'application/octet-stream' }).end(body);
+  } catch { response.writeHead(404).end(); }
 });
 await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
 const baseURL = `http://127.0.0.1:${server.address().port}/`;
@@ -102,7 +104,16 @@ test('waiver-only standalone presentation (header, timeline, hidden appointment 
   assert.equal(await visibleQuery(page, '#clientIdSection'), false, 'client ID section hidden');
   assert.equal(await visibleQuery(page, '#signaturesSection'), false, 'signatures section hidden');
   assert.equal(await visibleQuery(page, '#checklistCard'), false, 'checklist card hidden');
-  assert.equal(await visibleQuery(page, '.previewWrap'), false, 'output preview hidden');
+  assert.equal(await visibleQuery(page, '.previewWrap'), false, 'appointment output preview hidden');
+  assert.ok(await visibleQuery(page, '#waiverPreview'), 'waiver preview visible on the right for clients');
+  assert.equal(await page.getAttribute('#waiverPreviewOpen', 'aria-expanded'), 'false', 'waiver preview starts closed');
+  await page.click('#waiverPreviewOpen');
+  await page.waitForSelector('#waiverPreviewDialog:not([hidden])', { timeout:5000 });
+  await page.waitForFunction(() => document.querySelectorAll('#waiverPreviewPages canvas').length === 6, null, { timeout:5000 });
+  assert.equal(await page.getAttribute('#waiverPreviewOpen', 'aria-expanded'), 'true', 'tapping the preview opens the full waiver');
+  assert.equal(await page.locator('#waiverPreviewPages canvas').count(), 6, 'full waiver view contains all six rendered pages');
+  await page.click('#waiverPreviewClose');
+  assert.equal(await page.getAttribute('#waiverPreviewOpen', 'aria-expanded'), 'false', 'close control returns to the compact preview');
   assert.equal(await visibleQuery(page, '#appointmentInfoSection .appointment-only'), false, 'date/team member row hidden');
   assert.equal(await visibleQuery(page, '#appointmentInfoSection .in-person-only'), false, 'EOI/IA/Waiver checkboxes hidden');
 
@@ -122,6 +133,49 @@ test('waiver-only standalone presentation (header, timeline, hidden appointment 
   assert.deepEqual(errors, [], 'no page errors in waiver-only presentation');
   await context.close();
   console.log('PASS waiver-only standalone presentation');
+});
+
+test('waiver preview keeps signature ink above the date row', async () => {
+  const context = await browser.newContext({ viewport:{width:1440,height:900} });
+  const errors = [];
+  installSafeHooks(context, errors);
+  const page = await context.newPage();
+  await startWaiverOnly(page);
+  await page.fill('#clientName', 'Preview Signature Client');
+  await page.fill('#waiverClient1Date', '24/09/2026');
+  await drawOnPad(page, '#signature');
+  await page.click('#waiverPreviewOpen');
+  await page.waitForFunction(() => document.querySelectorAll('#waiverPreviewPages canvas').length === 6, null, { timeout:5000 });
+
+  const ink = await page.evaluate(() => {
+    const canvas = document.querySelector('#waiverPreviewPages canvas:last-child');
+    const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    const hasInk = (x0, x1, y0, y1) => {
+      for(let y = y0; y < y1; y++) for(let x = x0; x < x1; x++) {
+        const i = (y * canvas.width + x) * 4;
+        if(pixels[i + 3] > 10 && pixels[i] < 80 && pixels[i + 1] < 80 && pixels[i + 2] < 80) return true;
+      }
+      return false;
+    };
+    let minDateX = Infinity, maxDateX = -1;
+    for(let y = 470; y < 495; y++) for(let x = 100; x < 250; x++) {
+      const i = (y * canvas.width + x) * 4;
+      if(pixels[i + 3] > 10 && pixels[i] < 80 && pixels[i + 1] < 80 && pixels[i + 2] < 80) {
+        minDateX = Math.min(minDateX, x);
+        maxDateX = Math.max(maxDateX, x);
+      }
+    }
+    return {
+      signatureBand: hasInk(300, 400, 360, 415),
+      dateBand: hasInk(300, 400, 470, 490),
+      dateWidth: maxDateX - minDateX
+    };
+  });
+  assert.equal(ink.signatureBand, true, 'signature ink is rendered above its underline');
+  assert.equal(ink.dateBand, false, 'signature ink does not overlap the date row');
+  assert.ok(ink.dateWidth > 75, 'date characters retain readable spacing in the preview');
+  assert.deepEqual(errors, [], 'no page errors while rendering a signed waiver preview');
+  await context.close();
 });
 
 test('waiver-only validation requires client + waiver items only (no appointment fields)', async () => {

@@ -680,81 +680,60 @@
     if(zipRow) zipRow.classList.toggle('hidden', isWaiver);
   }
   function enterAppointment(){
-    /* If a saved appointment exists, offer choices before starting */
-    if(window._db && window._db.loadDraft){
-      window._db.loadDraft().then(function(result){
-        if(result.status === 'valid'){
-          _showNewAppointmentDialog();
-        } else if(result.status === 'corrupt'){
-          _showCorruptDraftDialog(result.meta);
-        } else {
-var staff = ($('landingStaff').value || '').trim();
+    var staff = ($('landingStaff').value || '').trim();
     if(!staff) return;
     var activeBtn = document.querySelector('.mode-card.active');
     var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
-    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
-    appointmentMode = selectedMode;
-    setControlValue('teamMember', staff);
-    if(generatedOutputChanged) clearGenerated();
-    preserveDraftDropdownValue('staff', staff);
-    localStorage.setItem("salesAppointmentLastStaff", staff);
-    $('landingScreen').classList.add('hidden');
-    applyAppointmentMode();
-    $('backToStart').style.display = '';
-    status('Staff: '+staff+' | Mode: '+appointmentMode);
-        }
-      }).catch(function(){
-var staff = ($('landingStaff').value || '').trim();
-    if(!staff) return;
-    var activeBtn = document.querySelector('.mode-card.active');
-    var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
-    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
-    appointmentMode = selectedMode;
-    setControlValue('teamMember', staff);
-    if(generatedOutputChanged) clearGenerated();
-    preserveDraftDropdownValue('staff', staff);
-    localStorage.setItem("salesAppointmentLastStaff", staff);
-    $('landingScreen').classList.add('hidden');
-    applyAppointmentMode();
-    $('backToStart').style.display = '';
-    status('Staff: '+staff+' | Mode: '+appointmentMode);
-      });
-    } else {
-var staff = ($('landingStaff').value || '').trim();
-    if(!staff) return;
-    var activeBtn = document.querySelector('.mode-card.active');
-    var selectedMode = activeBtn ? activeBtn.dataset.mode : 'inPerson';
-    var generatedOutputChanged = appointmentMode !== selectedMode || fieldText('teamMember') !== staff;
-    appointmentMode = selectedMode;
-    setControlValue('teamMember', staff);
-    if(generatedOutputChanged) clearGenerated();
-    preserveDraftDropdownValue('staff', staff);
-    localStorage.setItem("salesAppointmentLastStaff", staff);
-    $('landingScreen').classList.add('hidden');
-    applyAppointmentMode();
-    $('backToStart').style.display = '';
-    status('Staff: '+staff+' | Mode: '+appointmentMode);
-    }
+    startNewAppointment(staff, selectedMode);
   }
 
-  function _showNewAppointmentDialog(){
-    var choice = confirm('A saved appointment exists on this device. Choose OK to continue working on it, or Cancel to see more options.');
-    if(choice){ resumeDraft(); return; }
-    var choice2 = confirm('Start a new appointment and keep the saved one? Choose OK to start new and keep it, or Cancel to delete it and start new.');
-    if(choice2){ _startNewAppointment(); return; }
-    var delConfirm = confirm('Delete the saved appointment and start a new one? This cannot be undone.');
-    if(delConfirm){
-      window._db.deleteDraft(true).then(function(){
-        updateSaveStatus('idle');
-        _startNewAppointment();
-      });
-    }
+  function clearAppointmentForNewStart(){
+    fields.forEach(function(id){
+      var el = $(id);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = (id === 'includeFullPhotos' || id === 'compressPhotos' || id === 'iaApplySignature1' || id === 'iaApplySignature2');
+      else el.value = id === 'iaForm' ? 'perth' : '';
+    });
+    renderConfigurableControl('solicitor','solicitorControl','iaSolicitor','Solicitor / Conveyancer','Name of solicitor or conveyancer',false);
+    $('date').value = formatDisplayDate(localDateISO());
+    if($('iaDate')) $('iaDate').value = $('date').value;
+    if($('eoiDate')) $('eoiDate').value = $('date').value;
+    applyPdfDefaults(true);
+    var sole = document.querySelector('input[name="eoiOwnership"][value="sole"]');
+    if(sole) sole.checked = true;
+    if($('additionalDocsCount')) $('additionalDocsCount').value = '0';
+    photos.length = 4;
+    renderAdditionalDocsUI();
+    photos.forEach(function(_, index){ removePhoto(index); });
+    clearSig();
+    clearSig2();
+    if(typeof wbReset !== 'undefined') wbReset();
+    cancelAutosave();
+    updateSaveStatus('idle');
+    packageReadyHasBeenShown = false;
+    renderPackageReady('idle');
   }
 
-  function _startNewAppointment(){
-    var staff = $('landingStaff').value;
-    var mode = document.querySelector('.mode-card.active')?.dataset?.mode || 'inPerson';
-    startAppointment(staff, mode);
+  function startNewAppointment(staff, selectedMode){
+    clearAppointmentForNewStart();
+    appointmentMode = selectedMode;
+    setControlValue('teamMember', staff);
+    preserveDraftDropdownValue('staff', staff);
+    localStorage.setItem("salesAppointmentLastStaff", staff);
+    $('landingScreen').classList.add('hidden');
+    applyAppointmentMode();
+    $('backToStart').style.display = '';
+    if($('startFreshAppointment')) $('startFreshAppointment').style.display = '';
+    status('Staff: '+staff+' | Mode: '+appointmentMode);
+  }
+
+  function startFreshAppointment(){
+    var staff = (fieldText('teamMember') || '').trim();
+    if(!staff) returnToLanding();
+    else {
+      startNewAppointment(staff, appointmentMode);
+      toast('New appointment started.');
+    }
   }
 
   function _showCorruptDraftDialog(meta){
@@ -769,6 +748,7 @@ var staff = ($('landingStaff').value || '').trim();
   function backToStart(){
     $('landingScreen').classList.remove('hidden');
     $('backToStart').style.display = 'none';
+    if($('startFreshAppointment')) $('startFreshAppointment').style.display = 'none';
     updateLandingStaffFromStorage();
     updateContinueButtonText();
   }
@@ -779,6 +759,7 @@ var staff = ($('landingStaff').value || '').trim();
     $('landingContinue').disabled = true;
     $('landingScreen').classList.remove('hidden');
     $('backToStart').style.display = 'none';
+    if($('startFreshAppointment')) $('startFreshAppointment').style.display = 'none';
     updateLandingStaffFromStorage();
     updateContinueButtonText();
     applyAppointmentMode();
@@ -2378,6 +2359,8 @@ var staff = ($('landingStaff').value || '').trim();
         statusEl.style.color = 'var(--gold)';
       }
     }
+    const nextRequired = $('nextRequiredItem');
+    if(nextRequired) nextRequired.textContent = missingCount === 0 ? 'Ready to generate' : `Next: ${missingRequired[0]}`;
   }
 
   function updatePackagePreview(){
@@ -4442,6 +4425,37 @@ var staff = ($('landingStaff').value || '').trim();
   const waiverTemplateSources = Array.from({ length: 6 }, (_, i) => 'templates/rendered/waiver-page-' + (i + 1) + '.jpg');
   const waiverTemplateImages = new Array(6).fill(null);
 
+  async function openWaiverPreview(){
+    const dialog = $('waiverPreviewDialog');
+    const pages = $('waiverPreviewPages');
+    const trigger = $('waiverPreviewOpen');
+    if(!dialog || !pages || !trigger) return;
+    trigger.setAttribute('aria-expanded', 'true');
+    pages.textContent = 'Loading waiver…';
+    dialog.hidden = false;
+    try {
+      await ensureWaiverTemplateImage();
+      pages.textContent = '';
+      for(let index = 0; index < WAIVER_PAGE_COUNT; index++){
+        pages.appendChild(drawWaiverPage(index, index + 1, WAIVER_PAGE_COUNT, 1.5));
+      }
+      $('waiverPreviewClose').focus();
+    } catch(err) {
+      console.error(err);
+      pages.textContent = 'The waiver preview could not be loaded. You can still create the Waiver PDF.';
+    }
+  }
+
+  function closeWaiverPreview(){
+    const dialog = $('waiverPreviewDialog');
+    const trigger = $('waiverPreviewOpen');
+    if(dialog) dialog.hidden = true;
+    if(trigger){
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus();
+    }
+  }
+
   async function ensureWaiverTemplateImage(index = WAIVER_PAGE_COUNT - 1){
     if(waiverTemplateImages[index]) return waiverTemplateImages[index];
     status('Loading Waiver & Disclosure template...');
@@ -4556,8 +4570,9 @@ var staff = ($('landingStaff').value || '').trim();
         if (b) {
           const scale = Math.min(135 / b.w, 36 / b.h, 1);
           const w = b.w * scale, h = b.h * scale;
-          // Ink bottom sits 8pt above the underline (line at C1_SIG_Y - 2); dest top = bottom - h
-          ctx.drawImage(sig1Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C1_SIG_Y + 6 - h), w, h);
+          // Canvas coordinates run top-down: convert the PDF-space ink top,
+          // leaving the ink bottom 8pt above the signature underline.
+          ctx.drawImage(sig1Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C1_SIG_Y + 6 + h), w, h);
         }
       }
 
@@ -4567,16 +4582,8 @@ var staff = ($('landingStaff').value || '').trim();
       valueFont();
       if (client1Date) {
         const parts = splitDateParts(client1Date);
-        if (parts) {
-          // Draw with spaces around slashes: 11 / 09 / 2026
-          let x = FIELD_X;
-          for (const item of [parts.day, ' / ', parts.month, ' / ', parts.year]) {
-            ctx.fillText(item, sx(x), sy(C1_DATE_Y));
-            x += ctx.measureText(item).width;
-          }
-        } else {
-          ctx.fillText(client1Date.trim(), sx(FIELD_X), sy(C1_DATE_Y));
-        }
+        const displayDate = parts ? parts.day + ' / ' + parts.month + ' / ' + parts.year : client1Date.trim();
+        ctx.fillText(displayDate, sx(FIELD_X), sy(C1_DATE_Y));
       }
       underline(C1_DATE_Y);
 
@@ -4621,8 +4628,9 @@ var staff = ($('landingStaff').value || '').trim();
           if (b) {
             const scale = Math.min(135 / b.w, 36 / b.h, 1);
             const w = b.w * scale, h = b.h * scale;
-            // Ink bottom sits 8pt above the underline (line at C2_SIG_Y - 2); dest top = bottom - h
-            ctx.drawImage(sig2Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C2_SIG_Y + 6 - h), w, h);
+            // Canvas coordinates run top-down: convert the PDF-space ink top,
+            // leaving the ink bottom 8pt above the signature underline.
+            ctx.drawImage(sig2Canvas, b.x, b.y, b.w, b.h, sx(FIELD_X + 4), sy(C2_SIG_Y + 6 + h), w, h);
           }
         }
 
@@ -4632,15 +4640,8 @@ var staff = ($('landingStaff').value || '').trim();
         valueFont();
         if (c2Date) {
           const parts = splitDateParts(c2Date);
-          if (parts) {
-            let x = FIELD_X;
-            for (const item of [parts.day, ' / ', parts.month, ' / ', parts.year]) {
-              ctx.fillText(item, sx(x), sy(C2_DATE_Y));
-              x += ctx.measureText(item).width;
-            }
-          } else {
-            ctx.fillText(c2Date.trim(), sx(FIELD_X), sy(C2_DATE_Y));
-          }
+          const displayDate = parts ? parts.day + ' / ' + parts.month + ' / ' + parts.year : c2Date.trim();
+          ctx.fillText(displayDate, sx(FIELD_X), sy(C2_DATE_Y));
         }
         underline(C2_DATE_Y);
 
@@ -6907,11 +6908,17 @@ function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
   $('loadDraft').addEventListener('click',loadDraft);
   if($('loadTestData')) $('loadTestData').addEventListener('click',loadTestData);
   if($('waiverClient2Toggle')) $('waiverClient2Toggle').addEventListener('change',onWaiverClient2Toggle);
+  if($('waiverPreviewOpen')) $('waiverPreviewOpen').addEventListener('click',openWaiverPreview);
+  if($('waiverPreviewClose')) $('waiverPreviewClose').addEventListener('click',closeWaiverPreview);
   $('openSettings').addEventListener('click',openSettings);
   if($('configureStaffFromLanding')) $('configureStaffFromLanding').addEventListener('click',openSettings);
   $('closeSettings').addEventListener('click',e=>{ e.preventDefault(); closeSettings(); });
   $('settingsOverlay').addEventListener('click',e=>{ if(e.target===$('settingsOverlay') || (e.target.closest && e.target.closest('#closeSettings'))) closeSettings(); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('settingsOverlay').classList.contains('hidden')) closeSettings(); });
+  document.addEventListener('keydown',e=>{
+    if(e.key !== 'Escape') return;
+    if($('waiverPreviewDialog') && !$('waiverPreviewDialog').hidden) closeWaiverPreview();
+    else if(!$('settingsOverlay').classList.contains('hidden')) closeSettings();
+  });
   if($('copyIAFields')) $('copyIAFields').addEventListener('click',copyEOIToIA);
   $('resetForm').addEventListener('click',resetForm);
   if($('summaryDisclosure')) $('summaryDisclosure').addEventListener('click',()=>{
@@ -6942,6 +6949,7 @@ function drawWhiteboardPage(pageIdx, pageNumber, totalPages, scale, loadedImg){
   /* Landing screen event wiring */
   $('landingContinue').addEventListener('click', enterAppointment);
   if($('backToStart')) $('backToStart').addEventListener('click', backToStart);
+  if($('startFreshAppointment')) $('startFreshAppointment').addEventListener('click', startFreshAppointment);
 if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraft);
   document.querySelectorAll('.mode-card').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -6967,6 +6975,8 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     /* Create collapse body */
     var bodyDiv = document.createElement('div');
     bodyDiv.className = 'collapse-body';
+    var collapsedByDefault = section.getAttribute('data-default-collapsed') === 'true';
+    if(collapsedByDefault) bodyDiv.classList.add('collapsed');
     bodyDiv.setAttribute('id', section.id + '-body');
     for(var ci2 = 0; ci2 < children.length; ci2++){
       bodyDiv.appendChild(children[ci2]);
@@ -6975,9 +6985,9 @@ if($('resumeDraftBtn')) $('resumeDraftBtn').addEventListener('click', resumeDraf
     /* Create toggle button */
     var toggle = document.createElement('button');
     toggle.className = 'collapse-toggle';
-    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-expanded', collapsedByDefault ? 'false' : 'true');
     toggle.setAttribute('aria-controls', section.id + '-body');
-    toggle.innerHTML = '<span class="collapse-indicator incomplete" aria-hidden="true"></span><span class="collapse-label">' + h2.textContent + '</span><span class="collapse-chevron" aria-hidden="true">▲</span>';
+    toggle.innerHTML = '<span class="collapse-indicator incomplete" aria-hidden="true"></span><span class="collapse-label">' + h2.textContent + '</span><span class="collapse-chevron' + (collapsedByDefault ? ' collapsed' : '') + '" aria-hidden="true">▲</span>';
     section.insertBefore(toggle, bodyDiv);
     /* Hide the original h2 */
     h2.style.display = 'none';

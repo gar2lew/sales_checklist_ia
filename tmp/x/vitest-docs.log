@@ -1,0 +1,55 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/dev/Irrevoccable Authority CHECKLIST[39m
+
+✔ foundation exposes the four approved documentation modes (1.2845ms)
+ [31m❯[39m tests/documentation-automation.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ screenshot manifest is complete, sorted, unique, and deterministic (1.5873ms)
+✔ run paths remain rooted in the supplied repository (0.1863ms)
+✔ write contracts match the approved command boundaries (0.3567ms)
+✔ orchestrator dispatches each approved mode to its distinct injected handler (0.5628ms)
+ [31m❯[39m tests/documentation-generation.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ generate pipeline preserves stage order, facts, WARN, and cleanup (2.658ms)
+ [31m❯[39m tests/documentation-orchestration.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ primary failure stops dependent stages, marks NOT RUN, and cleanup never masks it (0.5494ms)
+✔ capture and validate run only their approved stage scopes (0.2323ms)
+ [31m❯[39m tests/documentation-pipeline.integration.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ report renders stable PASS/WARN/FAIL/BLOCKED facts without false visual approval (1.8832ms)
+ [31m❯[39m tests/documentation-reporting.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ report preserves manifest and deterministic finding order and accurate document semantics (1.6279ms)
+✔ changelog creates, prepends, preserves history, records WARN, and replaces duplicates (0.635ms)
+✔ validation aggregation is deterministic and retains severity and remediation (1.333ms)
+ [31m❯[39m tests/documentation-validation.test.mjs [2m([22m[2m0 test[22m[2m)[22m
+✔ validation tooling rejects wrappers and resolves direct pdfinfo and renderer executables (1.8957ms)
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-automation.test.mjs[2m [ tests/documentation-automation.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-automation.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-generation.test.mjs[2m [ tests/documentation-generation.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-generation.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-orchestration.test.mjs[2m [ tests/documentation-orchestration.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-orchestration.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-pipeline.integration.test.mjs[2m [ tests/documentation-pipeline.integration.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-pipeline.integration.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-reporting.test.mjs[2m [ tests/documentation-reporting.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-reporting.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/documentation-validation.test.mjs[2m [ tests/documentation-validation.test.mjs ][22m
+[31m[1mError[22m: No test suite found in file C:/dev/Irrevoccable Authority CHECKLIST/tests/documentation-validation.test.mjs[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m6 failed[39m[22m[90m (6)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m   Start at [22m 16:40:52
+[2m   Duration [22m 808ms[2m (transform 101ms, setup 0ms, import 280ms, tests 0ms, environment 0ms)[22m
+

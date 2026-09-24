@@ -1,0 +1,506 @@
+[
+  {
+    "viewport": "iPhone-SE",
+    "width": 375,
+    "height": 667,
+    "timing": {
+      "load": 1018
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "viewport": "iPhone-14",
+    "width": 390,
+    "height": 844,
+    "timing": {
+      "load": 596
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "viewport": "iPhone-14-PM",
+    "width": 393,
+    "height": 852,
+    "timing": {
+      "load": 609
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 393,
+      "clientWidth": 393,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "viewport": "iPhone-15-PM",
+    "width": 430,
+    "height": 932,
+    "timing": {
+      "load": 602
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 430,
+      "clientWidth": 430,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "viewport": "iPad",
+    "width": 768,
+    "height": 1024,
+    "timing": {
+      "load": 617
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  {
+    "viewport": "Desktop",
+    "width": 1280,
+    "height": 800,
+    "timing": {
+      "load": 626
+    },
+    "domStats": {
+      "totalNodes": 1545,
+      "scripts": 4,
+      "stylesheets": 1,
+      "images": 1,
+      "canvases": 4
+    },
+    "overflow": {
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "hasOverflow": false
+    },
+    "touchTargets": [
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "tag": "INPUT",
+        "text": "",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "pageErrors": [],
+    "consoleErrors": []
+  }
+]
